@@ -13,9 +13,7 @@
   <PropertyGroup />
   <ItemGroup />
   <ItemGroup>
-    <Reference Include="CoreDTO">
-      <HintPath>/home/user/VAN/publish/CoreDTO.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="CoreDTO/CoreDTO.csproj" />
     <Reference Include="Orchestrator">
       <HintPath>/home/user/VAN/publish/Orchestrator.dll</HintPath>
     </Reference>
