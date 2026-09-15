@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__VAN_BASE_URL__ = "https://www.alexvysotsky.com";</script>
+  <meta charset="UTF-8"/>
+  <title>VAN Portal · Trading</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Header ── */
+    header { border-bottom: 1px solid #1e293b; padding: 6px 0; }
+    .header-inner { max-width: 960px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { height: 48px; filter: invert(1) brightness(1.15); opacity: .96; }
+    .brand-title { font-size: 15px; font-weight: 600; }
+    .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .btn-logout { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-logout:hover { background: #334155; }
+
+    /* ── Nav ── */
+    nav { border-bottom: 1px solid #1e293b; background: #0b1220; }
+    .nav-inner { max-width: 960px; margin: 0 auto; display: flex; gap: 0; padding: 0 20px; }
+    .nav-item { padding: 8px 10px; font-size: 13px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; white-space: nowrap; }
+    .nav-item:hover { color: #f1f5f9; background: #111827; }
+    .nav-item.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    /* ── Main layout ── */
+    .main { max-width: 960px; margin: 0 auto; padding: 10px 20px 8px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid #1e293b; margin-bottom: 6px; }
+    .tab { padding: 4px 12px; min-height: 22px; box-sizing: border-box; font-size: 12px; line-height: 1.1; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s; }
+    .tab:hover { color: #f1f5f9; }
+    .tab.active { color: #10b981; border-bottom-color: #10b981; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Stats ── */
+    .stats { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+    @media(max-width:700px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+    @media(max-width:400px) { .stats { grid-template-columns: repeat(3, 1fr); gap: 5px; } .stat { padding: 5px 6px; } }
+    .stat { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 5px 10px; }
+    .stat-label { font-size: 10px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+    .stat-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-value.green { color: #34d399; }
+    .metric-tooltip { position: relative; overflow: visible; cursor: help; }
+    .metric-tooltip:after { content: attr(data-tooltip); position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%) translateY(4px); width: min(280px, calc(100vw - 32px)); padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,.96); border: 1px solid #334155; color: #e2e8f0; font-size: 12px; line-height: 1.35; font-weight: 400; text-transform: none; letter-spacing: 0; white-space: normal; box-shadow: 0 12px 30px rgba(2,6,23,.45); opacity: 0; pointer-events: none; transition: opacity .15s ease, transform .15s ease; z-index: 30; }
+    .metric-tooltip:before { content: ""; position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); border: 6px solid transparent; border-top-color: #334155; opacity: 0; transition: opacity .15s ease; z-index: 31; }
+    .metric-tooltip:hover:after, .metric-tooltip:hover:before { opacity: 1; }
+    .metric-tooltip:hover:after { transform: translateX(-50%) translateY(0); }
+
+    /* ── Chart card ── */
+    .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; margin-bottom: 8px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .card-title { font-size: 12px; font-weight: 600; color: #cbd5e1; }
+    .card-meta { font-size: 11px; color: #64748b; font-family: monospace; }
+    .chart-empty { color: #475569; font-size: 13px; text-align: center; padding: 60px 0; }
+
+    /* ── Placeholder ── */
+    .placeholder-card { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; padding: 60px; text-align: center; color: #64748b; }
+    .placeholder-card h3 { font-size: 16px; color: #94a3b8; margin-bottom: 8px; }
+
+    footer { text-align: center; padding: 10px 28px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; }
+
+    @media(max-width: 700px) {
+      .header-inner { padding: 0 6px; flex-direction: column; align-items: stretch; gap: 3px; }
+      .nav-inner { padding: 0 8px; }
+      .main { padding: 6px 8px 8px; }
+      .nav-item { padding: 8px 8px; font-size: 12px; }
+    }
+    @media(max-width: 480px) {
+      .header-inner { padding: 0 4px; gap: 2px; }
+      .nav-inner { padding: 0 4px; }
+      .main { padding: 4px 4px 8px; }
+    }
+
+
+    .maintenance-banner { display:none; max-width:960px; margin:12px auto 0; background:#3b0a0a; border:1px solid #7f1d1d; color:#fecaca; padding:12px 16px; border-radius:12px; font-size:13px; line-height:1.45; }
+    .maintenance-banner.visible { display:block; }
+    .maintenance-banner strong { color:#fff; }
+
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN"/>
+      <div>
+        <div class="brand-title">VAN Portal</div>
+        <div class="brand-sub">Trading</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="user-label" style="font-size:13px;color:#64748b"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-item" onclick="navTo('/app')">Overview</div>
+    <div class="nav-item active">Trading</div>
+    <div class="nav-item" onclick="navTo('/deribit')">Deribit</div>
+    <div class="nav-item" onclick="navTo('/okx')">OKX</div>
+    <div class="nav-item" onclick="navTo('/bybit')">Bybit</div>
+    <div class="nav-item" onclick="navTo('/coincall-spreads.html')">CoinCall</div>
+    <div class="nav-item" onclick="navTo('/mexc.html')">MEXC</div>
+    <div class="nav-item" onclick="navTo('/binance.html')">Binance</div>
+    <div class="nav-item" onclick="navTo('/hyperliquid.html')">Hyperliquid</div>
+    <div class="nav-item" onclick="navTo('/bitget.html')">Bitget</div>
+    <div class="nav-item" onclick="navTo('/kraken.html')">Kraken</div>
+    <div class="nav-item" onclick="navTo('/kucoin.html')">KuCoin</div>
+    <div class="nav-item" onclick="navTo('/gate.html')">Gate</div>
+    <div class="nav-item" onclick="navTo('/coinbase.html')">Coinbase</div>
+    <div class="nav-item" onclick="navTo('/arbitrage')">Arbitrage</div>
+    <div class="nav-item" onclick="navTo('/market-data')">Market Data</div>
+    <div class="nav-item" onclick="navTo('/position-builder')">Position Builder</div>
+    <div class="nav-item" onclick="navTo('/backtester')">Backtester</div>
+    <div class="nav-item" onclick="navTo('/app#accounts')">Accounts</div>
+  </div>
+</nav>
+
+
+<div class="maintenance-banner" id="maintenance-banner"></div>
+
+<script>
+(function () {
+  const banner = document.getElementById('maintenance-banner');
+  if (!banner) return;
+
+  function fmtUtc(value) {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return String(value);
+    const p = (n) => String(n).padStart(2, '0');
+    return dt.getUTCFullYear() + '-' + p(dt.getUTCMonth() + 1) + '-' + p(dt.getUTCDate()) + ' ' + p(dt.getUTCHours()) + ':' + p(dt.getUTCMinutes()) + ' UTC';
+  }
+
+  async function refreshMaintenanceBanner() {
+    try {
+      const resp = await fetch('/maintenance-state.json?ts=' + Date.now(), { cache: 'no-store' });
+      if (!resp.ok) return;
+      const state = await resp.json();
+      if (state && state.maintenance_active) {
+        const cooldown = state.cooldown_until ? (' Cooldown until ' + fmtUtc(state.cooldown_until) + '.') : '';
+        banner.innerHTML = '<strong>Maintenance mode:</strong> Deribit maintenance is in progress. Market data, equity updates and backtester calculations are temporarily paused.' + cooldown;
+        banner.classList.add('visible');
+      } else {
+        banner.classList.remove('visible');
+        banner.innerHTML = '';
+      }
+    } catch (err) {
+      console.warn('maintenance banner refresh failed', err);
+    }
+  }
+
+  refreshMaintenanceBanner();
+  setInterval(refreshMaintenanceBanner, 30000);
+  window.refreshMaintenanceBanner = refreshMaintenanceBanner;
+})();
+</script>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="van-combo-1">VAN_Combo_1</div>
+    <div class="tab" data-tab="van-fs">VAN_FS</div>
+    <div class="tab" data-tab="van-f">VAN_F</div>
+    <div class="tab" data-tab="van-op">VAN_OP</div>
+  </div>
+
+  <!-- VAN_Combo_1 Tab -->
+  <div class="tab-panel active" id="tab-van-combo-1">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat metric-tooltip" data-tooltip="Latest equity in USD from the live 1-minute equity series.">
+        <div class="stat-label">Current Equity</div>
+        <div class="stat-value green" id="stat-equity">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Current equity versus initial investment, shown as a percentage.">
+        <div class="stat-label">Total Return</div>
+        <div class="stat-value" id="stat-change">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Maximum peak-to-trough drawdown in percent, based on the 1-minute equity series.">
+        <div class="stat-label">Max DD</div>
+        <div class="stat-value" id="stat-maxdd" style="color:#94a3b8">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Number of calendar days covered by the displayed daily equity history.">
+        <div class="stat-label">Days</div>
+        <div class="stat-value" id="stat-days">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Compound Annual Growth Rate, annualized from initial investment, current equity, and displayed days.">
+        <div class="stat-label">CAGR</div>
+        <div class="stat-value" id="stat-apr">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Calmar Ratio = CAGR / Max Drawdown.">
+        <div class="stat-label">Calmar</div>
+        <div class="stat-value" id="stat-calmar">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Sortino Ratio for VAN_Combo_1 = average daily return / downside deviation, annualized by sqrt(365). Target return = 0% daily. Uses the daily equity series.">
+        <div class="stat-label">Sortino</div>
+        <div class="stat-value" id="stat-sortino">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Sharpe Ratio for VAN_Combo_1 = average daily return / standard deviation of daily returns, annualized by sqrt(365). Risk-free rate = 0%. Uses the displayed daily equity series.">
+        <div class="stat-label">Sharpe</div>
+        <div class="stat-value" id="stat-sharpe">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="UTC timestamp of the latest point received from the live 1-minute equity series.">
+        <div class="stat-label">Last Update</div>
+        <div class="stat-value" id="stat-time" style="font-size:13px">—</div>
+      </div>
+    </div>
+
+    <!-- Daily Equity Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">VAN_Combo_1 Equity (USD) · Daily</div>
+        <div class="card-meta" id="daily-chart-range"></div>
+      </div>
+      <div id="daily-chart-wrap">
+        <div class="chart-empty" id="daily-chart-empty">Loading daily chart…</div>
+        <canvas id="daily-chart" height="220" style="display:none;width:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- 1-min Equity Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Equity (USD) · Last 24 hours · 1-minute resolution</div>
+        <div class="card-meta" id="chart-range"></div>
+      </div>
+      <div id="chart-wrap">
+        <div class="chart-empty" id="chart-empty">Loading chart data…</div>
+        <canvas id="chart" height="220" style="display:none;width:100%"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VAN_F Tab -->
+  <div class="tab-panel" id="tab-van-f"></div>
+
+  <!-- VAN_OP Tab -->
+  <div class="tab-panel" id="tab-van-op"></div>
+
+  <!-- VAN_FS Tab -->
+  <div class="tab-panel" id="tab-van-fs">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat metric-tooltip" data-tooltip="Latest strategy equity in USD from the live 1-minute equity series.">
+        <div class="stat-label">BTC Equity (USD)</div>
+        <div class="stat-value green" id="fs-stat-equity">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Current equity versus initial investment, shown as a percentage.">
+        <div class="stat-label">Total Return</div>
+        <div class="stat-value" id="fs-stat-change">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Maximum peak-to-trough drawdown in percent, based on the 1-minute equity series.">
+        <div class="stat-label">Max DD</div>
+        <div class="stat-value" id="fs-stat-maxdd" style="color:#94a3b8">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Number of calendar days covered by the displayed daily equity history.">
+        <div class="stat-label">Days</div>
+        <div class="stat-value" id="fs-stat-days">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Compound Annual Growth Rate, annualized from initial investment, current equity, and displayed days.">
+        <div class="stat-label">CAGR</div>
+        <div class="stat-value" id="fs-stat-apr">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="Calmar Ratio = CAGR / Max Drawdown.">
+        <div class="stat-label">Calmar</div>
+        <div class="stat-value" id="fs-stat-calmar">—</div>
+      </div>
+      <div class="stat metric-tooltip" data-tooltip="UTC timestamp of the latest point received from the live 1-minute equity series.">
+        <div class="stat-label">Last Update</div>
+        <div class="stat-value" id="fs-stat-time" style="font-size:13px">—</div>
+      </div>
+    </div>
+
+    <!-- Daily BTC Equity Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">VAN_FS BTC Equity (USD) · Daily</div>
+        <div class="card-meta" id="fs-daily-chart-range"></div>
+      </div>
+      <div id="fs-daily-chart-wrap">
+        <div class="chart-empty" id="fs-daily-chart-empty">Loading daily chart…</div>
+        <canvas id="fs-daily-chart" height="220" style="display:none;width:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- 1-min BTC Equity Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">VAN_FS BTC Equity (USD) · Last 24 hours · 1-minute resolution</div>
+        <div class="card-meta" id="fs-chart-range"></div>
+      </div>
+      <div id="fs-chart-wrap">
+        <div class="chart-empty" id="fs-chart-empty">Loading chart data…</div>
+        <canvas id="fs-chart" height="220" style="display:none;width:100%"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>VAN Portal · Trading · Data from Deribit · Updated every 60 seconds</footer>
+
+<script>
+const BASE = window.__VAN_BASE_URL__ || '';
+let gInitialInvestmentUsd = null;
+let gDaysCount = null;
+let gMaxDrawdownPct = null;
+let gDailyPts = null;
+let gDailyDrawdownMap = null;
+let gCurrentEquity = null;
+let gCurrentTs = null;
+
+// ─── Auth guard ──────────────────────────────────────────────────────────────
+(function() {
+  var sess = null;
+  try { sess = JSON.parse(localStorage.getItem('van_session') || 'null'); } catch(e) {}
+  if (!sess || !sess.token) { window.location.href = '/'; throw new Error('Not authenticated'); }
+  var label = document.getElementById('user-label');
+  if (label) {
+    var u = sess.user;
+    label.textContent = (u && (u.Login || u.login || u.Name || u.name)) || 'Admin';
+  }
+})();
+
+function doLogout() {
+  localStorage.removeItem('van_session');
+  localStorage.removeItem('van_token');
+  window.location.href = '/';
+}
+
+function navTo(path) { window.location.href = path; }
+
+// ─── Tab switching ───────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var id = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    var panel = document.getElementById('tab-' + id);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function fmtShort(dt) {
+  var d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt);
+  return d.toISOString().slice(11, 16);
+}
+function fmtDate(dt) {
+  var d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt);
+  return d.toISOString().slice(0, 10);
+}
+function fmtUsd(v) {
+  return '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function buildDailyDrawdownMap(drawdownPoints) {
+  var map = new Map();
+  for (const p of (drawdownPoints || [])) {
+    var key = fmtDate(p.dt);
+    var value = Number(p.maxDrawdownPct);
+    if (key && Number.isFinite(value)) map.set(key, value);
+  }
+  return map;
+}
+function buildDailyHistogramValues(points) {
+  if (gDailyDrawdownMap && gDailyDrawdownMap.size > 0) {
+    return points.map(function(p) {
+      var key = fmtDate(p.dt);
+      if (gDailyDrawdownMap.has(key)) return gDailyDrawdownMap.get(key);
+      return 0;
+    });
+  }
+  var peak = points[0].v;
+  return points.map(function(p) {
+    if (p.v > peak) peak = p.v;
+    return peak > 0 ? (peak-p.v)/peak*100 : 0;
+  });
+}
+function computeDailySharpe(points) {
+  if (!points || points.length < 2) return null;
+  var returns = [];
+  for (var i = 1; i < points.length; i++) {
+    var prev = Number(points[i - 1].v);
+    var curr = Number(points[i].v);
+    if (!(prev > 0) || !isFinite(curr)) continue;
+    returns.push(curr / prev - 1);
+  }
+  if (returns.length < 2) return null;
+  var avg = returns.reduce(function(sum, r) { return sum + r; }, 0) / returns.length;
+  var variance = returns.reduce(function(sum, r) {
+    var diff = r - avg;
+    return sum + diff * diff;
+  }, 0) / returns.length;
+  if (!(variance > 0)) return null;
+  return (avg / Math.sqrt(variance)) * Math.sqrt(365);
+}
+function computeDailySortino(points) {
+  if (!points || points.length < 2) return null;
+  var returns = [];
+  for (var i = 1; i < points.length; i++) {
+    var prev = Number(points[i - 1].v);
+    var curr = Number(points[i].v);
+    if (!(prev > 0) || !isFinite(curr)) continue;
+    returns.push(curr / prev - 1);
+  }
+  if (returns.length < 2) return null;
+  var avg = returns.reduce(function(sum, r) { return sum + r; }, 0) / returns.length;
+  var downsideVariance = returns.reduce(function(sum, r) {
+    var downside = Math.min(0, r);
+    return sum + downside * downside;
+  }, 0) / returns.length;
+  if (!(downsideVariance > 0)) return null;
+  return (avg / Math.sqrt(downsideVariance)) * Math.sqrt(365);
+}
+function setRatioMetricById(id, value) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (value === null || value === undefined || !isFinite(value)) {
+    el.textContent = '—';
+    el.style.color = '';
+    return;
+  }
+  el.textContent = value.toFixed(2);
+  el.style.color = value >= 1 ? '#34d399' : value >= 0 ? '#fbbf24' : '#f87171';
+}
+
+// ─── 1-min chart ─────────────────────────────────────────────────────────────
+function drawChart(points, drawdownPoints) {
+  const canvas = document.getElementById('chart');
+  const empty  = document.getElementById('chart-empty');
+  const wrap   = document.getElementById('chart-wrap');
+  if (!points || points.length < 2) {
+    empty.textContent = 'Not enough data yet. Chart will appear as data accumulates.';
+    empty.style.display = '';
+    canvas.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const W = wrap.clientWidth || 900;
+  const H = 260;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const isMobile = window.innerWidth <= 700;
+  const pad = isMobile ? {top:20, right:42, bottom:30, left:2} : {top:16, right:62, bottom:32, left:14};
+  const cw = W - pad.left - pad.right;
+  const totalH = H - pad.top - pad.bottom;
+  const gap = 14;
+  const topH = Math.floor((totalH - gap) * (2 / 3));
+  const botH = totalH - gap - topH;
+  const topY = pad.top;
+  const botY = pad.top + topH + gap;
+
+  const vals = points.map(p => p.v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
+  const px = i => pad.left + (i / (points.length - 1)) * cw;
+  const py = v => topY + (1 - (v - minV) / range) * topH;
+
+  let ddVals;
+  if (drawdownPoints && drawdownPoints.length) {
+    const ddKey = dt => { const d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt); return isNaN(d) ? String(dt).slice(0,16) : d.toISOString().slice(0,16); };
+    const ddMap = new Map(drawdownPoints.map(p => [ddKey(p.dt), Number(p.maxDrawdownPct) || 0]));
+    ddVals = points.map(p => ddMap.has(ddKey(p.dt)) ? ddMap.get(ddKey(p.dt)) : 0);
+  } else {
+    let peak = points[0].v;
+    ddVals = points.map(p => {
+      if (p.v > peak) peak = p.v;
+      return peak > 0 ? (peak - p.v) / peak * 100 : 0;
+    });
+  }
+  const maxDd = Math.max(...ddVals, 0.01);
+  const currentDd = ddVals[ddVals.length - 1] || 0;
+  const deepThreshold = maxDd * 0.75;
+  const pyd = v => botY + (v / maxDd) * botH;
+  const fmtDd = v => (Math.abs(v)<0.005?'0.00%':'-'+Number(v).toFixed(2)+'%');
+
+  ctx.strokeStyle = 'rgba(71,85,105,.55)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = topY + (i / 4) * topH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('$' + (maxV - (i / 4) * range).toLocaleString('en-US', {maximumFractionDigits: 0}), pad.left + cw + 6, y + 4);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = botY + (i / 4) * botH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(fmtDd((i / 4) * maxDd), pad.left + cw + 6, y + 4);
+  }
+
+  ctx.strokeStyle = 'rgba(148,163,184,.9)';
+  ctx.beginPath(); ctx.moveTo(pad.left, topY + topH + gap / 2); ctx.lineTo(pad.left + cw, topY + topH + gap / 2); ctx.stroke();
+
+  const targetTicks = isMobile ? 6 : 8;
+  const step = Math.max(1, Math.floor(points.length / targetTicks));
+  ctx.fillStyle = '#94a3b8'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'center';
+  for (let i = 0; i < points.length; i += step)
+    ctx.fillText(fmtShort(points[i].dt), px(i), H - 8);
+
+  const grad = ctx.createLinearGradient(0, topY, 0, topY + topH);
+  grad.addColorStop(0, 'rgba(96,165,250,.22)');
+  grad.addColorStop(1, 'rgba(96,165,250,0)');
+  const GAP_MS = 2 * 60 * 1000;
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) {
+    const dtGap = new Date(points[i].dt) - new Date(points[i-1].dt);
+    if (dtGap > GAP_MS) ctx.moveTo(px(i), py(points[i].v));
+    else ctx.lineTo(px(i), py(points[i].v));
+  }
+  ctx.lineTo(px(points.length - 1), topY + topH); ctx.lineTo(px(0), topY + topH);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) {
+    const dtGap2 = new Date(points[i].dt) - new Date(points[i-1].dt);
+    if (dtGap2 > GAP_MS) ctx.moveTo(px(i), py(points[i].v));
+    else ctx.lineTo(px(i), py(points[i].v));
+  }
+  ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.stroke();
+  const lx = px(points.length - 1), ly = py(points[points.length - 1].v);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#60a5fa'; ctx.fill();
+
+  const barW = Math.max(1, Math.floor(cw / points.length));
+  for (let i = 0; i < points.length; i++) {
+    const x = px(i) - Math.floor(barW / 2);
+    const h = pyd(ddVals[i]) - botY;
+    if (ddVals[i] >= deepThreshold && ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(107,114,128,.42)';
+    } else if (ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(71,85,105,.30)';
+    } else {
+      ctx.fillStyle = 'rgba(71,85,105,.14)';
+    }
+    ctx.fillRect(x, botY, barW, Math.max(1, h));
+  }
+
+  ctx.font = '700 11px Liberation Sans, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#60a5fa'; ctx.fillText('■ Equity', pad.left, topY - 8);
+  ctx.fillStyle = '#6b7280'; ctx.fillText('■ Drawdown histogram', pad.left, botY + 3);
+  ctx.fillStyle = '#d1d5db';
+  ctx.textAlign = 'center';
+  ctx.fillText('Current DD: ' + fmtDd(currentDd) + '   Max DD: ' + fmtDd(maxDd), pad.left + cw / 2, topY - 8);
+}
+async function loadChart() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/equity-chart')).json();
+    const pts = d.points || [];
+    drawChart(pts, d.drawdownPoints || []);
+    if (pts.length > 0) {
+      const last = pts[pts.length - 1];
+      gCurrentEquity = last.v;
+      gCurrentTs = last.dt;
+      document.getElementById('stat-equity').textContent = fmtUsd(last.v);
+      document.getElementById('stat-time').textContent = fmtShort(last.dt) + ' UTC';
+      document.getElementById('chart-range').textContent =
+        fmtShort(pts[0].dt) + ' – ' + fmtShort(pts[pts.length - 1].dt) + ' UTC';
+      updateTotalReturn(last.v);
+      if (gDailyPts) refreshDailyChartFromCache();
+    }
+  } catch(e) { document.getElementById('chart-empty').textContent = 'Failed to load data.'; }
+}
+function updateEstimated(pts) {
+  if (!gInitialInvestmentUsd || gInitialInvestmentUsd <= 0 || !gDaysCount || gDaysCount < 2) return;
+  const lastV = (gCurrentEquity !== null && gCurrentEquity > 0) ? gCurrentEquity : pts[pts.length - 1].v;
+  const cagr = (Math.pow(lastV / gInitialInvestmentUsd, 365 / gDaysCount) - 1) * 100;
+  document.getElementById('stat-apr').textContent = (cagr >= 0 ? '+' : '') + cagr.toFixed(1) + '%';
+  document.getElementById('stat-apr').style.color = cagr >= 0 ? '#34d399' : '#f87171';
+
+  const elCalmar = document.getElementById('stat-calmar');
+  const elSortino = document.getElementById('stat-sortino');
+  const maxDd = gMaxDrawdownPct !== null ? gMaxDrawdownPct : (() => {
+    let peak = pts[0].v, dd = 0;
+    for (const p of pts) {
+      if (p.v > peak) peak = p.v;
+      const cur = peak > 0 ? (peak - p.v) / peak * 100 : 0;
+      if (cur > dd) dd = cur;
+    }
+    return dd;
+  })();
+
+  if (maxDd > 0) {
+    const calmar = cagr / maxDd;
+    setRatioMetricById('stat-calmar', calmar);
+  } else {
+    setRatioMetricById('stat-calmar', null);
+  }
+
+  setRatioMetricById('stat-sortino', computeDailySortino(pts));
+  setRatioMetricById('stat-sharpe', computeDailySharpe(pts));
+}
+
+function updateTotalReturn(currentEquity) {
+  if (!gInitialInvestmentUsd || gInitialInvestmentUsd <= 0) return;
+  const pct = (currentEquity - gInitialInvestmentUsd) / gInitialInvestmentUsd * 100;
+  const el  = document.getElementById('stat-change');
+  el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  el.style.color = pct >= 0 ? '#34d399' : '#f87171';
+}
+function buildDisplayDailyPoints(points) {
+  if (!points || points.length === 0) return points;
+  const pts = points.map(p => ({ ...p }));
+  if (gCurrentEquity === null || !(gCurrentEquity > 0)) return pts;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const lastDate = fmtDate(pts[pts.length - 1].dt);
+
+  if (lastDate < today) {
+    pts.push({ dt: today + 'T00:00:00Z', v: gCurrentEquity });
+  } else {
+    pts[pts.length - 1] = { ...pts[pts.length - 1], v: gCurrentEquity };
+  }
+  return pts;
+}
+function refreshDailyChartFromCache() {
+  if (!gDailyPts || gDailyPts.length === 0) return;
+  const pts = buildDisplayDailyPoints(gDailyPts);
+  drawDailyChart(pts);
+  document.getElementById('daily-chart-range').textContent =
+    fmtDate(pts[0].dt) + ' – ' + fmtDate(pts[pts.length - 1].dt);
+  if (pts.length > 1) {
+    const t0 = new Date(pts[0].dt.endsWith('Z') ? pts[0].dt : pts[0].dt + 'Z');
+    const t1 = new Date(pts[pts.length - 1].dt.endsWith('Z') ? pts[pts.length - 1].dt : pts[pts.length - 1].dt + 'Z');
+    gDaysCount = Math.round((t1 - t0) / 86400000) + 1;
+    document.getElementById('stat-days').textContent = gDaysCount;
+    updateEstimated(pts);
+  }
+}
+loadChart();
+setInterval(loadChart, 60000);
+window.addEventListener('resize', loadChart);
+
+async function loadMaxDrawdown() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/max-drawdown')).json();
+    if (d.maxDrawdownPct !== null && d.maxDrawdownPct !== undefined) {
+      gMaxDrawdownPct = d.maxDrawdownPct;
+      document.getElementById('stat-maxdd').textContent = (Math.abs(d.maxDrawdownPct)<0.005?'0.00':'-'+d.maxDrawdownPct.toFixed(2)) + '%';
+      document.getElementById('stat-maxdd').style.color = '#94a3b8';
+      if (gDailyPts) { refreshDailyChartFromCache(); } else if (gInitialInvestmentUsd && gDaysCount) { loadDailyChart(); }
+    }
+  } catch(e) { }
+}
+loadMaxDrawdown();
+setInterval(loadMaxDrawdown, 60000);
+
+function fmtDate(dt) {
+  const d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt);
+  return d.toISOString().slice(0, 10);
+}
+function drawDailyChart(points) {
+  const canvas = document.getElementById('daily-chart');
+  const empty  = document.getElementById('daily-chart-empty');
+  const wrap   = document.getElementById('daily-chart-wrap');
+  if (!points || points.length < 2) {
+    empty.textContent = 'Not enough data yet. Chart will appear as data accumulates.';
+    empty.style.display = '';
+    canvas.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const W = wrap.clientWidth || 900;
+  const H = 260;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const isMobile = window.innerWidth <= 700;
+  const pad = isMobile ? {top:20, right:42, bottom:34, left:2} : {top:16, right:62, bottom:32, left:14};
+  const cw = W - pad.left - pad.right;
+  const totalH = H - pad.top - pad.bottom;
+  const gap = 14;
+  const topH = Math.floor((totalH - gap) * (2 / 3));
+  const botH = totalH - gap - topH;
+  const topY = pad.top;
+  const botY = pad.top + topH + gap;
+
+  const vals = points.map(p => p.v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
+  const px = i => pad.left + (i / (points.length - 1)) * cw;
+  const py = v => topY + (1 - (v - minV) / range) * topH;
+
+  const ddVals = buildDailyHistogramValues(points);
+  const maxDdFromData = Math.max(...ddVals, 0.01);
+  const maxDd = maxDdFromData;
+  const currentDd = ddVals[ddVals.length - 1] || 0;
+  const deepThreshold = maxDd * 0.75;
+  const pyd = v => botY + (v / maxDd) * botH;
+  const fmtDd = v => (Math.abs(v)<0.005?'0.00%':'-'+Number(v).toFixed(2)+'%');
+
+  ctx.strokeStyle = 'rgba(71,85,105,.55)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = topY + (i / 4) * topH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('$' + (maxV - (i / 4) * range).toLocaleString('en-US', {maximumFractionDigits: 0}), pad.left + cw + 6, y + 4);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = botY + (i / 4) * botH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(fmtDd((i / 4) * maxDd), pad.left + cw + 6, y + 4);
+  }
+
+  ctx.strokeStyle = 'rgba(148,163,184,.9)';
+  ctx.beginPath(); ctx.moveTo(pad.left, topY + topH + gap / 2); ctx.lineTo(pad.left + cw, topY + topH + gap / 2); ctx.stroke();
+
+  const targetTicks = isMobile ? 4 : 8;
+  const step = Math.max(1, Math.floor(points.length / targetTicks));
+  ctx.fillStyle = '#94a3b8'; ctx.font = '600 9px Liberation Sans, Arial, sans-serif'; ctx.textAlign = 'center';
+  for (let i = 0; i < points.length; i += step)
+    ctx.fillText(fmtDate(points[i].dt), px(i), H - 8);
+
+  const grad = ctx.createLinearGradient(0, topY, 0, topY + topH);
+  grad.addColorStop(0, 'rgba(52,211,153,.22)');
+  grad.addColorStop(1, 'rgba(52,211,153,0)');
+  const GAP_DAILY_MS = 2 * 24 * 60 * 60 * 1000;
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) {
+    const dtGapD = new Date(points[i].dt) - new Date(points[i-1].dt);
+    if (dtGapD > GAP_DAILY_MS) ctx.moveTo(px(i), py(points[i].v));
+    else ctx.lineTo(px(i), py(points[i].v));
+  }
+  ctx.lineTo(px(points.length - 1), topY + topH); ctx.lineTo(px(0), topY + topH);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) {
+    const dtGapD2 = new Date(points[i].dt) - new Date(points[i-1].dt);
+    if (dtGapD2 > GAP_DAILY_MS) ctx.moveTo(px(i), py(points[i].v));
+    else ctx.lineTo(px(i), py(points[i].v));
+  }
+  ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2; ctx.stroke();
+  const lx = px(points.length - 1), ly = py(points[points.length - 1].v);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#34d399'; ctx.fill();
+
+  const barW = Math.max(2, Math.floor(cw / points.length) - 1);
+  for (let i = 0; i < points.length; i++) {
+    const x = px(i) - Math.floor(barW / 2);
+    const h = pyd(ddVals[i]) - botY;
+    if (ddVals[i] >= deepThreshold && ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(148,163,184,.72)';
+    } else if (ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(148,163,184,.45)';
+    } else {
+      ctx.fillStyle = 'rgba(148,163,184,.22)';
+    }
+    ctx.fillRect(x, botY, barW, Math.max(1, h));
+  }
+
+  ctx.font = '700 11px Liberation Sans, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#34d399'; ctx.fillText('■ Equity', pad.left, topY - 8);
+  ctx.fillStyle = '#94a3b8'; ctx.fillText('■ Drawdown histogram', pad.left, botY + 3);
+  ctx.fillStyle = '#d1d5db';
+  ctx.textAlign = 'center';
+  ctx.fillText('Max DD: ' + fmtDd(maxDd), pad.left + cw / 2, topY - 8);
+}
+async function loadDailyChart() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/daily-equity-chart')).json();
+    gDailyPts = d.points || [];
+    gDailyDrawdownMap = buildDailyDrawdownMap(d.drawdownPoints || []);
+    const pts = buildDisplayDailyPoints(gDailyPts);
+    drawDailyChart(pts);
+    if (pts.length > 0) {
+      document.getElementById('daily-chart-range').textContent =
+        fmtDate(pts[0].dt) + ' – ' + fmtDate(pts[pts.length - 1].dt);
+      if (d.initialInvestmentUsd > 0) {
+        gInitialInvestmentUsd = d.initialInvestmentUsd;
+        if (gCurrentEquity !== null) updateTotalReturn(gCurrentEquity);
+      }
+      if (pts.length > 1) {
+        const t0 = new Date(pts[0].dt.endsWith('Z') ? pts[0].dt : pts[0].dt + 'Z');
+        const t1 = new Date(pts[pts.length - 1].dt.endsWith('Z') ? pts[pts.length - 1].dt : pts[pts.length - 1].dt + 'Z');
+        gDaysCount = Math.round((t1 - t0) / 86400000) + 1;
+        document.getElementById('stat-days').textContent = gDaysCount;
+        updateEstimated(pts);
+      }
+    }
+  } catch(e) { document.getElementById('daily-chart-empty').textContent = 'Failed to load daily data.'; }
+}
+loadDailyChart();
+setInterval(loadDailyChart, 60000);
+window.addEventListener('resize', loadDailyChart);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VAN_FS / VAN_F / VAN_OP
+// ═══════════════════════════════════════════════════════════════════════════════
+var FS_BASE = window.__VAN_BASE_URL__ || '';
+var ASSET_WIDGETS = {
+  'van-fs': {
+    panelId: 'tab-van-fs',
+    title: 'VAN_FS',
+    assetLabel: 'BTC',
+    assetKey: 'btc',
+    color: '#f59e0b',
+    prefix: 'fs'
+  },
+  'van-f': {
+    panelId: 'tab-van-f',
+    title: 'VAN_F',
+    assetLabel: 'ETH',
+    assetKey: 'eth',
+    color: '#8b5cf6',
+    prefix: 'vf'
+  },
+  'van-op': {
+    panelId: 'tab-van-op',
+    title: 'VAN_OP',
+    assetLabel: 'USDC',
+    assetKey: 'usdc',
+    color: '#22c55e',
+    prefix: 'vo'
+  }
+};
+
+function hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return r+','+g+','+b;
+}
+
+function renderAssetPanel(cfg) {
+  var panel = document.getElementById(cfg.panelId);
+  if (!panel) return;
+  var p = cfg.prefix;
+  panel.innerHTML = '' +
+    '<div class="stats">' +
+      '<div class="stat metric-tooltip" data-tooltip="Latest BTC strategy equity in USD from the live 1-minute equity series."><div class="stat-label">' + cfg.assetLabel + ' Equity (USD)</div><div class="stat-value green" id="' + p + '-stat-equity">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Current equity versus initial investment, shown as a percentage."><div class="stat-label">Total Return</div><div class="stat-value" id="' + p + '-stat-change">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Maximum peak-to-trough drawdown in percent, based on the 1-minute equity series."><div class="stat-label">Max DD</div><div class="stat-value" id="' + p + '-stat-maxdd" style="color:#94a3b8">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Number of calendar days covered by the displayed daily equity history."><div class="stat-label">Days</div><div class="stat-value" id="' + p + '-stat-days">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Compound Annual Growth Rate, annualized from initial investment, current equity, and displayed days."><div class="stat-label">CAGR</div><div class="stat-value" id="' + p + '-stat-apr">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Calmar Ratio = CAGR / Max Drawdown."><div class="stat-label">Calmar</div><div class="stat-value" id="' + p + '-stat-calmar">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Sortino Ratio = average daily return / downside deviation, annualized by sqrt(365). Target return = 0% daily. Uses the displayed daily equity series."><div class="stat-label">Sortino</div><div class="stat-value" id="' + p + '-stat-sortino">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="Sharpe Ratio = average daily return / standard deviation of daily returns, annualized by sqrt(365). Risk-free rate = 0%. Uses the displayed daily equity series."><div class="stat-label">Sharpe</div><div class="stat-value" id="' + p + '-stat-sharpe">—</div></div>' +
+      '<div class="stat metric-tooltip" data-tooltip="UTC timestamp of the latest point received from the live 1-minute equity series."><div class="stat-label">Last Update</div><div class="stat-value" id="' + p + '-stat-time" style="font-size:13px">—</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-header"><div class="card-title">' + cfg.title + ' ' + cfg.assetLabel + ' Equity (USD) · Daily</div><div class="card-meta" id="' + p + '-daily-chart-range"></div></div>' +
+      '<div id="' + p + '-daily-chart-wrap"><div class="chart-empty" id="' + p + '-daily-chart-empty">Loading daily chart…</div><canvas id="' + p + '-daily-chart" height="220" style="display:none;width:100%"></canvas></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-header"><div class="card-title">' + cfg.title + ' ' + cfg.assetLabel + ' Equity (USD) · Last 24 hours · 1-minute resolution</div><div class="card-meta" id="' + p + '-chart-range"></div></div>' +
+      '<div id="' + p + '-chart-wrap"><div class="chart-empty" id="' + p + '-chart-empty">Loading chart data…</div><canvas id="' + p + '-chart" height="220" style="display:none;width:100%"></canvas></div>' +
+    '</div>';
+}
+
+Object.keys(ASSET_WIDGETS).forEach(function(key) {
+  var cfg = ASSET_WIDGETS[key];
+  cfg.state = {
+    initialInvestmentUsd: null,
+    daysCount: null,
+    maxDrawdownPct: null,
+    currentEquity: null,
+    dailyPts: null,
+    initialized: false
+  };
+  renderAssetPanel(cfg);
+});
+
+function drawAssetChart(points, canvasId, emptyId, wrapId, color, isDaily, assetLabel, drawdownPoints) {
+  var canvas = document.getElementById(canvasId);
+  var empty  = document.getElementById(emptyId);
+  var wrap   = document.getElementById(wrapId);
+  if (!points || points.length < 2) {
+    empty.textContent = 'Not enough data yet.';
+    empty.style.display = ''; canvas.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; canvas.style.display = 'block';
+  var W = wrap.clientWidth || 900, H = 260;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  var pad = {top:16, right:62, bottom:32, left:14};
+  var cw = W - pad.left - pad.right;
+  var totalH = H - pad.top - pad.bottom;
+  var gap = 14;
+  var topH = Math.floor((totalH - gap) * (2/3));
+  var botH = totalH - gap - topH;
+  var topY = pad.top, botY = pad.top + topH + gap;
+
+  var vals = points.map(function(p){return p.v;});
+  var minV = Math.min.apply(null, vals), maxV = Math.max.apply(null, vals), range = maxV - minV || 1;
+  var px2 = function(i){return pad.left + (i/(points.length-1))*cw;};
+  var py2 = function(v){return topY + (1-(v-minV)/range)*topH;};
+
+  var ddVals;
+  if (drawdownPoints && drawdownPoints.length) {
+    var ddMap = new Map(drawdownPoints.map(function(p){ return [fmtDate(p.dt), Number(p.maxDrawdownPct) || 0]; }));
+    ddVals = points.map(function(p){ var key = fmtDate(p.dt); return ddMap.has(key) ? ddMap.get(key) : 0; });
+  } else {
+    var peak = points[0].v;
+    ddVals = points.map(function(p){
+      if (p.v > peak) peak = p.v;
+      return peak > 0 ? (peak - p.v)/peak*100 : 0;
+    });
+  }
+  var maxDd = Math.max.apply(null, ddVals.concat([0.01]));
+  var deepThreshold = maxDd * 0.75;
+  var pyd2 = function(v){return botY + (v/maxDd)*botH;};
+  var fmtDd2 = function(v){return Math.abs(v)<0.005?'0.00%':'-'+Number(v).toFixed(2)+'%';};
+
+  ctx.strokeStyle = 'rgba(71,85,105,.55)'; ctx.lineWidth = 1;
+  for (var i=0; i<=4; i++) {
+    var y = topY + (i/4)*topH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cw, y); ctx.stroke();
+    ctx.fillStyle='#94a3b8'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText('$'+(maxV-(i/4)*range).toLocaleString('en-US',{maximumFractionDigits:0}), pad.left+cw+6, y+4);
+  }
+  for (var j=0; j<=4; j++) {
+    var y2 = botY + (j/4)*botH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y2); ctx.lineTo(pad.left+cw, y2); ctx.stroke();
+    ctx.fillStyle='#9ca3af'; ctx.font='10px monospace'; ctx.textAlign='left';
+    ctx.fillText(fmtDd2((j/4)*maxDd), pad.left+cw+6, y2+4);
+  }
+  ctx.strokeStyle='rgba(148,163,184,.9)';
+  ctx.beginPath(); ctx.moveTo(pad.left, botY); ctx.lineTo(pad.left+cw, botY); ctx.stroke();
+
+  var step = Math.max(1, Math.floor(points.length/8));
+  ctx.fillStyle='#94a3b8'; ctx.font='10px monospace'; ctx.textAlign='center';
+  for (var k=0; k<points.length; k+=step) {
+    var label = isDaily ? fmtDate(points[k].dt) : fmtShort(points[k].dt);
+    ctx.fillText(label, px2(k), H-8);
+  }
+
+  var gapMs = isDaily ? 2*24*60*60*1000 : 2*60*1000;
+  var grad = ctx.createLinearGradient(0, topY, 0, topY+topH);
+  grad.addColorStop(0, 'rgba('+hexToRgb(color)+',.22)');
+  grad.addColorStop(1, 'rgba('+hexToRgb(color)+',0)');
+  ctx.beginPath(); ctx.moveTo(px2(0), py2(points[0].v));
+  for (var m=1; m<points.length; m++) {
+    if (new Date(points[m].dt)-new Date(points[m-1].dt) > gapMs) ctx.moveTo(px2(m), py2(points[m].v));
+    else ctx.lineTo(px2(m), py2(points[m].v));
+  }
+  ctx.lineTo(px2(points.length-1), topY+topH); ctx.lineTo(px2(0), topY+topH);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px2(0), py2(points[0].v));
+  for (var n=1; n<points.length; n++) {
+    if (new Date(points[n].dt)-new Date(points[n-1].dt) > gapMs) ctx.moveTo(px2(n), py2(points[n].v));
+    else ctx.lineTo(px2(n), py2(points[n].v));
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  var lx=px2(points.length-1), ly=py2(points[points.length-1].v);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI*2); ctx.fillStyle=color; ctx.fill();
+
+  var barW = Math.max(isDaily ? 2 : 1, Math.floor(cw/points.length)-(isDaily?1:0));
+  for (var b=0; b<points.length; b++) {
+    var bx=px2(b)-Math.floor(barW/2), bh=pyd2(ddVals[b])-botY;
+    if (ddVals[b]>=deepThreshold && ddVals[b]>0) ctx.fillStyle = isDaily ? 'rgba(148,163,184,.72)' : 'rgba(107,114,128,.42)';
+    else if (ddVals[b]>0) ctx.fillStyle = isDaily ? 'rgba(148,163,184,.45)' : 'rgba(71,85,105,.30)';
+    else ctx.fillStyle = isDaily ? 'rgba(148,163,184,.22)' : 'rgba(71,85,105,.14)';
+    ctx.fillRect(bx, botY, barW, Math.max(1, bh));
+  }
+
+  ctx.font='11px monospace'; ctx.textAlign='left';
+  ctx.fillStyle=color; ctx.fillText('■ ' + assetLabel + ' Equity', pad.left, topY-2);
+  ctx.fillStyle = isDaily ? '#94a3b8' : '#6b7280'; ctx.fillText('■ Drawdown histogram', pad.left+100, topY-2);
+  ctx.fillStyle='#d1d5db'; ctx.textAlign='center';
+  if (isDaily) {
+    ctx.fillText('Max DD: '+fmtDd2(maxDd), pad.left+cw/2, topY-2);
+  } else {
+    var curDd = ddVals[ddVals.length-1] || 0;
+    ctx.fillText('Current DD: '+fmtDd2(curDd)+'   Max DD: '+fmtDd2(maxDd), pad.left+cw/2, topY-2);
+  }
+}
+
+function assetTotalReturn(cfg, curr) {
+  var state = cfg.state;
+  if (!state.initialInvestmentUsd || state.initialInvestmentUsd <= 0) return;
+  var pct = (curr - state.initialInvestmentUsd) / state.initialInvestmentUsd * 100;
+  var el = document.getElementById(cfg.prefix + '-stat-change');
+  el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  el.style.color = pct >= 0 ? '#34d399' : '#f87171';
+}
+
+function assetUpdateEstimated(cfg, pts) {
+  var state = cfg.state;
+  if (!state.initialInvestmentUsd || state.initialInvestmentUsd <= 0 || !state.daysCount || state.daysCount < 2) return;
+  var lastV = (state.currentEquity !== null && state.currentEquity > 0) ? state.currentEquity : pts[pts.length-1].v;
+  var cagr = (Math.pow(lastV / state.initialInvestmentUsd, 365 / state.daysCount) - 1) * 100;
+  document.getElementById(cfg.prefix + '-stat-apr').textContent = (cagr >= 0 ? '+' : '') + cagr.toFixed(1) + '%';
+  document.getElementById(cfg.prefix + '-stat-apr').style.color = cagr >= 0 ? '#34d399' : '#f87171';
+  var dd = state.maxDrawdownPct !== null ? state.maxDrawdownPct : (function(){
+    var pk=pts[0].v, mx=0;
+    for (var i=0;i<pts.length;i++){if(pts[i].v>pk)pk=pts[i].v;var c=pk>0?(pk-pts[i].v)/pk*100:0;if(c>mx)mx=c;}
+    return mx;
+  })();
+  if (dd > 0) {
+    var calmar = cagr / dd;
+    setRatioMetricById(cfg.prefix + '-stat-calmar', calmar);
+  } else {
+    setRatioMetricById(cfg.prefix + '-stat-calmar', null);
+  }
+  setRatioMetricById(cfg.prefix + '-stat-sortino', computeDailySortino(pts));
+  setRatioMetricById(cfg.prefix + '-stat-sharpe', computeDailySharpe(pts));
+}
+
+async function assetLoadChart(cfg) {
+  try {
+    var d = await (await fetch(FS_BASE + '/van-fs-api/' + cfg.assetKey + '-equity-chart')).json();
+    var pts = d.points || [];
+    drawAssetChart(pts, cfg.prefix + '-chart', cfg.prefix + '-chart-empty', cfg.prefix + '-chart-wrap', cfg.color, false, cfg.assetLabel);
+    if (pts.length > 0) {
+      var last = pts[pts.length-1];
+      cfg.state.currentEquity = last.v;
+      document.getElementById(cfg.prefix + '-stat-equity').textContent = fmtUsd(last.v);
+      document.getElementById(cfg.prefix + '-stat-time').textContent = fmtShort(last.dt) + ' UTC';
+      document.getElementById(cfg.prefix + '-chart-range').textContent = fmtShort(pts[0].dt) + ' – ' + fmtShort(pts[pts.length-1].dt) + ' UTC';
+      assetTotalReturn(cfg, last.v);
+      if (cfg.state.dailyPts) assetUpdateEstimated(cfg, cfg.state.dailyPts);
+    }
+  } catch(e) { document.getElementById(cfg.prefix + '-chart-empty').textContent = 'Failed to load data.'; }
+}
+
+async function assetLoadDailyChart(cfg) {
+  try {
+    var d = await (await fetch(FS_BASE + '/van-fs-api/' + cfg.assetKey + '-daily-equity-chart')).json();
+    var pts = d.points || [];
+    drawAssetChart(pts, cfg.prefix + '-daily-chart', cfg.prefix + '-daily-chart-empty', cfg.prefix + '-daily-chart-wrap', cfg.color, true, cfg.assetLabel, d.drawdownPoints || []);
+    if (pts.length > 0) {
+      document.getElementById(cfg.prefix + '-daily-chart-range').textContent = fmtDate(pts[0].dt) + ' – ' + fmtDate(pts[pts.length-1].dt);
+      if (d.initialInvestmentUsd > 0) {
+        cfg.state.initialInvestmentUsd = d.initialInvestmentUsd;
+        if (cfg.state.currentEquity !== null) assetTotalReturn(cfg, cfg.state.currentEquity);
+      }
+      if (pts.length > 1) {
+        var t0 = new Date(pts[0].dt.endsWith('Z') ? pts[0].dt : pts[0].dt+'Z');
+        var t1 = new Date(pts[pts.length-1].dt.endsWith('Z') ? pts[pts.length-1].dt : pts[pts.length-1].dt+'Z');
+        cfg.state.daysCount = Math.round((t1-t0)/86400000)+1;
+        document.getElementById(cfg.prefix + '-stat-days').textContent = cfg.state.daysCount;
+        cfg.state.dailyPts = pts;
+        assetUpdateEstimated(cfg, pts);
+      }
+    }
+  } catch(e) { document.getElementById(cfg.prefix + '-daily-chart-empty').textContent = 'Failed to load daily data.'; }
+}
+
+async function assetLoadMaxDrawdown(cfg) {
+  try {
+    var d = await (await fetch(FS_BASE + '/van-fs-api/' + cfg.assetKey + '-max-drawdown')).json();
+    if (d.maxDrawdownPct !== null && d.maxDrawdownPct !== undefined) {
+      cfg.state.maxDrawdownPct = d.maxDrawdownPct;
+      document.getElementById(cfg.prefix + '-stat-maxdd').textContent = (Math.abs(d.maxDrawdownPct)<0.005?'0.00':'-'+d.maxDrawdownPct.toFixed(2)) + '%';
+      if (cfg.state.dailyPts) { assetUpdateEstimated(cfg, cfg.state.dailyPts); } else if (cfg.state.initialInvestmentUsd && cfg.state.daysCount) { assetLoadDailyChart(cfg); }
+    }
+  } catch(e) {}
+}
+
+function initAssetWidget(cfg) {
+  if (cfg.state.initialized) return;
+  cfg.state.initialized = true;
+  assetLoadChart(cfg);
+  assetLoadDailyChart(cfg);
+  assetLoadMaxDrawdown(cfg);
+  window.addEventListener('resize', function() {
+    var panel = document.getElementById(cfg.panelId);
+    if (panel && panel.classList.contains('active')) {
+      assetLoadChart(cfg);
+      assetLoadDailyChart(cfg);
+    }
+  });
+  setInterval(function(){ assetLoadChart(cfg); }, 60000);
+  setInterval(function(){ assetLoadDailyChart(cfg); }, 300000);
+  setInterval(function(){ assetLoadMaxDrawdown(cfg); }, 60000);
+}
+
+initAssetWidget(ASSET_WIDGETS['van-fs']);
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var cfg = ASSET_WIDGETS[tab.dataset.tab];
+    if (cfg) initAssetWidget(cfg);
+  });
+});
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

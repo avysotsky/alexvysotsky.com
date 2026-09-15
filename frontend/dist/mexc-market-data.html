@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>VAN Portal - MEXC Market Data</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #020617; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; }
+a { color: inherit; text-decoration: none; }
+header { border-bottom: 1px solid #1e293b; background: #020617; padding: 8px 0; }
+.shell { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { height: 42px; filter: invert(1) brightness(1.1); }
+.brand-title { font-size: 15px; font-weight: 600; }
+.brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+.pill { border: 1px solid #334155; background: #0f172a; color: #94a3b8; border-radius: 999px; padding: 7px 12px; font-size: 12px; white-space: nowrap; }
+.nav { display: flex; gap: 2px; overflow: auto; padding: 12px 0 0; }
+.nav a { padding: 6px 9px; color: #94a3b8; border-bottom: 2px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; }
+.nav a:hover { color:#f1f5f9; background:#111827; }
+    .nav a.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+main { padding: 22px 0 40px; }
+.hero { background: linear-gradient(180deg, #0b1220 0%, #09101d 100%); border: 1px solid #1e293b; border-radius: 8px; padding: 18px; }
+.eyebrow { color: #60a5fa; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+h1 { margin: 0 0 10px; font-size: 28px; line-height: 1.1; letter-spacing: 0; }
+p { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.5; max-width: 860px; }
+.controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-top: 16px; }
+.field { display: grid; gap: 5px; }
+label { color: #94a3b8; font-size: 11px; }
+input, select { height: 36px; min-width: 150px; border: 1px solid #334155; background: #020617; color: #e2e8f0; border-radius: 6px; padding: 0 10px; font: 13px 'Segoe UI', system-ui, sans-serif; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; border-radius: 6px; padding: 0 14px; border: 1px solid #3b82f6; background: #111c31; color: #93c5fd; font-size: 13px; cursor: pointer; }
+.btn:disabled { opacity: .6; cursor: default; }
+.status-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+.status-item { border: 1px solid #1e293b; background: #08111f; color: #94a3b8; border-radius: 6px; padding: 6px 9px; font-size: 12px; }
+.status-item.ok { color: #86efac; border-color: #14532d; }
+.status-item.err { color: #fca5a5; border-color: #7f1d1d; }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.card { background: #0b1220; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; min-width: 0; }
+.card h2 { margin: 0; font-size: 15px; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.meta { color: #64748b; font-size: 11px; white-space: nowrap; }
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; }
+.span-8 { grid-column: span 8; }
+.span-12 { grid-column: span 12; }
+.table-wrap { overflow: auto; border: 1px solid #1e293b; border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid #172033; text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { color: #94a3b8; background: #08111f; font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.ask { color: #f87171; }
+.bid { color: #34d399; }
+.muted { color: #64748b; }
+.error { color: #fca5a5; font-size: 12px; }
+.blocked { color: #fbbf24; }
+.chart { width: 100%; height: 190px; border: 1px solid #1e293b; border-radius: 6px; background: #07101d; display: block; }
+.summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.kv { border: 1px solid #172033; border-radius: 6px; padding: 8px; min-width: 0; }
+.kv-label { color: #64748b; font-size: 11px; margin-bottom: 4px; }
+.kv-value { color: #e2e8f0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+code { color: #cbd5e1; font-size: 12px; word-break: break-word; }
+@media (max-width: 1000px) {
+  .span-3, .span-4, .span-6, .span-8 { grid-column: span 12; }
+  .summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 780px) {
+  .header-row { align-items: flex-start; flex-direction: column; }
+  h1 { font-size: 24px; }
+  input, select { min-width: 100%; }
+  .field { flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="brand">
+          <img src="/van-logo.png" alt="VAN" />
+          <div>
+            <div class="brand-title">VAN Portal</div>
+            <div class="brand-sub">Admin · MEXC Market Data</div>
+          </div>
+        </div>
+        <div class="pill">Read-only public data</div>
+      </div>
+      <nav class="nav" aria-label="MEXC navigation">
+        <a href="/mexc.html" class="active">MEXC</a>
+        <a href="/market-data">Full Market Data</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="shell">
+      <section class="hero">
+        <div class="eyebrow">MEXC</div>
+        <h1>Market Data</h1>
+        <p>Authenticated admin access to read-only public MEXC REST data through VAN backend routes. Private accounts, trading, options, streams, collectors and stored history stay blocked here.</p>
+        <div class="controls">
+          <div class="field">
+            <label for="spotSymbol">Spot symbol</label>
+            <input id="spotSymbol" list="spotSymbols" value="BTCUSDT" autocomplete="off" />
+            <datalist id="spotSymbols"><option value="BTCUSDT"></option><option value="ETHUSDT"></option><option value="SOLUSDT"></option></datalist>
+          </div>
+          <div class="field">
+            <label for="futuresSymbol">Futures symbol</label>
+            <input id="futuresSymbol" list="futuresSymbols" value="BTC_USDT" autocomplete="off" />
+            <datalist id="futuresSymbols"><option value="BTC_USDT"></option><option value="ETH_USDT"></option><option value="SOL_USDT"></option></datalist>
+          </div>
+          <button class="btn" id="refreshBtn" type="button">Refresh</button>
+        </div>
+        <div class="status-strip" id="statusStrip">
+          <div class="status-item">Idle</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card span-6">
+          <div class="card-head"><h2>Spot Order Book</h2><div class="meta" id="spotBookMeta">BTCUSDT</div></div>
+          <div id="spotBook" class="table-wrap"><table><tbody><tr><td class="muted">Not loaded</td></tr></tbody></table></div>
+        </article>
+        <article class="card span-6">
+          <div class="card-head"><h2>Futures Order Book</h2><div class="meta" id="futuresBookMeta">BTC_USDT</div></div>
+          <div id="futuresBook" class="table-wrap"><table><tbody><tr><td class="muted">Not loaded</td></tr></tbody></table></div>
+        </article>
+
+        <article class="card span-6">
+          <div class="card-head"><h2>Spot 1m Close</h2><div class="meta" id="spotChartMeta">last 60</div></div>
+          <svg class="chart" id="spotChart" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+        </article>
+        <article class="card span-6">
+          <div class="card-head"><h2>Futures 1m Close</h2><div class="meta" id="futuresChartMeta">last 60</div></div>
+          <svg class="chart" id="futuresChart" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+        </article>
+
+        <article class="card span-4">
+          <div class="card-head"><h2>Spot Instrument</h2><div class="meta" id="spotInstrumentMeta">summary</div></div>
+          <div class="summary" id="spotInstrument"><div class="muted">Not loaded</div></div>
+        </article>
+        <article class="card span-4">
+          <div class="card-head"><h2>Futures Instrument</h2><div class="meta" id="futuresInstrumentMeta">summary</div></div>
+          <div class="summary" id="futuresInstrument"><div class="muted">Not loaded</div></div>
+        </article>
+        <article class="card span-4">
+          <div class="card-head"><h2>Futures Funding</h2><div class="meta" id="fundingMeta">current</div></div>
+          <div class="summary" id="fundingCard"><div class="muted">Not loaded</div></div>
+        </article>
+
+        <article class="card span-12">
+          <div class="card-head"><h2>Blocked Controls</h2><div class="meta">not wired</div></div>
+          <p class="blocked">Private accounts, balances, order placement, cancel actions, authenticated streams, collectors, stored DB history and options chain are intentionally disabled for MEXC in this static shell. No synthetic or fake data is rendered.</p>
+        </article>
+      </section>
+    </div>
+  </main>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const state = { startedAt: 0 };
+
+  function token(){
+    const direct = localStorage.getItem('van_token');
+    if (direct) return direct;
+    try {
+      const raw = localStorage.getItem('van_session');
+      if (!raw) return '';
+      const s = JSON.parse(raw);
+      return s && (s.token || s.Token) || '';
+    } catch { return ''; }
+  }
+
+  function esc(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  async function api(path){
+    const t = token();
+    const headers = t ? { Authorization: 'Bearer ' + t } : {};
+    const res = await fetch(path, { headers, cache: 'no-store' });
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (res.status === 401 || res.status === 403) {
+      location.replace('/app?logout=1');
+      throw new Error('Unauthorized');
+    }
+    if (!res.ok) throw new Error((data && data.message) || text || res.statusText || ('HTTP ' + res.status));
+    return data;
+  }
+
+  function qs(params){
+    return Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+  }
+
+  function setStatus(items){
+    $('statusStrip').innerHTML = items.map(x => '<div class="status-item ' + esc(x.kind || '') + '">' + esc(x.text) + '</div>').join('');
+  }
+
+  function setPanelError(id, message){
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = '<div class="error">' + esc(message) + '</div>';
+  }
+
+  function normalizeSpotSymbol(){
+    return String($('spotSymbol').value || 'BTCUSDT').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40) || 'BTCUSDT';
+  }
+
+  function normalizeFuturesSymbol(){
+    let value = String($('futuresSymbol').value || 'BTC_USDT').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 49);
+    if (!value.includes('_') && value.endsWith('USDT')) value = value.slice(0, -4) + '_USDT';
+    return /^[A-Z0-9]{1,24}_[A-Z0-9]{1,24}$/.test(value) ? value : 'BTC_USDT';
+  }
+
+  function firstArray(value){
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    for (const key of ['data','symbols','items','rows','list']) {
+      const v = value[key];
+      if (Array.isArray(v)) return v;
+      if (v && typeof v === 'object') {
+        const nested = firstArray(v);
+        if (nested.length) return nested;
+      }
+    }
+    return [];
+  }
+
+  function spotInstrumentFrom(data, symbol){
+    const rows = firstArray(data);
+    return rows.find(r => String(r.symbol || '').toUpperCase() === symbol) || rows[0] || data;
+  }
+
+  function futuresInstrumentFrom(data, symbol){
+    const payload = data && data.data !== undefined ? data.data : data;
+    const rows = Array.isArray(payload) ? payload : firstArray(payload);
+    return rows.find(r => String(r.symbol || '').toUpperCase() === symbol) || rows[0] || payload;
+  }
+
+  function kvHtml(rows){
+    return rows.map(([k,v]) => '<div class="kv"><div class="kv-label">' + esc(k) + '</div><div class="kv-value" title="' + esc(v) + '">' + esc(v == null || v === '' ? '-' : v) + '</div></div>').join('');
+  }
+
+  function renderSpotInstrument(data, symbol){
+    const r = spotInstrumentFrom(data, symbol) || {};
+    $('spotInstrument').innerHTML = kvHtml([
+      ['symbol', r.symbol],
+      ['status', r.status],
+      ['baseAsset', r.baseAsset],
+      ['quoteAsset', r.quoteAsset],
+      ['baseSizePrecision', r.baseSizePrecision],
+      ['quoteAmountPrecision', r.quoteAmountPrecision],
+      ['orderTypes', Array.isArray(r.orderTypes) ? r.orderTypes.join(', ') : r.orderTypes],
+      ['spotAllowed', r.isSpotTradingAllowed]
+    ]);
+    $('spotInstrumentMeta').textContent = symbol;
+  }
+
+  function renderFuturesInstrument(data, symbol){
+    const r = futuresInstrumentFrom(data, symbol) || {};
+    $('futuresInstrument').innerHTML = kvHtml([
+      ['symbol', r.symbol],
+      ['displayName', r.displayNameEn || r.displayName],
+      ['base/quote', [r.baseCoin, r.quoteCoin].filter(Boolean).join('/')],
+      ['settleCoin', r.settleCoin],
+      ['contractSize', r.contractSize],
+      ['leverage', [r.minLeverage, r.maxLeverage].filter(v => v != null).join(' - ')],
+      ['priceUnit', r.priceUnit],
+      ['volUnit', r.volUnit]
+    ]);
+    $('futuresInstrumentMeta').textContent = symbol;
+  }
+
+  function renderFunding(data, symbol){
+    const d = data && data.data !== undefined ? data.data : data || {};
+    $('fundingCard').innerHTML = kvHtml([
+      ['symbol', d.symbol || symbol],
+      ['fundingRate', d.fundingRate],
+      ['maxFundingRate', d.maxFundingRate],
+      ['minFundingRate', d.minFundingRate],
+      ['collectCycle', d.collectCycle],
+      ['nextSettleTime', formatTime(d.nextSettleTime || d.nextSettleTimeMillis)]
+    ]);
+    $('fundingMeta').textContent = symbol;
+  }
+
+  function normalizeBook(data, type){
+    const d = data && data.data !== undefined ? data.data : data || {};
+    let asks = d.asks || d.ask || d.Asks || [];
+    let bids = d.bids || d.bid || d.Bids || [];
+    const map = row => {
+      if (Array.isArray(row)) return { price: num(row[0]), size: num(row[1]), orders: row[2] };
+      return { price: num(row.price || row.p || row[0]), size: num(row.quantity || row.qty || row.volume || row.vol || row.v || row[1]), orders: row.count || row.num || row[2] };
+    };
+    asks = Array.isArray(asks) ? asks.map(map).filter(x => Number.isFinite(x.price)).slice(0,10) : [];
+    bids = Array.isArray(bids) ? bids.map(map).filter(x => Number.isFinite(x.price)).slice(0,10) : [];
+    if (type === 'spot') asks.sort((a,b) => b.price - a.price);
+    return { asks, bids };
+  }
+
+  function renderBook(id, data, type){
+    const book = normalizeBook(data, type);
+    const rows = [];
+    for (const r of book.asks) rows.push(['ask', r.price, r.size, r.orders]);
+    for (const r of book.bids) rows.push(['bid', r.price, r.size, r.orders]);
+    if (!rows.length) {
+      $(id).innerHTML = '<div class="error">No order book levels returned.</div>';
+      return;
+    }
+    $(id).innerHTML = '<table><thead><tr><th>Side</th><th>Price</th><th>Size</th><th>Orders</th></tr></thead><tbody>' +
+      rows.map(r => '<tr><td class="' + r[0] + '">' + r[0].toUpperCase() + '</td><td>' + fmt(r[1]) + '</td><td>' + fmt(r[2]) + '</td><td>' + esc(r[3] == null ? '-' : r[3]) + '</td></tr>').join('') +
+      '</tbody></table>';
+  }
+
+  function num(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function fmt(v){
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '-';
+    if (Math.abs(n) >= 1000) return n.toFixed(2);
+    if (Math.abs(n) >= 1) return n.toFixed(4).replace(/0+$/,'').replace(/\\.$/,'');
+    return n.toPrecision(6).replace(/0+$/,'').replace(/\\.$/,'');
+  }
+
+  function spotCloses(data){
+    const rows = Array.isArray(data) ? data : firstArray(data);
+    return rows.map(r => Array.isArray(r) ? num(r[4]) : num(r.close || r.c)).filter(Number.isFinite).slice(-60);
+  }
+
+  function futuresCloses(data){
+    const d = data && data.data !== undefined ? data.data : data;
+    if (d && Array.isArray(d.close)) return d.close.map(num).filter(Number.isFinite).slice(-60);
+    const rows = Array.isArray(d) ? d : firstArray(d);
+    return rows.map(r => Array.isArray(r) ? num(r[4]) : num(r.close || r.c)).filter(Number.isFinite).slice(-60);
+  }
+
+  function renderChart(id, points){
+    const svg = $(id);
+    if (!points.length) {
+      svg.innerHTML = '<text x="320" y="96" text-anchor="middle" fill="#64748b" font-size="13">No close data</text>';
+      return;
+    }
+    const w = 640, h = 190, pad = 18;
+    const min = Math.min(...points), max = Math.max(...points);
+    const span = max - min || Math.max(1, Math.abs(max) * 0.001);
+    const step = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0;
+    const coords = points.map((p,i) => {
+      const x = pad + i * step;
+      const y = h - pad - ((p - min) / span) * (h - pad * 2);
+      return [x,y];
+    });
+    const line = coords.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    svg.innerHTML =
+      '<line x1="' + pad + '" y1="' + (h-pad) + '" x2="' + (w-pad) + '" y2="' + (h-pad) + '" stroke="#172033"/>' +
+      '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (h-pad) + '" stroke="#172033"/>' +
+      '<polyline fill="none" stroke="#60a5fa" stroke-width="2" points="' + line + '"/>' +
+      '<text x="' + pad + '" y="14" fill="#94a3b8" font-size="11">' + esc(fmt(max)) + '</text>' +
+      '<text x="' + pad + '" y="' + (h-4) + '" fill="#94a3b8" font-size="11">' + esc(fmt(min)) + '</text>' +
+      '<text x="' + (w-pad) + '" y="14" text-anchor="end" fill="#e2e8f0" font-size="12">' + esc(fmt(points[points.length-1])) + '</text>';
+  }
+
+  function formatTime(v){
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return '-';
+    const ms = n > 1000000000000 ? n : n * 1000;
+    return new Date(ms).toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  }
+
+  async function loadSection(name, fn){
+    const started = Date.now();
+    try {
+      await fn();
+      return { text: name + ' ok ' + (Date.now() - started) + 'ms', kind: 'ok' };
+    } catch (e) {
+      return { text: name + ' failed: ' + (e && e.message ? e.message : e), kind: 'err' };
+    }
+  }
+
+  async function refresh(){
+    const spot = normalizeSpotSymbol();
+    const fut = normalizeFuturesSymbol();
+    $('spotSymbol').value = spot;
+    $('futuresSymbol').value = fut;
+    $('spotBookMeta').textContent = spot;
+    $('futuresBookMeta').textContent = fut;
+    $('refreshBtn').disabled = true;
+    state.startedAt = Date.now();
+    setStatus([{ text: 'Loading ' + spot + ' / ' + fut }]);
+
+    const results = await Promise.all([
+      loadSection('spot instrument', async () => renderSpotInstrument(await api('/api/admin/mexc/public/spot/instruments?' + qs({symbol: spot})), spot)),
+      loadSection('spot book', async () => renderBook('spotBook', await api('/api/admin/mexc/public/spot/orderbook?' + qs({symbol: spot, limit: 20})), 'spot')),
+      loadSection('spot klines', async () => {
+        const rows = spotCloses(await api('/api/admin/mexc/public/spot/klines?' + qs({symbol: spot, interval: '1m', limit: 60})));
+        $('spotChartMeta').textContent = rows.length + ' closes';
+        renderChart('spotChart', rows);
+      }),
+      loadSection('futures instrument', async () => renderFuturesInstrument(await api('/api/admin/mexc/public/futures/instruments?' + qs({symbol: fut})), fut)),
+      loadSection('futures book', async () => renderBook('futuresBook', await api('/api/admin/mexc/public/futures/orderbook?' + qs({symbol: fut})), 'futures')),
+      loadSection('futures funding', async () => renderFunding(await api('/api/admin/mexc/public/futures/funding?' + qs({symbol: fut})), fut)),
+      loadSection('futures klines', async () => {
+        const rows = futuresCloses(await api('/api/admin/mexc/public/futures/klines?' + qs({symbol: fut, interval: 'Min1', start: Math.floor(Date.now() / 1000) - 3600, end: Math.floor(Date.now() / 1000)})));
+        $('futuresChartMeta').textContent = rows.length + ' closes';
+        renderChart('futuresChart', rows);
+      })
+    ]);
+
+    setStatus([{ text: 'Updated ' + new Date().toISOString().slice(11,19) + ' UTC', kind: results.some(r => r.kind === 'err') ? 'err' : 'ok' }, ...results]);
+    $('refreshBtn').disabled = false;
+  }
+
+  $('refreshBtn').addEventListener('click', refresh);
+  refresh().catch(e => {
+    setStatus([{ text: 'Load failed: ' + (e && e.message ? e.message : e), kind: 'err' }]);
+    $('refreshBtn').disabled = false;
+  });
+})();
+</script>
+</body>
+</html>

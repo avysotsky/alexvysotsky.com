@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VAN Portal, About Preview</title>
+  <meta property="og:title" content="Alex Vysotsky — Personal Website"/>
+  <meta property="og:description" content="Systematic trading, current projects, and live visibility of VAN_Combo_1."/>
+  <meta property="og:image" content="https://www.alexvysotsky.com/trading/og-van-combo-1.jpg?v=20260404-204657"/>
+  <meta property="og:image:secure_url" content="https://www.alexvysotsky.com/trading/og-van-combo-1.jpg?v=20260404-204657"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="627"/>
+  <meta property="og:image:alt" content="VAN_Combo_1 live public strategy preview"/>
+  <meta property="og:url" content="https://www.alexvysotsky.com/"/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="Alex Vysotsky — Personal Website"/>
+  <meta name="twitter:description" content="Systematic trading, current projects, and live visibility of VAN_Combo_1."/>
+  <meta name="twitter:image" content="https://www.alexvysotsky.com/trading/og-van-combo-1.jpg?v=20260404-204657"/>
+  <meta name="robots" content="noindex,nofollow,noarchive"/>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <script>window.__VAN_BASE_URL__ = window.location.origin;</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#020617;color:#f1f5f9;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none} html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}
+    header{border-bottom:1px solid #1e293b;padding:0 24px}
+    .header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 20px;min-height:64px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-logo{height:64px;width:auto;display:block;filter:invert(1) brightness(1.15);opacity:.96}
+    .header-title{font-size:15px;font-weight:600;letter-spacing:.01em;color:#f1f5f9}
+    .header-sub{font-size:11px;color:#64748b;margin-top:2px}
+    .header-signin{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .header-signin input{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:6px 10px;color:#f1f5f9;font-size:13px;outline:none;width:130px;transition:border-color .15s}
+    .header-signin input:focus{border-color:#3b82f6}
+    .header-signin .btn-primary{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#2563eb;color:#fff;transition:opacity .15s;white-space:nowrap}
+    .header-signin .btn-primary:hover:not(:disabled){background:#1d4ed8}
+    .header-signin .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+    #hdr-err{font-size:11px;color:#f87171;white-space:nowrap}
+    .main{max-width:960px;margin:0 auto;padding:10px 20px 10px}
+    @media(max-height:1040px){
+      html,body{min-height:100vh;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
+      header{padding:0 18px}
+      .header-inner{min-height:52px}
+      .brand-logo{height:52px}
+      .header-title{font-size:14px}
+      .header-sub{font-size:10px}
+      .main{padding:6px 18px 4px}
+      .panels{gap:6px}
+      .founder-panel,.hero-card,.updates-panel{padding:7px 18px 5px;border-radius:18px}
+      .founder-panel{grid-template-columns:228px 1fr;gap:10px}
+      .founder-photo{max-width:228px}
+      .founder-photo-note{margin-top:1px;font-size:10px}
+      .founder-title{font-size:12px;line-height:1.55}
+      .hero-title,.updates-title{font-size:17px}
+      .hero-sub,.updates-sub,.updates-item-body{font-size:12px;line-height:1.45}
+      .hero-actions{margin-top:8px}
+      .btn{padding:8px 14px}
+      .updates-feed{margin-top:5px;max-height:132px;gap:6px}
+      .updates-item{padding:8px 10px}
+      footer{margin-top:4px;padding:4px 0 2px;font-size:10px}
+    }
+    @media(max-height:900px){
+      .main{padding:4px 14px 2px}
+      .founder-panel,.hero-card,.updates-panel{padding:6px 14px 4px;border-radius:16px}
+      .founder-panel{grid-template-columns:200px 1fr;gap:8px}
+      .founder-photo{max-width:200px}
+      .founder-title{font-size:11px;line-height:1.42}
+      .hero-title,.updates-title{font-size:15px}
+      .hero-sub,.updates-item-body{font-size:10.5px;line-height:1.35}
+      .updates-feed{max-height:86px}
+      .updates-item{padding:6px 8px}
+      footer{display:none}
+    }
+    @media(max-width:700px){.main{padding:6px 8px 8px}}
+    @media(max-width:480px){.main{padding:4px 4px 8px}}
+    .panels{display:grid;grid-template-columns:1fr;gap:10px}
+
+    .founder-panel{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;background:linear-gradient(180deg,#111827,#0b1220);border:1px solid #1e293b;border-radius:22px;padding:10px 24px 8px;overflow:hidden;position:relative}
+    .founder-panel:before{content:'';position:absolute;left:-80px;bottom:-80px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.14),rgba(59,130,246,0) 70%)}
+    .founder-photo-wrap{position:relative;z-index:1;align-self:start}
+    .founder-photo{width:100%;max-width:280px;border-radius:24px;border:1px solid #334155;background:#0f172a;display:block;box-shadow:0 18px 40px rgba(2,6,23,.35);overflow:hidden}
+    .founder-photo-badge{width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#2563eb,#1d4ed8);color:#fff;font-size:36px;font-weight:700;letter-spacing:.04em}
+    .founder-photo-note{margin-top:4px;font-size:11px;color:#64748b;text-align:center}.founder-photo img{width:100%;height:auto;display:block;image-rendering:auto}
+    .founder-copy{position:relative;z-index:1}
+    .founder-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid #334155;background:#0f172a;color:#93c5fd;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+    .founder-title{font-size:14px;font-weight:400;line-height:1.7;color:#94a3b8;margin:0;white-space:pre-line}.inline-link-btn{color:#38bdf8;text-decoration:underline;font-weight:600}.inline-link-btn:hover{color:#7dd3fc}.about-inline-actions{display:none}
+    .founder-sub{display:none}
+    .founder-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+    .founder-point{background:#020617;border:1px solid #334155;border-radius:14px;padding:12px 14px}
+    .founder-point-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .founder-point-value{font-size:13px;color:#e2e8f0;font-weight:600;line-height:1.45}
+    .hero-card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid #1e293b;border-radius:22px;padding:10px 24px 8px;overflow:hidden;position:relative}
+    .hero-card:before{content:'';position:absolute;right:-90px;top:-90px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,.16),rgba(16,185,129,0) 70%)}
+    .hero-card.stats:before{background:radial-gradient(circle,rgba(59,130,246,.18),rgba(59,130,246,0) 70%)}
+    .hero-copy{position:relative;z-index:1;max-width:700px}
+    .hero-title{font-size:21px;font-weight:700;line-height:1.15;margin-bottom:4px;color:#f8fafc}
+    .hero-sub{font-size:14px;color:#94a3b8;max-width:640px}
+    .hero-actions{position:relative;z-index:1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}.updates-panel{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid #1e293b;border-radius:22px;padding:10px 24px 8px;overflow:hidden;position:relative}.updates-panel:before{content:"";position:absolute;right:-90px;top:-90px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(14,165,233,.12),rgba(14,165,233,0) 70%)}.updates-head{position:relative;z-index:1}.updates-title{font-size:21px;font-weight:700;line-height:1.15;margin-bottom:4px;color:#f8fafc}.updates-sub{font-size:14px;color:#94a3b8;max-width:700px}.updates-feed{position:relative;z-index:1;margin-top:8px;max-height:260px;overflow-y:auto;padding-right:6px;display:grid;gap:8px}.updates-item{background:#020617;border:1px solid #334155;border-radius:14px;padding:10px 12px}.updates-meta{font-size:11px;color:#64748b;margin-bottom:4px}.updates-item-title{font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:4px}.updates-item-body{font-size:13px;line-height:1.55;color:#94a3b8}.updates-item-body a{color:#38bdf8;text-decoration:underline;font-weight:600}.updates-item-body a:hover{color:#7dd3fc}
+    .btn{padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-green{background:#10b981;color:#fff}.btn-green:hover:not(:disabled){background:#059669}
+    .btn-secondary{background:#111827;color:#e5e7eb;border:1px solid #334155}.btn-secondary:hover:not(:disabled){background:#1f2937}
+                            .field{display:flex;flex-direction:column;gap:5px}
+    .field label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+    .field input,.field textarea{background:#020617;border:1px solid #334155;border-radius:10px;padding:8px 12px;color:#f1f5f9;font-size:13px;outline:none;transition:border-color .15s}
+    .field input:focus,.field textarea:focus{border-color:#3b82f6}
+    .field textarea{min-height:90px;resize:vertical;font-family:inherit}
+    .msg-err{font-size:12px;color:#f87171}.msg-ok{font-size:12px;color:#34d399}
+    footer{text-align:center;padding:8px 0 6px;color:#334155;font-size:11px;border-top:1px solid #1e293b;margin-top:10px}
+    @media(max-width:700px){
+      header{padding:0 10px}
+      .header-inner{padding:0;flex-direction:column;align-items:stretch;gap:4px;min-height:56px}
+      .brand{justify-content:center}
+      .brand-logo{height:48px}
+      .header-signin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:4px;align-items:center;margin-top:-2px}
+      .header-signin input{width:100%;min-width:0;padding:3px 6px;font-size:13px;height:30px;border-radius:6px}
+      .header-signin .btn-primary{width:auto;padding:3px 8px;font-size:13px;height:30px;border-radius:6px}
+      #hdr-err{grid-column:1 / -1;white-space:normal;font-size:10px}
+      .hero-card{padding:8px 10px 6px}
+      .updates-panel{padding:8px 10px 6px}
+      .hero-title{font-size:19px}
+      .founder-panel{grid-template-columns:1fr;padding:8px 10px 6px}
+      .founder-photo{max-width:220px;margin:0 auto}
+      .founder-points{grid-template-columns:1fr}
+    }
+    @media(max-width:480px){
+      header{padding:0 6px}
+      .header-inner{gap:3px;min-height:52px}
+      .brand-logo{height:42px}
+      .header-signin{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:3px;margin-top:-3px}
+      .header-signin input{padding:3px 6px;font-size:13px;height:28px}
+      .header-signin .btn-primary{width:auto;padding:3px 8px;font-size:13px;height:28px}
+      .hero-card,.updates-panel,.founder-panel{padding-left:6px;padding-right:6px}
+      #contact-card > div[style*='grid-template-columns:1fr 1fr']{grid-template-columns:1fr !important}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN logo"/>
+      <div>
+        <div class="header-title">VAN Portal</div>
+        <div class="header-sub">Real-time · Updated every minute</div>
+      </div>
+    </div>
+    <div class="header-signin">
+      <input id="hdr-login" type="text" autocomplete="username" placeholder="Login"/>
+      <input id="hdr-pass" type="password" autocomplete="current-password" placeholder="Password"/>
+      <button class="btn-primary" id="hdr-btn" onclick="doLogin()">Sign in</button>
+      <span id="hdr-err" style="display:none"></span>
+    </div>
+  </div>
+</header>
+<div class="main">
+  <div class="panels">
+    <div class="founder-panel">
+      <div class="founder-photo-wrap">
+        <div class="founder-photo">
+          <img src="/alex-founder-photo-web.jpg" alt="Oleksandr Alex Vysotsky"/>
+        </div>
+        <div class="founder-photo-note">Oleksandr (Alex) Vysotsky</div>
+      </div>
+      <div class="founder-copy">
+        <div class="founder-title">I am Oleksandr (Alex) Vysotsky - a systematic trader with 20+ years in algorithmic trading and 6+ years of experience in crypto derivatives on Deribit (now part of Coinbase).
+
+In 2024–2025, I developed VAN - a proprietary trading system built with an emphasis on robust logic, disciplined risk control, and investor-oriented operation.
+
+Since November 14, 2025, I have been running a live reference account with fully public, real-time performance tracking of latest VAN system modification - VAN_Combo_1.
+Live performance is publicly available 24/7 <a class='inline-link-btn' href='https://www.alexvysotsky.com/trading/van_combo_1.html'>here</a>.
+
+The strategy is fully systematic, designed for investor-account environments, and focused on crypto futures and options on Deribit.
+
+If you are an investor, allocator, or introducer interested in systematic trading and performance-aligned capital partnerships - feel free to contact me <a class='inline-link-btn' href='https://www.alexvysotsky.com/contact.html'>here</a>.</div>
+        <div class="founder-sub"></div>
+      </div>
+    </div>
+    <div class="hero-card stats">
+      <div class="hero-copy">
+        <div class="hero-title">Systematic crypto trading strategies</div>
+        <div class="hero-sub">Open the public statistics page to view equity, drawdown, CAGR and Calmar metrics based on daily and 1-minute portfolio data of strategies.</div>
+        <div class="hero-actions">
+          <button class="btn btn-green" type="button" onclick="window.location.href='/trading/van_combo_1.html'">VAN_Combo_1</button>
+        </div>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-copy">
+        <div class="hero-title">Investor access and onboarding</div>
+        <div class="hero-sub">Get allocation details, onboarding terms and investor access. Use the contact form to reach out directly.</div>
+        <div class="hero-actions">
+          <button class="btn btn-green" type="button" onclick="window.location.href='/contact.html'">Contacts</button>
+        </div>
+      </div>
+    </div>
+    <div class="updates-panel">
+      <div class="updates-head">
+        <div class="updates-title">Updates, reports and news</div>
+      </div>
+      <div class="updates-feed">
+        <div class="updates-item">
+          <div class="updates-meta">2026-05-29 · Update</div>
+          <div class="updates-item-title">Update of High-Water Mark calculation method</div>
+          <div class="updates-item-body">Since now 60-minute moving average of the account's current equity is a basis for HWM. This approach yields a more realistic estimate of daily drawdown while avoiding overreaction to minor intraday fluctuations. <a href="https://www.linkedin.com/posts/alexvysotsky_systematictrading-algotrading-quant-share-7466109420175777792-nNEh/?utm_source=share&utm_medium=member_desktop&rcm=ACoAADSpVh4B9DhC8osPyuZFxJoVo1KL6qo9AOQ" target="_blank" rel="noopener noreferrer">Read the LinkedIn update</a>.</div>
+        </div>
+        <div class="updates-item">
+          <div class="updates-meta">2026-04-13 · Update</div>
+          <div class="updates-item-title">Drawdown and Calmar methodology updated</div>
+          <div class="updates-item-body">Drawdown is now calculated from the 1-minute PnL series using a 30-minute confirmation rule for new high-water marks. Calmar ratio is now recalculated from the same updated drawdown series for methodological consistency.</div>
+        </div>
+        <div class="updates-item">
+          <div class="updates-meta">2026-04-09 · Update</div>
+          <div class="updates-item-title">First LinkedIn post published, public investor outreach started</div>
+          <div class="updates-item-body">The first public <a href="https://www.linkedin.com/posts/alexvysotsky_systematictrading-algorithmictrading-quanttrading-activity-7447649181785083904-cXQv/" target="_blank" rel="noopener noreferrer">LinkedIn post</a> about VAN_Combo_1 trading system is now live, marking the start of public investor outreach and broader visibility for the strategy and its track record.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer>VAN Portal · Data from Deribit · Updated every 60 seconds</footer>
+<script>
+const BASE = window.__VAN_BASE_URL__ || '';
+async function doLogin() {
+  const btn = document.getElementById('hdr-btn');
+  const err = document.getElementById('hdr-err');
+  const login = document.getElementById('hdr-login').value.trim();
+  const pass = document.getElementById('hdr-pass').value;
+  err.style.display = 'none';
+  if (!login || !pass) { err.textContent = 'Login and password required.'; err.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const r = await fetch(BASE + '/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({Login:login, Password:pass})});
+    if (!r.ok) throw new Error('Invalid credentials');
+    const d = await r.json();
+    const session = {token: d.Token || d.token || '', user: d.User || d.user || {}};
+    localStorage.setItem('van_session', JSON.stringify(session));
+    localStorage.setItem('van_token', session.token);
+    window.location.href = '/app';
+  } catch(e) {
+    err.textContent = e.message || 'Login failed'; err.style.display = '';
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+document.getElementById('hdr-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('hdr-login').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+function scrollToSignIn(){ const el=document.getElementById('hdr-login'); if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(()=>el.focus(),250);} }
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

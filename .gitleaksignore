@@ -1,0 +1,4 @@
+# False positive spanning adjacent DOM element IDs in the static UI.
+frontend/dist/arbitrage.html:airtable-api-key:832
+# Static exchange instrument symbol, not a credential.
+frontend/dist/arbitrage.html:generic-api-key:3909

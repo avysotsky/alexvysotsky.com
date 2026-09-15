@@ -1,0 +1,3934 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__VAN_BASE_URL__ = "https://www.alexvysotsky.com";</script>
+  <meta charset="UTF-8"/>
+  <title>VAN Portal · Backtester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Header ── */
+    header { border-bottom: 1px solid #1e293b; padding: 6px 24px; }
+    .header-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { height: 48px; filter: invert(1) brightness(1.15); opacity: .96; }
+    .brand-title { font-size: 15px; font-weight: 600; }
+    .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    #user-label { font-size: 13px; color: #64748b; }
+    .btn-logout { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-logout:hover { background: #334155; }
+
+    /* ── Nav ── */
+    nav { border-bottom: 1px solid #1e293b; background: #0b1220; }
+    .nav-inner { max-width: 1400px; margin: 0 auto; display: flex; gap: 0; padding: 0 24px; }
+    .nav-item { padding: 8px 10px; font-size: 13px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; white-space: nowrap; }
+    .nav-item:hover { color: #f1f5f9; background: #111827; }
+    .nav-item.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    /* ── Main ── */
+    .main { max-width: 1400px; margin: 0 auto; padding: 20px 24px 48px; }
+
+    /* ── Page title ── */
+    .page-title-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+    .page-title { font-size: 20px; font-weight: 700; color: #f8fafc; margin-bottom: 0; }
+    .page-title span { color: #64748b; font-weight: 400; font-size: 14px; margin-left: 10px; }
+    .top-period-shortcuts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:34px; }
+
+    /* ── Config panel ── */
+    .config-panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+    .config-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+    .config-group { display: flex; flex-direction: column; gap: 6px; }
+    .config-group label { font-size: 12px; color: #64748b; font-weight: 500; letter-spacing: 0.03em; }
+    .config-input { background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 7px 12px; border-radius: 8px; font-size: 13px; width: 160px; outline: none; }
+    .config-input:focus { border-color: #3b82f6; }
+    .config-input.narrow { width: 100px; }
+    .config-input.wide { width: 200px; }
+    select.config-input { cursor: pointer; }
+    .run-btn { background: #1d4ed8; border: 1px solid #2563eb; color: #fff; padding: 8px 28px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .run-btn:hover { background: #2563eb; }
+    .run-btn:disabled { background: #1e293b; border-color: #334155; color: #475569; cursor: not-allowed; }
+    .param-group { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; }
+    .param-title { font-size: 12px; color: #3b82f6; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .period-shortcuts { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-height:34px; }
+    .period-shortcuts.hidden { display:none; }
+    .period-chip { background:#1e293b; border:1px solid #334155; color:#cbd5e1; padding:7px 10px; border-radius:8px; font-size:12px; line-height:1.2; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .period-chip:hover { background:#334155; color:#fff; border-color:#475569; }
+    .period-chip.active { background:#1d4ed8; border-color:#3b82f6; color:#fff; }
+    .period-chip-sub { color:#94a3b8; font-size:11px; margin-left:6px; }
+    .period-chip.active .period-chip-sub { color:#dbeafe; }
+
+    /* ── Stats row ── */
+    .stats-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 12px 20px; flex: 1; min-width: 130px; }
+    .stat-card .stat-label { font-size: 11px; color: #64748b; margin-bottom: 4px; letter-spacing: 0.03em; }
+    .stat-card .stat-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-card .stat-value.pos { color: #34d399; }
+    .stat-card .stat-value.neg { color: #f87171; }
+    .stat-card .stat-value.neutral { color: #f1f5f9; }
+    .stat-card .stat-value.warn { color: #fbbf24; }
+
+    /* ── Charts ── */
+    .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .chart-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+    .chart-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
+    .chart-box { height: 260px; }
+
+    /* ── Trades table ── */
+    .trades-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+    .trades-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .trades-title { font-size: 13px; font-weight: 600; color: #94a3b8; }
+    .trades-count { font-size: 12px; color: #475569; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; color: #475569; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid #1e293b; letter-spacing: 0.03em; }
+    td { padding: 7px 10px; border-bottom: 1px solid #0f172a; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: #111827; }
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .tag.open { background: #1e3a5f; color: #60a5fa; }
+    .tag.close { background: #134e4a; color: #34d399; }
+    .tag.itm { background: #4c1d1d; color: #f87171; }
+    .tag.worthless { background: #14532d; color: #4ade80; }
+    .tag.buyback { background: #2d1b69; color: #a78bfa; }
+
+    /* ── Empty / Loading states ── */
+    .empty-state { text-align: center; padding: 60px 20px; color: #475569; }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+    .loading-overlay { display: none; align-items: center; justify-content: center; gap: 10px; padding: 12px 0; color: #3b82f6; font-size: 13px; }
+    .loading-overlay.visible { display: flex; }
+    .spinner { width: 18px; height: 18px; border: 2px solid #1e3a5f; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box { background: #2d1515; border: 1px solid #7f1d1d; border-radius: 8px; padding: 12px 16px; color: #fca5a5; font-size: 13px; margin-bottom: 16px; display: none; }
+
+    /* ── Payoff Viewer ── */
+    .payoff-section { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+    .payoff-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+    .payoff-section-title { font-size: 13px; font-weight: 600; color: #94a3b8; }
+    .payoff-meta { display: flex; gap: 18px; flex-wrap: wrap; }
+    .payoff-meta-item { font-size: 12px; color: #64748b; }
+    .payoff-meta-item span { color: #f1f5f9; font-weight: 600; }
+    .payoff-meta-item.tte span { color: #fbbf24; }
+    .payoff-meta-item.pnl-pos span { color: #34d399; }
+    .payoff-meta-item.pnl-neg span { color: #f87171; }
+    .payoff-canvas-wrap { position: relative; width: 100%; height: 300px; }
+    canvas#payoff-canvas { display: block; width: 100%; height: 100%; }
+    .payoff-legend { display: flex; gap: 16px; margin-top: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
+    .legend-dot { width: 24px; height: 3px; border-radius: 2px; }
+    /* Timeline slider */
+    .timeline-wrap { margin-top: 14px; }
+    .timeline-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .tl-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; width: 32px; height: 32px; border-radius: 8px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    .tl-btn:hover { background: #334155; color: #f1f5f9; }
+    .tl-btn.active { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+    .tl-date { font-size: 13px; color: #f1f5f9; font-weight: 600; min-width: 100px; }
+    .tl-step { font-size: 12px; color: #64748b; }
+    input[type=range].tl-slider { flex: 1; accent-color: #3b82f6; cursor: pointer; height: 4px; }
+    .tl-speed { font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; }
+    .tl-speed select { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 3px 7px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .charts-row { grid-template-columns: 1fr; }
+      .config-row { gap: 12px; }
+      .config-input { width: 140px; }
+    }
+    @media (max-width: 640px) {
+      .nav-item { padding: 8px 8px; font-size: 12px; }
+      .main { padding: 14px 12px 40px; }
+      .stats-row { gap: 8px; }
+      .stat-card { min-width: 100px; padding: 10px 12px; }
+      .stat-card .stat-value { font-size: 18px; }
+    }
+
+
+    .maintenance-banner { display:none; max-width:1200px; margin:12px auto 0; background:#3b0a0a; border:1px solid #7f1d1d; color:#fecaca; padding:12px 16px; border-radius:12px; font-size:13px; line-height:1.45; }
+    .maintenance-banner.visible { display:block; }
+    .maintenance-banner strong { color:#fff; }
+
+	</style>
+	<style>
+	  .fpr-mode-select { height:26px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f172a;font-size:12px;padding:0 26px 0 8px; }
+	</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN"/>
+      <div>
+        <div class="brand-title">VAN Portal</div>
+        <div class="brand-sub">Backtester</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="user-label"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-item" onclick="navTo('/app')">Overview</div>
+    <div class="nav-item" onclick="navTo('/trading')">Trading</div>
+    <div class="nav-item" onclick="navTo('/deribit')">Deribit</div>
+    <div class="nav-item" onclick="navTo('/okx')">OKX</div>
+    <div class="nav-item" onclick="navTo('/bybit')">Bybit</div>
+    <div class="nav-item" onclick="navTo('/coincall-spreads.html')">CoinCall</div>
+    <div class="nav-item" onclick="navTo('/mexc.html')">MEXC</div>
+    <div class="nav-item" onclick="navTo('/binance.html')">Binance</div>
+    <div class="nav-item" onclick="navTo('/hyperliquid.html')">Hyperliquid</div>
+    <div class="nav-item" onclick="navTo('/bitget.html')">Bitget</div>
+    <div class="nav-item" onclick="navTo('/kraken.html')">Kraken</div>
+    <div class="nav-item" onclick="navTo('/kucoin.html')">KuCoin</div>
+    <div class="nav-item" onclick="navTo('/gate.html')">Gate</div>
+    <div class="nav-item" onclick="navTo('/coinbase.html')">Coinbase</div>
+    <div class="nav-item" onclick="navTo('/arbitrage')">Arbitrage</div>
+    <div class="nav-item" onclick="navTo('/market-data')">Market Data</div>
+    <div class="nav-item" onclick="navTo('/position-builder')">Position Builder</div>
+    <div class="nav-item active">Backtester</div>
+    <div class="nav-item" onclick="navTo('/app#accounts')">Accounts</div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="page-title-row">
+    <div class="page-title">Backtester</div>
+    <div class="config-group" id="period-shortcuts-group" style="display:none;margin:0">
+      <div id="period-shortcuts" class="top-period-shortcuts hidden"></div>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <div class="config-panel">
+    <div class="config-row" style="margin-bottom:16px">
+      <div class="config-group">
+        <label>STRATEGY</label>
+        <select id="strategy-select" class="config-input wide" onchange="onStrategyChange()">
+          <option value="short_eth_put_daily">Short ETH Put (Daily)</option>
+          <option value="short_eth_strangle_daily">Short ETH Strangle (Daily)</option>
+          <option value="futures_algo1">Futures Algo 1 (ETH-PERP Grid)</option>
+          <option value="futures_spread_algo1" selected>Futures Spread Algo 1</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>DATE FROM</label>
+        <input id="date-from" type="date" class="config-input" value="2026-03-15"/>
+      </div>
+      <div class="config-group">
+        <label>DATE TO</label>
+        <input id="date-to" type="date" class="config-input" value="2026-03-24"/>
+      </div>
+    </div>
+
+    <!-- Strategy params -->
+    <div class="param-group" style="margin-bottom:16px">
+      <div class="param-title">Strategy Parameters</div>
+      <!-- Short ETH Put params -->
+      <div class="config-row" id="params-put">
+        <div class="config-group">
+          <label>STRIKE OFFSET %</label>
+          <input id="p-strike-offset" type="number" class="config-input narrow" value="2.5" min="0.5" max="20" step="0.5"/>
+        </div>
+        <div class="config-group">
+          <label>INITIAL CAPITAL (USD)</label>
+          <input id="p-capital" type="number" class="config-input" value="1000" min="10" max="1000000" step="10"/>
+        </div>
+        <div class="config-group">
+          <label>LOTS PER TRADE</label>
+          <input id="p-lots" type="number" class="config-input narrow" value="1" min="1" max="100" step="1"/>
+        </div>
+        <div class="config-group" style="justify-content:flex-end">
+          <label>SELL AT BID</label>
+          <div style="display:flex;align-items:center;gap:8px;height:34px">
+            <input id="p-use-bid" type="checkbox" checked style="width:16px;height:16px;cursor:pointer;accent-color:#3b82f6"/>
+            <span style="font-size:12px;color:#64748b">Conservative (bid price)</span>
+          </div>
+        </div>
+      </div>
+      <!-- Short ETH Strangle params -->
+      <div class="config-row" id="params-strangle" style="display:none">
+        <div class="config-group">
+          <label>PUT OFFSET %</label>
+          <input id="p-put-offset" type="number" class="config-input narrow" value="2.5" min="0.5" max="20" step="0.5"/>
+        </div>
+        <div class="config-group">
+          <label>CALL OFFSET %</label>
+          <input id="p-call-offset" type="number" class="config-input narrow" value="2.5" min="0.5" max="20" step="0.5"/>
+        </div>
+        <div class="config-group">
+          <label>INITIAL CAPITAL (USD)</label>
+          <input id="p-capital-s" type="number" class="config-input" value="10000" min="100" max="1000000" step="100"/>
+        </div>
+        <div class="config-group">
+          <label>LOTS PER TRADE</label>
+          <input id="p-lots-s" type="number" class="config-input narrow" value="1" min="1" max="100" step="1"/>
+        </div>
+        <div class="config-group" style="justify-content:flex-end">
+          <label>SELL AT BID</label>
+          <div style="display:flex;align-items:center;gap:8px;height:34px">
+            <input id="p-use-bid-s" type="checkbox" checked style="width:16px;height:16px;cursor:pointer;accent-color:#3b82f6"/>
+            <span style="font-size:12px;color:#64748b">Conservative (bid price)</span>
+          </div>
+        </div>
+      </div>
+      <!-- Futures Algo 1 params -->
+      <div class="config-row" id="params-algo1" style="display:none">
+        <div class="config-group spread-algo-only" style="display:none">
+          <label>SHORT TICKER</label>
+          <select id="p-a1-short-ticker" class="config-input"></select>
+        </div>
+        <div class="config-group spread-algo-only" style="display:none">
+          <label>LONG TICKER</label>
+          <select id="p-a1-long-ticker" class="config-input"></select>
+        </div>
+        <div class="config-group spread-algo-only" style="display:none">
+          <label>Envelope Step, %</label>
+          <input id="p-a1-envelope-step" type="number" class="config-input narrow" value="0.1" min="0.001" max="10" step="0.1"/>
+        </div>
+        <div class="config-group spread-algo-only" style="display:none">
+          <label>Fee, %</label>
+          <input id="p-a1-fee-pct" type="number" class="config-input narrow" value="0" min="0" max="10" step="0.01"/>
+        </div>
+        <div class="config-group">
+          <label>GRID STEP %</label>
+          <input id="p-a1-step" type="number" class="config-input narrow" value="1.0" min="0.1" max="10" step="0.1"/>
+        </div>
+        <div class="config-group">
+          <label>MAX ORDERS</label>
+          <input id="p-a1-maxorders" type="number" class="config-input narrow" value="20" min="1" max="50" step="1"/>
+        </div>
+        <div class="config-group">
+          <label>TP OFFSET %</label>
+          <input id="p-a1-tp" type="number" class="config-input narrow" value="2.0" min="0.1" max="20" step="0.1"/>
+        </div>
+        <div class="config-group">
+          <label>ORDER SIZE (USD)</label>
+          <input id="p-a1-ordersize" type="number" class="config-input narrow" value="5" min="1" max="10000" step="1"/>
+        </div>
+        <div class="config-group">
+          <label>INITIAL CAPITAL (USD)</label>
+          <input id="p-a1-capital" type="number" class="config-input" value="1000" min="10" max="1000000" step="10"/>
+        </div>
+        <div class="config-group" style="flex-direction:row;align-items:center;gap:8px">
+          <input id="p-a1-split-tp" type="checkbox" checked style="width:16px;height:16px;cursor:pointer;accent-color:#3b82f6"/>
+          <label style="cursor:pointer" onclick="document.getElementById('p-a1-split-tp').click()">SPLIT TP (3 LEVELS)</label>
+        </div>
+        <div class="config-group">
+          <label>TP1 OFFSET % of SwingDown</label>
+          <input id="p-a1-tp1-offset" type="number" class="config-input narrow" value="15" min="1" max="100" step="1"/>
+        </div>
+        <div class="config-group">
+          <label>TP3 OFFSET % of SwingDown</label>
+          <input id="p-a1-tp3-offset" type="number" class="config-input narrow" value="15" min="1" max="100" step="1"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-row" style="align-items:center;gap:16px">
+      <button class="run-btn" id="run-btn" onclick="runBacktest()">▶ Run Backtest</button>
+      <div class="loading-overlay" id="loading"><div class="spinner"></div> <span id="loading-msg">Running minute-level simulation… (~2s/day)</span></div>
+      <div id="avail-dates" style="font-size:12px;color:#475569"></div>
+    </div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Futures Profile Viewer (P&L vs ETH Price) — shown only for futures_algo1 -->
+  <div class="payoff-section" id="futures-profile-section" style="display:none;margin-bottom:6px">
+    <div class="payoff-section-header">
+      <div class="payoff-section-title">Strategy Profile — Futures P&amp;L vs ETH Price</div>
+      <div class="payoff-meta" id="fp-meta">
+        <div class="payoff-meta-item"><span id="fp-instrument">—</span></div>
+        <div class="payoff-meta-item">Open longs: <span id="fp-longs">—</span></div>
+        <div class="payoff-meta-item">Size: <span id="fp-size">—</span> ETH</div>
+        <div class="payoff-meta-item">Avg Entry: <span id="fp-entry">—</span></div>
+        <div class="payoff-meta-item">Avg TP: <span id="fp-tp">—</span></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+      <div class="payoff-legend" style="margin-top:0;margin-bottom:0">
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Total Mark P&amp;L</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Unrealized P&amp;L</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Realized P&amp;L</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Current Spot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;opacity:.5"></div>Avg Entry</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7;opacity:.5"></div>Avg TP</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:11px;color:#334155">Scroll: zoom &nbsp;|&nbsp; Drag Y-axis: zoom Y &nbsp;|&nbsp; Drag X-axis: zoom X &nbsp;|&nbsp; Drag chart: pan</span>
+        <button class="tl-btn" onclick="_fpZoom={x:1,y:1};_fpPanX=0;_fpPanY=0;drawFuturesProfileAt(_fpIdx)" title="Reset zoom" style="font-size:11px;width:auto;padding:0 10px">Reset zoom</button>
+      </div>
+    </div>
+    <div class="payoff-canvas-wrap" style="margin-top:0">
+      <canvas id="futures-profile-canvas"></canvas>
+    </div>
+    <div class="timeline-wrap">
+      <div class="timeline-controls">
+        <button class="tl-btn" onclick="_fpStep(-1)" title="Previous">&#8249;</button>
+        <button class="tl-btn" id="fp-play" onclick="_fpTogglePlay()" title="Play/Pause">&#9654;</button>
+        <button class="tl-btn" onclick="_fpStep(1)" title="Next">&#8250;</button>
+        <input type="range" class="tl-slider" id="fp-slider" min="0" value="0" oninput="_fpSeek(parseInt(this.value));_tlSyncFromFp(parseInt(this.value))"/>
+        <div class="tl-date" id="fp-date">—</div>
+        <div class="tl-step" id="fp-stepinfo"></div>
+        <div class="tl-speed">Speed:
+          <select id="fp-speed" onchange="_fpSetSpeed(parseInt(this.value))">
+            <option value="1200">0.5×</option>
+            <option value="800" selected>1×</option>
+            <option value="400">2×</option>
+            <option value="150">4×</option>
+            <option value="60">10×</option>
+            <option value="25">20×</option>
+            <option value="10">50×</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Futures Price History Panel — shown only for futures_algo1 -->
+  <div class="payoff-section" id="futures-price-section" style="display:none;padding-top:10px;padding-bottom:10px;margin-bottom:6px">
+	    <div class="payoff-section-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:nowrap">
+	      <div class="payoff-section-title" id="futures-price-title" style="white-space:nowrap;flex:0 0 auto">ETH Price History — Futures Algo 1</div>
+      <div class="payoff-meta" id="fpr-header-extra" style="display:flex;gap:14px;flex:1 1 auto;justify-content:center;white-space:nowrap;min-width:0">
+        <div class="payoff-meta-item"><span id="fpr-instrument">ETH-PERPETUAL · Trades: 0</span></div>
+        <div class="payoff-meta-item">Avg Entry: <span id="fpr-avg-entry">—</span></div>
+        <div class="payoff-meta-item">Mark P&L: <span id="fpr-mark-pnl">—</span></div>
+      </div>
+      <div class="payoff-meta" id="fpr-meta" style="display:flex;gap:14px;white-space:nowrap;flex:0 0 auto">
+        <div class="payoff-meta-item"><span id="fpr-spot">—</span></div>
+        <div class="payoff-meta-item">Run: <span id="fpr-run">—</span></div>
+        <div class="payoff-meta-item">Open longs: <span id="fpr-longs">—</span></div>
+	        <div class="payoff-meta-item">Cycle Avg Entry: <span id="fpr-cycle-entry">—</span></div>
+	      </div>
+	    </div>
+	    <div id="fpr-chart-mode-control" style="display:none;align-items:center;gap:6px;margin:6px 0 5px 0">
+	      <span style="font-size:11px;color:#334155">Chart</span>
+	      <select id="fpr-chart-mode" class="fpr-mode-select" aria-label="ETH Price History chart mode">
+	        <option value="line" selected>Line</option>
+	        <option value="candles">Candles</option>
+	      </select>
+	    </div>
+	    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+      <div class="payoff-legend" style="margin-top:0;margin-bottom:0">
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>ETH Price</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>▲ Buy Fill</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f9a8d4"></div>▼ TP1</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff7f6e"></div>▼ TP2</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>▼ TP3</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>— Legacy TP2/TP3</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;opacity:.5"></div>| Grid Start/Restart</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;opacity:.5"></div>— Avg Entry</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7;opacity:.5"></div>— Avg TP</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22d3ee;opacity:.7"></div>— Cycle Avg Entry</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:11px;color:#334155">Scroll: zoom Y &nbsp;|&nbsp; Drag Y-axis: zoom Y &nbsp;|&nbsp; Drag X-axis: zoom X &nbsp;|&nbsp; Drag chart: pan</span>
+        <button class="tl-btn" onclick="_fprZoom=1;_fprPanY=0;_fprZoomX=1;_fprPanX=0;_fsprZoom=1;_fsprPanY=0;_fsprPanX=0;drawFuturePriceAt(_fpIdx)" title="Reset zoom" style="font-size:11px;width:auto;padding:0 10px">Reset zoom</button>
+      </div>
+    </div>
+    <div class="payoff-canvas-wrap" style="margin-top:0">
+      <canvas id="futures-price-canvas"></canvas>
+    </div>
+    <div id="futures-spread-chart-block" style="display:none;margin-top:8px">
+      <div class="payoff-legend" id="futures-spread-legend" style="margin-top:0;margin-bottom:6px">
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Spread</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#38bdf8"></div>±0.1%</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>±0.2%</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f472b6"></div>±0.3%</div>
+      </div>
+      <div class="payoff-canvas-wrap" style="margin-top:0;height:304px">
+        <canvas id="futures-spread-canvas"></canvas>
+      </div>
+      <div id="futures-spread-status" style="font-size:11px;color:#94a3b8;margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- Payoff Profile Viewer -->
+  <div class="payoff-section" id="payoff-section" style="display:none">
+    <div class="payoff-section-header">
+      <div class="payoff-section-title" id="payoff-section-title">Strategy Profile — Option P&L vs ETH Price</div>
+      <div class="payoff-meta" id="payoff-meta">
+        <div class="payoff-meta-item"><span id="pm-instrument">—</span></div>
+        <div class="payoff-meta-item">Avg Entry: <span id="pm-iv">—</span></div>
+        <div class="payoff-meta-item">Avg TP: <span id="pm-sell">—</span></div>
+        <div class="payoff-meta-item" id="pm-pnl-wrap">Mark P&L: <span id="pm-pnl">—</span></div>
+        <div class="payoff-meta-item">TTE: <span id="pm-tte">—</span></div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+      <div class="payoff-legend" style="margin-top:0;margin-bottom:0">
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Payoff at Expiry</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;border-top:2px dashed #3b82f6;height:0"></div>Today (BS)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Current Spot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;opacity:.4"></div>Strike</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:11px;color:#334155">Scroll: zoom X &nbsp;|&nbsp; Shift+Scroll: zoom Y</span>
+        <button class="tl-btn" onclick="_zoom={x:1,y:1};_panX=0;_panY=0;_dragStartPanY=0;drawPayoffAt(_tlIdx)" title="Reset zoom" style="font-size:11px;width:auto;padding:0 10px">Reset zoom</button>
+      </div>
+    </div>
+    <div class="payoff-canvas-wrap" style="margin-top:0">
+      <canvas id="payoff-canvas"></canvas>
+    </div>
+
+    <div class="timeline-wrap">
+      <div class="timeline-controls">
+        <button class="tl-btn" id="tl-prev" onclick="tlStep(-1)" title="Previous">‹</button>
+        <button class="tl-btn" id="tl-play" onclick="tlTogglePlay()" title="Play/Pause">▶</button>
+        <button class="tl-btn" id="tl-next" onclick="tlStep(1)" title="Next">›</button>
+        <input type="range" class="tl-slider" id="tl-slider" min="0" value="0" oninput="tlSeek(parseInt(this.value));_fpSyncFromTl(parseInt(this.value))"/>
+        <div class="tl-date" id="tl-date">—</div>
+        <div class="tl-step" id="tl-stepinfo"></div>
+        <div class="tl-speed">Speed:
+          <select id="tl-speed" onchange="tlSetSpeed(parseInt(this.value))">
+            <option value="1200">0.5×</option>
+            <option value="800" selected>1×</option>
+            <option value="400">2×</option>
+            <option value="150">4×</option>
+            <option value="60">10×</option>
+            <option value="25">20×</option>
+            <option value="10">50×</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row" style="display:none">
+    <div class="stat-card">
+      <div class="stat-label">TOTAL P&L</div>
+      <div class="stat-value" id="s-pnl">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">TOTAL RETURN</div>
+      <div class="stat-value" id="s-return">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ANN. RETURN</div>
+      <div class="stat-value" id="s-ann">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">MAX DRAWDOWN</div>
+      <div class="stat-value" id="s-dd">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">WIN RATE</div>
+      <div class="stat-value" id="s-wr">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">TRADES</div>
+      <div class="stat-value neutral" id="s-n">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">AVG WIN</div>
+      <div class="stat-value pos" id="s-win">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">AVG LOSS</div>
+      <div class="stat-value neg" id="s-loss">—</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row" id="charts-row" style="display:none">
+    <div class="chart-card">
+      <div class="chart-title">Equity Curve (USD)</div>
+      <div class="chart-box" id="equity-chart"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Daily P&L (USD)</div>
+      <div class="chart-box" id="pnl-chart"></div>
+    </div>
+  </div>
+
+  <!-- Trades -->
+  <div class="trades-card" id="trades-card" style="display:none">
+    <div class="trades-header">
+      <div class="trades-title">Trade Log</div>
+      <div class="trades-count" id="trades-count"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr id="trades-header-row">
+            <th>Date</th>
+            <th>Time UTC</th>
+            <th>Action</th>
+            <th>Instrument</th>
+            <th>Strike</th>
+            <th>Expiry</th>
+            <th>Sell Price</th>
+            <th>Close Price</th>
+            <th>Spot Open</th>
+            <th>Spot Close</th>
+            <th>P&L USD</th>
+            <th>Result</th>
+            <th>Equity</th>
+          </tr>
+        </thead>
+        <tbody id="trades-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">📊</div>
+    <p>Configure parameters and click <strong>Run Backtest</strong> to simulate the strategy.</p>
+  </div>
+</div>
+
+<script>
+// ── Auth ──────────────────────────────────────────────────────────────────────
+(function() {
+  var sess = null;
+  try { sess = JSON.parse(localStorage.getItem('van_session') || 'null'); } catch(e) {}
+  if (!sess || !sess.token) { window.location.href = '/'; return; }
+  var u = sess.user;
+  var role = (u && (u.Role || u.role)) || '';
+  if (role.toLowerCase() !== 'admin') { window.location.href = '/'; return; }
+  var label = document.getElementById('user-label');
+  if (label) label.textContent = (u && (u.Login || u.login || u.Name || u.name)) || 'Admin';
+})();
+
+function doLogout() {
+  localStorage.removeItem('van_session');
+  localStorage.removeItem('van_token');
+  window.location.href = '/';
+}
+function navTo(p) { window.location.href = p; }
+
+// ── Strategy switcher ────────────────────────────────────────────────────────
+var _availableDates = [];
+var _availableDateRanges = [];
+
+function _buildContiguousRanges(dates) {
+  if (!dates || !dates.length) return [];
+  var parsed = dates
+    .map(function(ds) { return new Date(ds + 'T00:00:00Z'); })
+    .filter(function(d) { return !isNaN(d.getTime()); })
+    .sort(function(a, b) { return a - b; });
+  if (!parsed.length) return [];
+
+  var ranges = [];
+  var start = parsed[0];
+  var prev = parsed[0];
+  for (var i = 1; i < parsed.length; i++) {
+    var cur = parsed[i];
+    var diffDays = Math.round((cur - prev) / 86400000);
+    if (diffDays === 1) {
+      prev = cur;
+      continue;
+    }
+    ranges.push({
+      from: start.toISOString().slice(0, 10),
+      to: prev.toISOString().slice(0, 10),
+      days: Math.round((prev - start) / 86400000) + 1
+    });
+    start = prev = cur;
+  }
+  ranges.push({
+    from: start.toISOString().slice(0, 10),
+    to: prev.toISOString().slice(0, 10),
+    days: Math.round((prev - start) / 86400000) + 1
+  });
+  return ranges;
+}
+
+function setDateRange(from, to) {
+  document.getElementById('date-from').value = from;
+  document.getElementById('date-to').value = to;
+  updatePeriodShortcutState();
+}
+
+function updatePeriodShortcutState() {
+  var from = document.getElementById('date-from').value;
+  var to = document.getElementById('date-to').value;
+  var buttons = document.querySelectorAll('#period-shortcuts .period-chip');
+  buttons.forEach(function(btn) {
+    var active = btn.getAttribute('data-from') === from && btn.getAttribute('data-to') === to;
+    btn.classList.toggle('active', active);
+  });
+}
+
+function renderPeriodShortcuts() {
+  var wrap = document.getElementById('period-shortcuts');
+  var group = document.getElementById('period-shortcuts-group');
+  if (!wrap || !group) return;
+  if (!_availableDateRanges.length) {
+    wrap.classList.add('hidden');
+    group.style.display = 'none';
+    return;
+  }
+  group.style.display = 'flex';
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '';
+  _availableDateRanges.forEach(function(r, idx) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'period-chip';
+    btn.setAttribute('data-from', r.from);
+    btn.setAttribute('data-to', r.to);
+    var periodName = (idx === 0 ? '2023' : (idx === 1 ? '2024 A' : (idx === 2 ? '2024 B' : (idx === 3 ? '2026' : 'Period ' + (idx + 1)))));
+    btn.innerHTML = periodName + '<span class="period-chip-sub">' + r.from + ' → ' + r.to + ' · ' + r.days + 'd</span>';
+    btn.onclick = function() { setDateRange(r.from, r.to); };
+    wrap.appendChild(btn);
+  });
+  updatePeriodShortcutState();
+}
+
+function onStrategyChange() {
+  var strat = document.getElementById('strategy-select').value;
+  var isStrangle = strat === 'short_eth_strangle_daily';
+  var isAlgo1    = isFuturesGridStrategy(strat);
+  var isSpread   = isFuturesSpreadStrategy(strat);
+  document.getElementById('params-put').style.display      = (!isStrangle && !isAlgo1) ? '' : 'none';
+  document.getElementById('params-strangle').style.display = isStrangle ? '' : 'none';
+  document.getElementById('params-algo1').style.display    = isAlgo1    ? '' : 'none';
+  Array.prototype.forEach.call(document.querySelectorAll('.spread-algo-only'), function(el) {
+    el.style.display = isSpread ? '' : 'none';
+  });
+  if (isSpread) loadFuturesSpreadInstruments();
+  renderPeriodShortcuts();
+}
+
+function isFuturesSpreadStrategy(strategyId) {
+  return strategyId === 'futures_spread_algo1';
+}
+
+function getFuturesSpreadEnvelopeStepPct() {
+  var el = document.getElementById('p-a1-envelope-step');
+  var value = el ? parseFloat(el.value) : NaN;
+  return value > 0 && isFinite(value) ? value : 0.1;
+}
+
+	function renderFuturesPriceLegend() {
+	  var priceLegend = document.querySelector('#futures-price-section .payoff-legend');
+	  var modeControl = document.getElementById('fpr-chart-mode-control');
+	  if (modeControl) modeControl.style.display = isFuturesSpreadStrategy(_activeStrategyId) ? 'flex' : 'none';
+	  if (!priceLegend) return;
+  if (isFuturesSpreadStrategy(_activeStrategyId)) {
+    var shortTicker = document.getElementById('p-a1-short-ticker');
+    var longTicker = document.getElementById('p-a1-long-ticker');
+    var shortLegend = shortTicker && shortTicker.value ? shortTicker.value : 'ETH-25DEC26';
+    var longLegend = longTicker && longTicker.value ? longTicker.value : 'ETH-PERPETUAL';
+    priceLegend.innerHTML =
+      '<div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>' + escapeHtml(shortLegend) + '</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#38bdf8"></div>' + escapeHtml(longLegend) + '</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>-- Sell Limit</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>-- Buy Limit</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>▼ Sell Short leg</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>▲ Buy Long leg</div>';
+    return;
+  }
+  priceLegend.innerHTML =
+    '<div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>ETH Price</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>▲ Buy Fill</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#f9a8d4"></div>▼ TP1</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#ff7f6e"></div>▼ TP2</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>▼ TP3</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>— Legacy TP2/TP3</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#fbbf24;opacity:.5"></div>| Grid Start/Restart</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#f59e0b;opacity:.5"></div>— Avg Entry</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#a855f7;opacity:.5"></div>— Avg TP</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:#22d3ee;opacity:.7"></div>— Cycle Avg Entry</div>';
+}
+
+function _setSelectOptions(select, instruments, fallback) {
+  if (!select) return;
+  var prev = select.value || fallback;
+  select.innerHTML = '';
+  instruments.forEach(function(inst) {
+    var opt = document.createElement('option');
+    opt.value = inst.ticker;
+    opt.textContent = inst.label || inst.ticker;
+    select.appendChild(opt);
+  });
+  if (instruments.some(function(inst) { return inst.ticker === prev; })) select.value = prev;
+  else if (fallback && instruments.some(function(inst) { return inst.ticker === fallback; })) select.value = fallback;
+}
+
+function loadFuturesSpreadInstruments() {
+  var from = document.getElementById('date-from').value;
+  var to = document.getElementById('date-to').value;
+  var url = '/backtester-api/futures-spread-algo1/instruments?date_from=' + encodeURIComponent(from) + '&date_to=' + encodeURIComponent(to);
+  fetch(url)
+    .then(function(r) { if (!r.ok) throw new Error('API ' + r.status); return r.json(); })
+    .then(function(d) {
+      var instruments = d.instruments || [];
+      _setSelectOptions(document.getElementById('p-a1-short-ticker'), instruments, 'ETH-25DEC26');
+      _setSelectOptions(document.getElementById('p-a1-long-ticker'), instruments, 'ETH-PERPETUAL');
+      renderFuturesPriceLegend();
+    })
+    .catch(function() {});
+}
+
+// ── Available dates ────────────────────────────────────────────────────────────
+fetch('/backtester-api/available-dates')
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.dates && d.dates.length) {
+      _availableDates = d.dates.slice();
+      _availableDateRanges = _buildContiguousRanges(_availableDates);
+      var el = document.getElementById('avail-dates');
+      el.textContent = 'Data: ' + d.dates[0] + ' → ' + d.dates[d.dates.length - 1];
+      document.getElementById('date-from').value = (d.dates.includes('2026-03-15') ? '2026-03-15' : d.dates[0]);
+      document.getElementById('date-to').value = d.dates[d.dates.length - 1];
+      renderPeriodShortcuts();
+      if (isFuturesSpreadStrategy(document.getElementById('strategy-select').value)) loadFuturesSpreadInstruments();
+    }
+  })
+  .catch(function() {});
+
+document.getElementById('date-from').addEventListener('change', function() { updatePeriodShortcutState(); if (isFuturesSpreadStrategy(document.getElementById('strategy-select').value)) loadFuturesSpreadInstruments(); });
+document.getElementById('date-to').addEventListener('change', function() { updatePeriodShortcutState(); if (isFuturesSpreadStrategy(document.getElementById('strategy-select').value)) loadFuturesSpreadInstruments(); });
+	document.getElementById('p-a1-short-ticker').addEventListener('change', function() { renderFuturesPriceLegend(); if (isFuturesSpreadStrategy(_activeStrategyId)) loadFuturesSpreadHistory(); });
+	document.getElementById('p-a1-long-ticker').addEventListener('change', function() { renderFuturesPriceLegend(); if (isFuturesSpreadStrategy(_activeStrategyId)) loadFuturesSpreadHistory(); });
+	document.getElementById('p-a1-envelope-step').addEventListener('change', function() { if (isFuturesSpreadStrategy(_activeStrategyId)) loadFuturesSpreadHistory(); });
+	document.getElementById('fpr-chart-mode').addEventListener('change', function() { _futuresSpreadChartMode = this.value === 'candles' ? 'candles' : 'line'; scheduleFuturePriceDraw(_fpIdx); });
+	onStrategyChange();
+
+// ── Chart instances ───────────────────────────────────────────────────────────
+var equityChartInst = null;
+var pnlChartInst = null;
+var eqSeriesGlobal = null;
+var eqDataGlobal = [];
+var spotSeriesGlobal = null;
+var avgEntrySeriesGlobal = null;
+var avgTpSeriesGlobal = null;
+
+function isFuturesGridStrategy(strategyId) {
+  return strategyId === 'futures_algo1' || strategyId === 'futures_spread_algo1';
+}
+
+function destroyCharts() {
+  if (equityChartInst) { try { equityChartInst.remove(); } catch(e){} equityChartInst = null; }
+  eqSeriesGlobal = null; eqDataGlobal = []; spotSeriesGlobal = null; avgEntrySeriesGlobal = null; avgTpSeriesGlobal = null;
+  if (pnlChartInst) { try { pnlChartInst.remove(); } catch(e){} pnlChartInst = null; }
+}
+
+// ── Run ────────────────────────────────────────────────────────────────────────
+function runBacktest() {
+  var btn = document.getElementById('run-btn');
+  var loading = document.getElementById('loading');
+  var errBox = document.getElementById('error-box');
+
+  btn.disabled = true;
+  loading.classList.add('visible');
+  errBox.style.display = 'none';
+
+  var stratId = document.getElementById('strategy-select').value;
+  var params = {};
+  if (stratId === 'short_eth_strangle_daily') {
+    params = {
+      put_offset_pct:  parseFloat(document.getElementById('p-put-offset').value)  || 2.5,
+      call_offset_pct: parseFloat(document.getElementById('p-call-offset').value) || 2.5,
+      initial_capital: parseFloat(document.getElementById('p-capital-s').value)   || 10000,
+      lots_per_trade:  parseInt(document.getElementById('p-lots-s').value)         || 1,
+      use_bid: document.getElementById('p-use-bid-s').checked
+    };
+  } else if (isFuturesGridStrategy(stratId)) {
+    params = {
+      step_pct:        parseFloat(document.getElementById('p-a1-step').value)      || 1.0,
+      max_orders:      parseInt(document.getElementById('p-a1-maxorders').value)   || 20,
+      tp_pct:          parseFloat(document.getElementById('p-a1-tp').value)        || 2.0,
+      order_size_usd:  parseFloat(document.getElementById('p-a1-ordersize').value) || 5,
+      initial_capital: parseFloat(document.getElementById('p-a1-capital').value)   || 1000,
+      use_split_tp:    document.getElementById('p-a1-split-tp').checked,
+      tp1_offset_pct:  parseFloat(document.getElementById('p-a1-tp1-offset').value) || 15.0,
+      tp3_offset_pct:  parseFloat(document.getElementById('p-a1-tp3-offset').value) || 15.0,
+    };
+    if (isFuturesSpreadStrategy(stratId)) {
+      params.short_ticker = document.getElementById('p-a1-short-ticker').value || 'ETH-25DEC26';
+      params.long_ticker = document.getElementById('p-a1-long-ticker').value || 'ETH-PERPETUAL';
+      params.envelope_step_pct = getFuturesSpreadEnvelopeStepPct();
+      params.fee_pct = parseFloat(document.getElementById('p-a1-fee-pct').value) || 0;
+    }
+  } else {
+    params = {
+      strike_offset_pct: parseFloat(document.getElementById('p-strike-offset').value) || 2.5,
+      initial_capital:   parseFloat(document.getElementById('p-capital').value)        || 10000,
+      lots_per_trade:    parseInt(document.getElementById('p-lots').value)              || 1,
+      use_bid: document.getElementById('p-use-bid').checked
+    };
+  }
+  var payload = {
+    strategy_id: stratId,
+    date_from: document.getElementById('date-from').value,
+    date_to: document.getElementById('date-to').value,
+    params: params
+  };
+
+  fetch('/backtester-api/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Server error ' + r.status); });
+    return r.json();
+  })
+  .then(function(data) {
+    btn.disabled = false;
+    loading.classList.remove('visible');
+    _activeStrategyId = stratId;
+    renderResult(data);
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    loading.classList.remove('visible');
+    errBox.textContent = 'Error: ' + err.message;
+    errBox.style.display = 'block';
+  });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+function fmt(v, digits, prefix, suffix) {
+  if (v == null || v === undefined) return '—';
+  var n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return (prefix || '') + n.toFixed(digits || 2) + (suffix || '');
+}
+function fmtSign(v, digits, suffix) {
+  if (v == null) return '—';
+  var n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(digits || 2) + (suffix || '');
+}
+function escapeHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+  });
+}
+function colorClass(v, invert) {
+  if (v == null) return 'neutral';
+  var n = parseFloat(v);
+  if (isNaN(n) || n === 0) return 'neutral';
+  if (invert) return n > 0 ? 'neg' : 'pos';
+  return n > 0 ? 'pos' : 'neg';
+}
+
+function renderResult(data) {
+  document.getElementById('empty-state').style.display = 'none';
+
+  // Payoff viewer
+  initPayoffViewer(data.payoff_snapshots || [], data.trades || []);
+
+  var s = data.stats;
+
+  // Stats
+  var statsRow = document.getElementById('stats-row');
+  statsRow.style.display = 'flex';
+
+  function setStat(id, val, cls) {
+    var el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'stat-value ' + (cls || 'neutral');
+  }
+
+  setStat('s-pnl', fmt(s.total_pnl_usd, 2, '$'), colorClass(s.total_pnl_usd));
+  setStat('s-return', fmtSign(s.total_return_pct, 2, '%'), colorClass(s.total_return_pct));
+  setStat('s-ann', fmtSign(s.annualized_return_pct, 1, '%'), colorClass(s.annualized_return_pct));
+  setStat('s-dd', fmt(s.max_drawdown_pct, 2, '', '%'), colorClass(s.max_drawdown_pct, true));
+  setStat('s-wr', fmt(s.win_rate_pct, 1, '', '%'), s.win_rate_pct >= 60 ? 'pos' : s.win_rate_pct >= 40 ? 'warn' : 'neg');
+  setStat('s-n', String(s.n_trades || 0), 'neutral');
+  // show grid_restarts in win label area if available
+  if (s.grid_restarts != null) {
+    document.getElementById('s-win').textContent = '+$' + (s.avg_win_usd || 0).toFixed(2);
+    document.getElementById('s-win').className = 'stat-value pos';
+  }
+  setStat('s-win', fmt(s.avg_win_usd, 2, '+$'), 'pos');
+  setStat('s-loss', fmt(s.avg_loss_usd, 2, '$'), s.avg_loss_usd < 0 ? 'neg' : 'neutral');
+
+  // Charts
+  document.getElementById('charts-row').style.display = 'grid';
+  destroyCharts();
+
+  // Equity curve — minute timestamps, deduplicate same-second entries for LightweightCharts
+  var eqRaw = (data.equity_curve || []).filter(function(p) { return p.equity != null; });
+  // Convert "2026-03-16T08:00" → unix seconds
+  var seenTs = {};
+  var eqData = [];
+  eqRaw.forEach(function(p) {
+    var ts = p.ts || p.date;
+    var unixSec = Math.floor(new Date(ts.length === 10 ? ts + 'T00:00:00Z' : ts + ':00Z').getTime() / 1000);
+    if (!seenTs[unixSec]) { seenTs[unixSec] = true; eqData.push({ time: unixSec, value: p.equity }); }
+  });
+  eqData.sort(function(a,b){ return a.time - b.time; });
+
+  // Downsample to 1 point per hour for readable chart (keep last point of each hour bucket)
+  if (eqData.length > 500) {
+    var buckets = {};
+    eqData.forEach(function(p) {
+      var hourBucket = Math.floor(p.time / 3600);
+      buckets[hourBucket] = p;  // last point in bucket wins
+    });
+    eqData = Object.keys(buckets).sort(function(a,b){return a-b;}).map(function(k){ return buckets[k]; });
+  }
+
+  if (eqData.length) {
+    var equityEl = document.getElementById('equity-chart');
+    equityChartInst = LightweightCharts.createChart(equityEl, {
+      layout: { background: { color: '#0f172a' }, textColor: '#64748b' },
+      grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+      rightPriceScale: { borderColor: '#1e293b' },
+      timeScale: { borderColor: '#1e293b', timeVisible: true },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      handleScroll: true,
+      handleScale: true,
+    });
+    var baselineVal = eqData.length ? eqData[0].value : 10000;
+    var eqSeries = equityChartInst.addBaselineSeries({
+      baseValue: { type: 'price', price: baselineVal },
+      topLineColor:    'rgba(0,230,118,0.55)',
+      topFillColor1:   'rgba(0,230,118,0.15)',
+      topFillColor2:   'rgba(0,230,118,0.03)',
+      bottomLineColor: 'rgba(255,23,68,0.55)',
+      bottomFillColor1:'rgba(255,23,68,0.03)',
+      bottomFillColor2:'rgba(255,23,68,0.15)',
+      lineWidth: 1,
+      priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
+    });
+    eqSeries.setData(eqData);
+    equityChartInst.timeScale().fitContent();
+    eqSeriesGlobal = eqSeries;
+    eqDataGlobal = eqData;
+
+    // ── Spot price series (left axis, blue) ──
+    var spotData = [];
+    var seenSpotTs = {};
+    eqRaw.forEach(function(p) {
+      if (p.spot == null) return;
+      var ts = p.ts || p.date;
+      var unixSec = Math.floor(new Date(ts.length === 10 ? ts + 'T00:00:00Z' : ts + ':00Z').getTime() / 1000);
+      var hourBucket = Math.floor(unixSec / 3600);
+      if (!seenSpotTs[hourBucket]) { seenSpotTs[hourBucket] = true; spotData.push({ time: unixSec, value: p.spot }); }
+    });
+    spotData.sort(function(a,b){ return a.time - b.time; });
+    if (spotData.length) {
+      equityChartInst.applyOptions({ leftPriceScale: { visible: true, borderColor: '#1e293b' } });
+      var spotSeries = equityChartInst.addLineSeries({
+        color: 'rgba(59,130,246,0.5)',
+        lineWidth: 1,
+        priceScaleId: 'left',
+        priceFormat: { type: 'price', precision: 0, minMove: 1 },
+        crosshairMarkerVisible: false,
+        lastValueVisible: true,
+        title: 'ETH',
+      });
+      spotSeries.setData(spotData);
+      spotSeriesGlobal = spotSeries;
+    }
+
+    // ── Avg Entry price series for Futures Algo 1 (left axis, amber) ──
+    if (isFuturesGridStrategy(data.strategy) && (data.payoff_snapshots || []).length) {
+      var avgEntryData = [];
+      var seenAvgTs = {};
+      (data.payoff_snapshots || []).forEach(function(s) {
+        if (s.viewer_type !== 'futures_algo1_pnl' || s.avg_entry == null || !s.ts) return;
+        var unixSec = Math.floor(new Date(s.ts.length === 10 ? s.ts + 'T00:00:00Z' : s.ts + ':00Z').getTime() / 1000);
+        var bucket = Math.floor(unixSec / 900); // 15m snapshots
+        if (!seenAvgTs[bucket]) { seenAvgTs[bucket] = true; avgEntryData.push({ time: unixSec, value: s.avg_entry }); }
+      });
+      avgEntryData.sort(function(a,b){ return a.time - b.time; });
+      if (avgEntryData.length) {
+        equityChartInst.applyOptions({ leftPriceScale: { visible: true, borderColor: '#1e293b' } });
+        var avgEntrySeries = equityChartInst.addLineSeries({
+          color: 'rgba(245,158,11,0.85)',
+          lineWidth: 2,
+          priceScaleId: 'left',
+          priceFormat: { type: 'price', precision: 0, minMove: 1 },
+          crosshairMarkerVisible: true,
+          lastValueVisible: true,
+          title: 'Avg Entry',
+        });
+        avgEntrySeries.setData(avgEntryData);
+        avgEntrySeriesGlobal = avgEntrySeries;
+      }
+
+      var avgTpData = [];
+      var seenTpTs = {};
+      (data.payoff_snapshots || []).forEach(function(s) {
+        if (s.viewer_type !== 'futures_algo1_pnl' || s.avg_tp == null || !s.ts) return;
+        var unixSec = Math.floor(new Date(s.ts.length === 10 ? s.ts + 'T00:00:00Z' : s.ts + ':00Z').getTime() / 1000);
+        var bucket = Math.floor(unixSec / 900);
+        if (!seenTpTs[bucket]) { seenTpTs[bucket] = true; avgTpData.push({ time: unixSec, value: s.avg_tp }); }
+      });
+      avgTpData.sort(function(a,b){ return a.time - b.time; });
+      if (avgTpData.length) {
+        var avgTpSeries = equityChartInst.addLineSeries({
+          color: 'rgba(168,85,247,0.85)',
+          lineWidth: 2,
+          priceScaleId: 'left',
+          priceFormat: { type: 'price', precision: 0, minMove: 1 },
+          crosshairMarkerVisible: true,
+          lastValueVisible: true,
+          title: 'Avg TP',
+        });
+        avgTpSeries.setData(avgTpData);
+        avgTpSeriesGlobal = avgTpSeries;
+      }
+    }
+  }
+
+  // Trade P&L bars (one per closed trade, keyed by date)
+  var trades = data.trades || [];
+  var closeTrades = trades.filter(function(t) {
+    return (t.action === 'close' && t.pnl_usd != null) || t.action === 'spread_sale';
+  });
+  var pnlData = closeTrades.map(function(t) {
+    return {
+      time: t.date,
+      value: t.pnl_usd,
+      color: t.pnl_usd >= 0 ? 'rgba(52,211,153,0.8)' : 'rgba(248,113,113,0.8)'
+    };
+  });
+
+  if (pnlData.length) {
+    var pnlEl = document.getElementById('pnl-chart');
+    pnlChartInst = LightweightCharts.createChart(pnlEl, {
+      layout: { background: { color: '#0f172a' }, textColor: '#64748b' },
+      grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+      rightPriceScale: { borderColor: '#1e293b' },
+      timeScale: { borderColor: '#1e293b', timeVisible: true },
+      handleScroll: true,
+      handleScale: true,
+    });
+    var pnlSeries = pnlChartInst.addHistogramSeries({
+      priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
+    });
+    pnlSeries.setData(pnlData);
+    pnlChartInst.timeScale().fitContent();
+  }
+
+  // Trades table
+  var card = document.getElementById('trades-card');
+  card.style.display = 'block';
+  document.getElementById('trades-count').textContent = closeTrades.length + ' closed trades';
+
+  var isSpreadTradeLog = isFuturesSpreadStrategy((data && data.strategy) || _activeStrategyId);
+  var displayTrades = isSpreadTradeLog
+    ? trades.filter(function(t) { return t.action === 'sell_short_fill' || t.action === 'spread_sale'; })
+    : trades;
+  var headerRow = document.getElementById('trades-header-row');
+  if (headerRow) {
+    headerRow.innerHTML = isSpreadTradeLog
+      ? '<th>Date</th>' +
+        '<th>Time UTC</th>' +
+        '<th>Action</th>' +
+        '<th>Instrument</th>' +
+        '<th>Spread Size</th>' +
+        '<th>Short sell price</th>' +
+        '<th>Long buy price</th>' +
+        '<th>Fee/Commission</th>' +
+        '<th>Result</th>' +
+        '<th>Equity</th>'
+      : '<th>Date</th>' +
+        '<th>Time UTC</th>' +
+        '<th>Action</th>' +
+        '<th>Instrument</th>' +
+        '<th>Strike</th>' +
+        '<th>Expiry</th>' +
+        '<th>Sell Price</th>' +
+        '<th>Close Price</th>' +
+        '<th>Spot Open</th>' +
+        '<th>Spot Close</th>' +
+        '<th>P&amp;L USD</th>' +
+        '<th>Result</th>' +
+        '<th>Equity</th>';
+  }
+  if (isSpreadTradeLog) {
+    var completedSpreadSales = displayTrades.filter(function(t) { return t.action === 'spread_sale'; }).length;
+    document.getElementById('trades-count').textContent = completedSpreadSales + ' completed spread sales';
+  }
+
+  var tbody = document.getElementById('trades-tbody');
+  tbody.innerHTML = '';
+
+  displayTrades.forEach(function(t) {
+    var tr = document.createElement('tr');
+    var isClose = t.action === 'close';
+
+    // Result tag
+    var tagCls = 'open', tagTxt = 'OPEN';
+    if (isClose) {
+      if (t.close_type === 'expired_worthless') { tagCls = 'worthless'; tagTxt = 'WORTHLESS'; }
+      else if (t.close_type === 'expired_itm') { tagCls = 'itm'; tagTxt = 'ITM'; }
+      else if (t.close_type === 'bought_back') { tagCls = 'buyback'; tagTxt = 'BUY BACK'; }
+      else { tagCls = 'close'; tagTxt = t.close_type || 'CLOSE'; }
+    }
+
+    if (isSpreadTradeLog) {
+      var spreadUsdVal = t.spread_size_usd != null ? t.spread_size_usd : (t.spread_usd != null ? t.spread_usd : t.spread_value);
+      var spreadPctVal = t.spread_size_pct != null ? t.spread_size_pct : t.spread_pct;
+      var spreadParts = [];
+      if (spreadUsdVal != null) spreadParts.push('$' + Number(spreadUsdVal).toFixed(2));
+      if (spreadPctVal != null) spreadParts.push(Number(spreadPctVal).toFixed(4) + '%');
+      var spreadSizeTxt = spreadParts.length ? spreadParts.join(' / ') : '—';
+      var spreadInstrument = escapeHtml((t.short_ticker || 'Short') + ' / ' + (t.long_ticker || 'Long'));
+      var spreadTimeUtc = t.time_utc || (((t.ts || '').substring(11, 16) || '—') + ' UTC');
+      if (t.action === 'sell_short_fill') {
+        tr.innerHTML =
+          '<td>' + (t.ts || '').substring(0, 10) + '</td>' +
+          '<td>' + spreadTimeUtc + '</td>' +
+          '<td><span class="tag open">SHORT FILL</span></td>' +
+          '<td style="font-size:11px">' + spreadInstrument + '</td>' +
+          '<td>' + spreadSizeTxt + '</td>' +
+          '<td>' + (t.sell_price != null ? '$' + Number(t.sell_price).toFixed(2) : '—') + '</td>' +
+          '<td>—</td>' +
+          '<td>—</td>' +
+          '<td><span class="tag open">SellShortLeg &rarr; BuyLongLeg</span></td>' +
+          '<td>—</td>';
+        tbody.appendChild(tr);
+        return;
+      }
+      if (t.action === 'spread_sale') {
+        var feeTxtSpread = t.commission_usd != null ? '$' + Number(t.commission_usd).toFixed(4) : '—';
+        tr.innerHTML =
+          '<td>' + (t.ts || '').substring(0, 10) + '</td>' +
+          '<td>' + spreadTimeUtc + '</td>' +
+          '<td><span class="tag close">SPREAD SOLD</span></td>' +
+          '<td style="font-size:11px">' + spreadInstrument + '</td>' +
+          '<td>' + spreadSizeTxt + '</td>' +
+          '<td>' + (t.short_sell_price != null ? '$' + Number(t.short_sell_price).toFixed(2) : '—') + '</td>' +
+          '<td>' + (t.long_buy_price != null ? '$' + Number(t.long_buy_price).toFixed(2) : '—') + '</td>' +
+          '<td>' + feeTxtSpread + '</td>' +
+          '<td><span class="tag close">Completed</span></td>' +
+          '<td>' + (t.equity != null ? '$' + Number(t.equity).toFixed(2) : '—') + '</td>';
+        tbody.appendChild(tr);
+        return;
+      }
+    }
+
+    // Algo1 special rows
+    if (t.action === 'grid_start' || t.action === 'grid_restart') {
+      var isRestart = t.action === 'grid_restart';
+      tr.innerHTML =
+        '<td colspan="13" style="background:#111827;color:' + (isRestart ? '#fbbf24' : '#60a5fa') + ';font-size:11px;padding:5px 10px">' +
+        (isRestart ? '↺ RESTART' : '▶ START') + ' Run #' + t.run +
+        ' @ $' + (t.start_price || t.trigger_price || '—') +
+        (isRestart ? ' | avg_entry $' + (t.avg_entry || '—') + ' | filled: ' + t.filled_count + ' | kept TPs: ' + t.kept_tp_orders : '') +
+        '</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    var pnlTxt = '—';
+    if (t.action === 'tp_fill' && t.pnl_usd != null) {
+      pnlTxt = '<span style="color:#34d399;font-weight:600">+' + t.pnl_usd.toFixed(2) + '</span>';
+    } else if (isClose && t.pnl_usd != null) {
+      pnlTxt = '<span style="color:' + (t.pnl_usd >= 0 ? '#34d399' : '#f87171') + ';font-weight:600">'
+        + (t.pnl_usd >= 0 ? '+' : '') + t.pnl_usd.toFixed(2) + '</span>';
+    }
+
+    // Algo1 buy_fill / tp_fill rows
+    if (t.action === 'buy_fill' || t.action === 'tp_fill') {
+      var aCls = t.action === 'buy_fill' ? 'open' : 'worthless';
+      var aTxt = t.action === 'buy_fill' ? 'BUY' : 'TP FILL';
+      tr.innerHTML =
+        '<td>' + (t.ts || '').substring(0, 10) + '</td>' +
+        '<td>' + ((t.time_utc || (((t.ts || '').substring(11, 16) || '—') + ' UTC'))) + '</td>' +
+        '<td><span class="tag ' + aCls + '">' + aTxt + '</span></td>' +
+        '<td style="font-size:11px">ETH-PERPETUAL</td>' +
+        '<td>—</td><td>Run #' + t.run + '</td>' +
+        '<td>' + (t.buy_price != null ? '$' + t.buy_price.toFixed(2) : '—') + '</td>' +
+        '<td>' + (t.tp_price != null  ? '$' + t.tp_price.toFixed(2)  : '—') + '</td>' +
+        '<td>' + (t.spot != null ? '$' + t.spot.toFixed(0) : '—') + '</td>' +
+        '<td>' + (t.size_eth != null ? t.size_eth.toFixed(4) + ' ETH' : '—') + '</td>' +
+        '<td>' + pnlTxt + '</td>' +
+        '<td><span class="tag ' + aCls + '">' + aTxt + '</span></td>' +
+        '<td>' + (t.equity != null ? '$' + t.equity.toFixed(2) : '—') + '</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    if (t.action === 'spread_sale') {
+      var spreadPct = t.spread_pct != null ? Number(t.spread_pct).toFixed(4) + '%' : '—';
+      var spreadUsd = t.spread_usd != null ? '$' + Number(t.spread_usd).toFixed(2) : '—';
+      var feeTxt = t.commission_usd != null ? '$' + Number(t.commission_usd).toFixed(4) : '—';
+      var timeUtc = t.time_utc || (((t.ts || '').substring(11, 16) || '—') + ' UTC');
+      tr.innerHTML =
+        '<td>' + (t.ts || '').substring(0, 10) + '</td>' +
+        '<td>' + timeUtc + '</td>' +
+        '<td><span class="tag close">SPREAD SOLD</span></td>' +
+        '<td style="font-size:11px">' + escapeHtml((t.short_ticker || 'Short') + ' / ' + (t.long_ticker || 'Long')) + '</td>' +
+        '<td>' + spreadPct + '</td>' +
+        '<td>' + spreadUsd + '</td>' +
+        '<td>' + (t.short_sell_price != null ? '$' + Number(t.short_sell_price).toFixed(2) : '—') + '</td>' +
+        '<td>' + (t.long_buy_price != null ? '$' + Number(t.long_buy_price).toFixed(2) : '—') + '</td>' +
+        '<td>' + (t.spread_value_trigger != null ? '$' + Number(t.spread_value_trigger).toFixed(2) : '—') + '</td>' +
+        '<td>' + feeTxt + '</td>' +
+        '<td>' + (t.pnl_usd != null ? '<span style="color:#f87171;font-weight:600">' + Number(t.pnl_usd).toFixed(4) + '</span>' : '—') + '</td>' +
+        '<td><span class="tag close">Completed</span></td>' +
+        '<td>' + (t.equity != null ? '$' + Number(t.equity).toFixed(2) : '—') + '</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    tr.innerHTML =
+      '<td>' + t.date + '</td>' +
+      '<td>' + (t.time_utc || (((t.ts || '').substring(11, 16) || '—') + ' UTC')) + '</td>' +
+      '<td><span class="tag ' + (isClose ? 'close' : 'open') + '">' + t.action.toUpperCase() + '</span></td>' +
+      '<td style="font-family:monospace;font-size:11px">' + (t.instrument || '—') + '</td>' +
+      '<td>' + (t.strike || '—') + '</td>' +
+      '<td>' + (t.expiry || '—') + '</td>' +
+      '<td>' + (t.sell_price != null ? t.sell_price.toFixed(6) : '—') + '</td>' +
+      '<td>' + (isClose && t.close_price != null ? t.close_price.toFixed(6) : '—') + '</td>' +
+      '<td>' + (t.underlying_open != null ? '$' + t.underlying_open.toFixed(0) : '—') + '</td>' +
+      '<td>' + (t.underlying_close != null ? '$' + t.underlying_close.toFixed(0) : '—') + '</td>' +
+      '<td>' + pnlTxt + '</td>' +
+      '<td><span class="tag ' + tagCls + '">' + tagTxt + '</span></td>' +
+      '<td>' + (t.equity != null ? '$' + t.equity.toFixed(2) : '—') + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAYOFF PROFILE VIEWER
+// ══════════════════════════════════════════════════════════════════════════════
+
+var _payoffSnaps = [];
+var _tlIdx = 0;
+var _tlTimer = null;
+var _tlSpeed = 800;
+var _fixedScale = null;   // { sMin, sMax, yMin, yMax } — computed once per result
+var _zoom = { x: 1.0, y: 1.0 };  // zoom multipliers (1 = default)
+// Futures Profile viewer state
+var _fpSnaps = [];
+var _fpTrades = [];  // full trades array for order markers
+var _fpIdx = 0;
+var _fpTimer = null;
+var _fpSpeed = 800;
+var _fpFixedScale = null;
+var _fpZoom = { x: 1.0, y: 1.0 };
+var _fpPanX = 0;
+var _fpPanY = 0;
+var _fpDrag = { active: false, mode: 'pan', startX: 0, startY: 0, startPanX: 0, startPanY: 0, startZoomX: 1, startZoomY: 1 };
+var _fpListenersRegistered = false;
+// Price panel vars
+var _fprZoom = 1.0;  // Y-zoom only
+var _fprPanY = 0.0;
+var _fprDrag = { active: false, mode: 'pan-y', startX: 0, startY: 0, startPanY: 0, startPanX: 0, startZoom: 1, startZoomX: 1 };
+var _fprZoomX = 1.0;  // X-zoom (time axis)
+var _fprPanX  = 0.0;  // pan in snap-index units
+var _fprListenersRegistered = false;
+var _fprCache = null;
+var _fprDrawReq = null;
+var _fprInteractionFastMode = false;
+function _fprMaxZoomX() {
+  var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+  // At max zoom, keep roughly 50 one-minute bars across the full chart width.
+  return Math.max(20, n / 50);
+}
+var _fsprZoom = 1.0;  // spread chart Y-zoom
+var _fsprPanY = 0.0;
+var _fsprPanX = 0.0;  // mirrored to shared price/spread horizontal pan
+var _fsprDrag = { active: false, mode: 'pan', startX: 0, startY: 0, startPanX: 0, startPanY: 0, startZoom: 1, startZoomX: 1 };
+var _fsprListenersRegistered = false;
+	var _activeStrategyId = 'futures_spread_algo1';
+	var _futuresSpreadHistory = null;
+	var _futuresSpreadHistoryReq = 0;
+	var _futuresSpreadChartMode = 'line';
+function scheduleFuturePriceDraw(idx) {
+  if (_fprDrawReq != null) cancelAnimationFrame(_fprDrawReq);
+  _fprDrawReq = requestAnimationFrame(function() {
+    _fprDrawReq = null;
+    drawFuturePriceAt(idx != null ? idx : _fpIdx);
+  });
+}
+var _panX = 0;            // pan offset in spot-price units
+var _panY = 0;            // pan offset in P&L USD units
+var _dragStartPanY = 0;
+
+// Black-Scholes (matches position-builder implementation)
+function normCDF(x) {
+  var t = 1 / (1 + 0.2316419 * Math.abs(x));
+  var d = 0.3989422820 * Math.exp(-x * x / 2);
+  var p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return x >= 0 ? 1 - p : p;
+}
+function normPDF(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); }
+
+function bsPut(S, K, T, r, sigma) {
+  // Returns {price, delta, gamma, theta, vega}
+  if (T <= 0) {
+    var intrinsic = Math.max(0, K - S);
+    return { price: intrinsic / S, delta: S < K ? -1 : 0, gamma: 0, theta: 0, vega: 0 };
+  }
+  var sqrtT = Math.sqrt(T);
+  var d1 = (Math.log(S/K) + (r + sigma*sigma/2)*T) / (sigma*sqrtT);
+  var d2 = d1 - sigma*sqrtT;
+  var price = K*Math.exp(-r*T)*normCDF(-d2) - S*normCDF(-d1);
+  var priceEth = price / S; // normalise to ETH (Deribit convention)
+  var delta = normCDF(d1) - 1;
+  var gamma = normPDF(d1) / (S*sigma*sqrtT);
+  var vega  = S*normPDF(d1)*sqrtT/100;
+  var theta = -(S*normPDF(d1)*sigma/(2*sqrtT) - r*K*Math.exp(-r*T)*normCDF(-d2))/365;
+  return { price: priceEth, priceUSD: price, delta: delta, gamma: gamma, theta: theta, vega: vega };
+}
+
+function bsCall(S, K, T, r, sigma) {
+  // Returns {price} — price in ETH (Deribit convention), same as bsPut
+  if (T <= 0) {
+    var intrinsic = Math.max(0, S - K);
+    return { price: intrinsic / Math.max(S, 1) };
+  }
+  var sqrtT = Math.sqrt(T);
+  var d1 = (Math.log(S/K) + (r + sigma*sigma/2)*T) / (sigma*sqrtT);
+  var d2 = d1 - sigma*sqrtT;
+  var price = S*normCDF(d1) - K*Math.exp(-r*T)*normCDF(d2);
+  return { price: price / Math.max(S, 1) };
+}
+
+function initPayoffViewer(snapshots, tradesData) {
+  _payoffSnaps = snapshots || [];
+  _tlIdx = 0;
+  _zoom = { x: 1.0, y: 1.0 };
+  _panX = 0; _panY = 0; _dragStartPanY = 0;
+  _fixedScale = null;
+
+  if (!_payoffSnaps.length) return;
+
+  if (_payoffSnaps[0].viewer_type === 'futures_spread_algo1') {
+    document.getElementById('payoff-section').style.display = 'none';
+    initFuturesProfileViewer(_payoffSnaps, tradesData || []);
+    return;
+  }
+
+  if (_payoffSnaps[0].viewer_type === 'futures_algo1_pnl') {
+    document.getElementById('payoff-section').style.display = 'block';
+    document.getElementById('payoff-section-title').textContent = 'Position P&L Dynamics — Futures Algo 1';
+    document.querySelector('.payoff-legend').innerHTML = '' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Total Mark P&L</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Unrealized P&L</div>' +
+      '<div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Realized P&L</div>';
+    var slider = document.getElementById('tl-slider');
+    slider.max = _payoffSnaps.length - 1;
+    slider.value = 0;
+    drawPayoffAt(0);
+    new ResizeObserver(function() { drawPayoffAt(_tlIdx); }).observe(document.getElementById('payoff-canvas').parentElement);
+    // Also init the futures profile viewer
+    initFuturesProfileViewer(_payoffSnaps, tradesData || []);
+    return;
+  }
+
+  document.getElementById('payoff-section-title').textContent = 'Strategy Profile — Option P&L vs ETH Price';
+
+  // ── Compute global fixed scale across ALL snapshots ──
+  var R = 0.05;
+  var STEPS = 200;
+  var allSpots = _payoffSnaps.map(function(s){ return s.spot; });
+  var globalCenter = allSpots.reduce(function(a,b){return a+b;},0) / allSpots.length;
+  var globalHalf = globalCenter * 0.38;
+  var gSmin = globalCenter - globalHalf;
+  var gSmax = globalCenter + globalHalf;
+  var gYmin = Infinity, gYmax = -Infinity;
+
+  _payoffSnaps.forEach(function(snap) {
+    var lots = snap.lots * snap.lot_size;
+    if (snap.put_strike != null && snap.call_strike != null) {
+      // Strangle: short put + short call
+      var Kp = snap.put_strike, Kc = snap.call_strike;
+      var pSell = (snap.put_sell_price_eth || 0) + (snap.call_sell_price_eth || 0);
+      var T  = Math.max(snap.tte_frac, 1/525600);
+      var ivP = (snap.put_iv  || 80) / 100;
+      var ivC = (snap.call_iv || 80) / 100;
+      for (var i = 0; i <= STEPS; i++) {
+        var s = gSmin + (gSmax - gSmin) * i / STEPS;
+        var putExpiryEth  = Math.max(0, Kp - s) / Math.max(s, 1);
+        var callExpiryEth = Math.max(0, s - Kc)  / Math.max(s, 1);
+        var pnlE = (pSell - putExpiryEth - callExpiryEth) * lots * s;
+        var bsP = bsPut(s, Kp, T, R, ivP);
+        var bsC = bsCall(s, Kc, T, R, ivC);
+        var pnlT = (pSell - bsP.price - bsC.price) * lots * s;
+        if (pnlE < gYmin) gYmin = pnlE;
+        if (pnlE > gYmax) gYmax = pnlE;
+        if (pnlT < gYmin) gYmin = pnlT;
+        if (pnlT > gYmax) gYmax = pnlT;
+      }
+    } else {
+      var K = snap.strike, sellEth = snap.sell_price_eth;
+      var T = Math.max(snap.tte_frac, 1/525600);
+      var iv = snap.iv / 100;
+      for (var i = 0; i <= STEPS; i++) {
+        var s = gSmin + (gSmax - gSmin) * i / STEPS;
+        var expiryEth = Math.max(0, K - s) / Math.max(s, 1);
+        var pnlE = (sellEth - expiryEth) * lots * s;
+        var bs = bsPut(s, K, T, R, iv);
+        var pnlT = (sellEth - bs.price) * lots * s;
+        if (pnlE < gYmin) gYmin = pnlE;
+        if (pnlE > gYmax) gYmax = pnlE;
+        if (pnlT < gYmin) gYmin = pnlT;
+        if (pnlT > gYmax) gYmax = pnlT;
+      }
+    }
+  });
+
+  if (!isFinite(gYmin) || !isFinite(gYmax)) { gYmin = -50; gYmax = 50; }
+  var yPad = (gYmax - gYmin) * 0.12 || 5;
+  if (gYmin > 0) gYmin = -yPad; else gYmin -= yPad;
+  if (gYmax < 0) gYmax = yPad;  else gYmax += yPad;
+  if (gYmax - gYmin < 0.01) { gYmin -= 10; gYmax += 10; }
+
+  _fixedScale = { sMin: gSmin, sMax: gSmax, yMin: gYmin, yMax: gYmax };
+
+  var slider = document.getElementById('tl-slider');
+  slider.max = _payoffSnaps.length - 1;
+  slider.value = 0;
+
+  document.getElementById('payoff-section').style.display = 'block';
+  drawPayoffAt(0);
+
+  // ── Mouse interaction ──
+  var canvas = document.getElementById('payoff-canvas');
+
+  // Zoom via wheel
+  canvas.onwheel = function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.89 : 1.12;
+    var rect = canvas.getBoundingClientRect();
+    var fs = _fixedScale;
+
+    // Zoom X around mouse X position
+    var mouseXfrac = (e.clientX - rect.left) / rect.width;
+    var padL = 70 / rect.width, padR = 20 / rect.width;
+    var chartFracX = Math.max(0, Math.min(1, (mouseXfrac - padL) / (1 - padL - padR)));
+    var sCtr  = (fs.sMin + fs.sMax) / 2 + _panX;
+    var sHalf = (fs.sMax - fs.sMin) / 2 / _zoom.x;
+    var sAtMouse = sCtr - sHalf + chartFracX * sHalf * 2;
+    _zoom.x = Math.max(0.2, Math.min(10, _zoom.x * delta));
+    var newSHalf = (fs.sMax - fs.sMin) / 2 / _zoom.x;
+    _panX = sAtMouse - (fs.sMin + fs.sMax) / 2 - newSHalf * (2 * chartFracX - 1);
+
+    // Zoom Y around mouse Y position
+    var mouseYfrac = (e.clientY - rect.top) / rect.height;
+    var padT = 20 / rect.height, padB = 40 / rect.height;
+    var chartFracY = Math.max(0, Math.min(1, (mouseYfrac - padT) / (1 - padT - padB)));
+    var yCtr  = (fs.yMin + fs.yMax) / 2 - _panY;
+    var yHalf = (fs.yMax - fs.yMin) / 2 / _zoom.y;
+    var yAtMouse = yCtr + yHalf - chartFracY * yHalf * 2;  // Y axis inverted
+    _zoom.y = Math.max(0.25, Math.min(8, _zoom.y * delta));
+    var newYHalf = (fs.yMax - fs.yMin) / 2 / _zoom.y;
+    _panY = (fs.yMin + fs.yMax) / 2 - (yAtMouse + newYHalf * (2 * chartFracY - 1));
+
+    drawPayoffAt(_tlIdx);
+  };
+
+  // Drag: pan on chart area, zoom on axes
+  // _drag.mode: 'pan' | 'zoom-x' | 'zoom-y'
+  var _drag = { active: false, mode: 'pan', startX: 0, startY: 0, startPanX: 0, startPanY: 0, startZoomX: 1, startZoomY: 1 };
+
+  canvas.onmousedown = function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var lx = e.clientX - rect.left;
+    var ly = e.clientY - rect.top;
+    var PAD_L = 70, PAD_B = 40, PAD_T = 20, PAD_R = 20;
+    var onXAxis = ly > rect.height - PAD_B;          // below chart = X axis strip
+    var onYAxis = lx < PAD_L;                         // left of chart = Y axis strip
+    _drag.active  = true;
+    _drag.startX  = e.clientX;
+    _drag.startY  = e.clientY;
+    _drag.startPanX  = _panX;
+    _drag.startPanY  = _panY;
+    _drag.startZoomX = _zoom.x;
+    _drag.startZoomY = _zoom.y;
+    if (onXAxis)      { _drag.mode = 'zoom-x'; canvas.style.cursor = 'ew-resize'; }
+    else if (onYAxis) { _drag.mode = 'zoom-y'; canvas.style.cursor = 'ns-resize'; }
+    else              { _drag.mode = 'pan';    canvas.style.cursor = 'grabbing'; }
+    e.preventDefault();
+  };
+
+  window.addEventListener('mousemove', function(e) {
+    if (!_drag.active) return;
+    var fs = _fixedScale;
+    if (!fs) return;
+    var rect = document.getElementById('payoff-canvas').getBoundingClientRect();
+    var chartW = rect.width  - 70 - 20;
+    var chartH = rect.height - 20 - 40;
+    var dx = e.clientX - _drag.startX;
+    var dy = e.clientY - _drag.startY;
+
+    if (_drag.mode === 'pan') {
+      var sRange = (fs.sMax - fs.sMin) / _drag.startZoomX;
+      var yRange = (fs.yMax - fs.yMin) / _drag.startZoomY;
+      _panX = _drag.startPanX - (dx / chartW) * sRange;
+      _panY = _drag.startPanY - (dy / chartH) * yRange;  // inverted: drag up → see higher P&L
+
+    } else if (_drag.mode === 'zoom-x') {
+      // drag right → compress (zoom in), drag left → expand (zoom out)
+      var factor = Math.pow(1.005, -dx);
+      _zoom.x = Math.max(0.2, Math.min(10, _drag.startZoomX * factor));
+      // keep center stable
+      _panX = _drag.startPanX;
+
+    } else if (_drag.mode === 'zoom-y') {
+      // drag up → compress (zoom in), drag down → expand (zoom out)
+      var factor = Math.pow(1.005, -dy);
+      _zoom.y = Math.max(0.25, Math.min(8, _drag.startZoomY * factor));
+      _panY = _drag.startPanY;
+    }
+    drawPayoffAt(_tlIdx);
+  });
+
+  window.addEventListener('mouseup', function() {
+    if (_drag.active) {
+      _drag.active = false;
+      document.getElementById('payoff-canvas').style.cursor = _drag.mode === 'pan' ? 'grab' : 'default';
+    }
+  });
+
+  // Crosshair + tooltip on hover
+  canvas.onmousemove = function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var lx = e.clientX - rect.left, ly = e.clientY - rect.top;
+
+    // Cursor style
+    if (!_drag.active) {
+      if (ly > rect.height - 40)   canvas.style.cursor = 'ew-resize';
+      else if (lx < 70)            canvas.style.cursor = 'ns-resize';
+      else                         canvas.style.cursor = 'grab';
+    }
+    if (_drag.active) return;
+
+    // Only show crosshair inside chart area
+    var PAD_L = 70, PAD_T = 20, PAD_R = 20, PAD_B = 40;
+    if (lx < PAD_L || lx > rect.width - PAD_R || ly < PAD_T || ly > rect.height - PAD_B) {
+      drawPayoffAt(_tlIdx);
+      return;
+    }
+
+    // Redraw base chart then overlay crosshair
+    drawPayoffAt(_tlIdx);
+
+    var snap = _payoffSnaps[_tlIdx];
+    var fs = _fixedScale;
+    var W = rect.width, H = rect.height;
+    var cw = W - PAD_L - PAD_R, ch = H - PAD_T - PAD_B;
+    var sCtr  = (fs.sMin + fs.sMax) / 2 + _panX;
+    var sHalf = (fs.sMax - fs.sMin) / 2 / _zoom.x;
+    var sMin  = sCtr - sHalf, sMax = sCtr + sHalf;
+    var yCtr  = (fs.yMin + fs.yMax) / 2 - _panY;
+    var yHalf = (fs.yMax - fs.yMin) / 2 / _zoom.y;
+    var yMin  = yCtr - yHalf, yMax = yCtr + yHalf;
+
+    // Mouse → data coords
+    var mouseS = sMin + (lx - PAD_L) / cw * (sMax - sMin);
+    var mouseP = yMax - (ly - PAD_T) / ch * (yMax - yMin);
+
+    // Compute P&L at mouseS for both curves
+    var isStrangleCH = snap.put_strike != null && snap.call_strike != null;
+    var lots = snap.lots * snap.lot_size, r = 0.05;
+    var T = Math.max(snap.tte_frac, 1/525600);
+    var tteMins = snap.tte_mins;
+    var tteStr = tteMins >= 60 ? (tteMins/60).toFixed(1)+'h' : tteMins.toFixed(0)+'m';
+    var pnlExpiry, pnlToday;
+
+    if (isStrangleCH) {
+      var Kp = snap.put_strike, Kc = snap.call_strike;
+      var pSell = (snap.put_sell_price_eth || 0) + (snap.call_sell_price_eth || 0);
+      var ivP = (snap.put_iv  || 80) / 100;
+      var ivC = (snap.call_iv || 80) / 100;
+      var putExpiryEth  = Math.max(0, Kp - mouseS) / Math.max(mouseS, 1);
+      var callExpiryEth = Math.max(0, mouseS - Kc)  / Math.max(mouseS, 1);
+      pnlExpiry = (pSell - putExpiryEth - callExpiryEth) * lots * mouseS;
+      var bsP = bsPut(mouseS, Kp, T, r, ivP);
+      var bsC = bsCall(mouseS, Kc, T, r, ivC);
+      pnlToday  = (pSell - bsP.price - bsC.price) * lots * mouseS;
+    } else {
+      var K = snap.strike, sellEth = snap.sell_price_eth, iv = snap.iv/100;
+      var expiryEth = Math.max(0, K - mouseS) / Math.max(mouseS, 1);
+      pnlExpiry = (sellEth - expiryEth) * lots * mouseS;
+      var bs = bsPut(mouseS, K, T, r, iv);
+      pnlToday  = (sellEth - bs.price) * lots * mouseS;
+    }
+
+    var ctx = canvas.getContext('2d');
+    ctx.scale && void 0;
+    var dpr = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Crosshair lines
+    ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(lx, PAD_T); ctx.lineTo(lx, PAD_T + ch); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD_L, ly); ctx.lineTo(PAD_L + cw, ly); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dots on curves
+    var xDot = PAD_L + (mouseS - sMin) / (sMax - sMin) * cw;
+    var yDotE = PAD_T + (1 - (pnlExpiry - yMin)/(yMax - yMin)) * ch;
+    var yDotT = PAD_T + (1 - (pnlToday  - yMin)/(yMax - yMin)) * ch;
+    function dot(cx, cy, col) {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#0b1220'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    dot(xDot, yDotE, '#10b981');
+    dot(xDot, yDotT, '#3b82f6');
+
+    // Tooltip box
+    var ivLine = isStrangleCH
+      ? { label: 'IV P/C', val: (snap.put_iv||'—') + '/' + (snap.call_iv||'—') + '%', col: '#94a3b8' }
+      : { label: 'IV',     val: snap.iv != null ? snap.iv.toFixed(1) + '%' : '—',      col: '#94a3b8' };
+    var isNearCurrentSpot = snap.spot != null && Math.abs(mouseS - (snap.spot || mouseS)) <= 5;
+    var markNow = snap.total_mark_pnl_usd != null ? snap.total_mark_pnl_usd : (snap.cumulative_pnl != null ? snap.cumulative_pnl : null);
+    var bsAtSpot = snap.bs_pnl_at_spot_usd != null ? snap.bs_pnl_at_spot_usd : pnlToday;
+    var expiryAtSpot = snap.expiry_payoff_at_spot_usd != null ? snap.expiry_payoff_at_spot_usd : pnlExpiry;
+    var payoffVal = isNearCurrentSpot ? expiryAtSpot : pnlExpiry;
+    var markVal   = isNearCurrentSpot ? markNow      : null;
+    var bsVal     = isNearCurrentSpot ? bsAtSpot     : pnlToday;
+    var lines = [
+      { label: 'Spot',             val: '$' + Math.round(mouseS).toLocaleString(),     col: '#f1f5f9' },
+      { label: 'TTE',              val: tteStr,                                         col: '#fbbf24' },
+      { label: 'Payoff at Expiry', val: (payoffVal >= 0 ? '+' : '') + payoffVal.toFixed(2) + ' $', col: payoffVal >= 0 ? '#10b981' : '#f87171' },
+      { label: 'P&L Today (BS)',   val: (bsVal >= 0 ? '+' : '') + bsVal.toFixed(2) + ' $',         col: bsVal >= 0 ? '#10b981' : '#f87171' },
+    ];
+    if (isNearCurrentSpot && markVal != null) {
+      lines.splice(3, 0, {
+        label: 'Mark P&L (MTM)',
+        val: (markVal >= 0 ? '+' : '') + markVal.toFixed(2) + ' $',
+        col: markVal >= 0 ? '#10b981' : '#f87171'
+      });
+    }
+    lines.push(ivLine);
+    var lineH = 18, tPad = 10, tW = 170, tH = lines.length * lineH + tPad * 2;
+    var tx = lx + 14, ty = ly - tH / 2;
+    if (tx + tW > W - PAD_R - 4) tx = lx - tW - 10;
+    ty = Math.max(PAD_T + 4, Math.min(ty, PAD_T + ch - tH - 4));
+
+    ctx.fillStyle = 'rgba(15,23,42,0.92)';
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(tx, ty, tW, tH, 6) : ctx.rect(tx, ty, tW, tH);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '11px "Segoe UI", system-ui, sans-serif';
+    lines.forEach(function(ln, i) {
+      var y = ty + tPad + i * lineH + 11;
+      ctx.fillStyle = '#64748b'; ctx.textAlign = 'left';  ctx.fillText(ln.label, tx + tPad, y);
+      ctx.fillStyle = ln.col;    ctx.textAlign = 'right'; ctx.fillText(ln.val, tx + tW - tPad, y);
+    });
+
+    ctx.restore();
+  };
+  canvas.onmouseleave = function() { if (!_drag.active) { canvas.style.cursor = 'default'; drawPayoffAt(_tlIdx); } };
+
+  canvas.style.cursor = 'grab';
+
+  // Resize observer
+  new ResizeObserver(function() { drawPayoffAt(_tlIdx); }).observe(canvas.parentElement);
+}
+
+function drawPayoffAt(idx) {
+  if (!_payoffSnaps.length) return;
+
+  if (_payoffSnaps[0].viewer_type === 'futures_algo1_pnl') {
+    idx = Math.max(0, Math.min(idx, _payoffSnaps.length - 1));
+    _tlIdx = idx;
+    var snap = _payoffSnaps[idx];
+
+    if (eqSeriesGlobal && eqDataGlobal.length && snap && snap.ts) {
+      var snapUnix = Math.floor(new Date(snap.ts.length === 10 ? snap.ts + 'T00:00:00Z' : snap.ts + ':00Z').getTime() / 1000);
+      var closest = eqDataGlobal.reduce(function(best, p) {
+        return Math.abs(p.time - snapUnix) < Math.abs(best.time - snapUnix) ? p : best;
+      }, eqDataGlobal[0]);
+      eqSeriesGlobal.setMarkers([{ time: closest.time, position: 'inBar', color: '#fbbf24', shape: 'circle', size: 1 }]);
+      if (spotSeriesGlobal) {
+        spotSeriesGlobal.setMarkers([{ time: closest.time, position: 'inBar', color: '#fbbf24', shape: 'circle', size: 1 }]);
+      }
+      if (avgEntrySeriesGlobal) {
+        avgEntrySeriesGlobal.setMarkers([{ time: closest.time, position: 'inBar', color: '#f59e0b', shape: 'circle', size: 1 }]);
+      }
+      if (avgTpSeriesGlobal) {
+        avgTpSeriesGlobal.setMarkers([{ time: closest.time, position: 'inBar', color: '#a855f7', shape: 'circle', size: 1 }]);
+      }
+    }
+
+    var canvas = document.getElementById('payoff-canvas');
+    var wrap = canvas.parentElement;
+    var W = wrap.clientWidth;
+    var H = wrap.clientHeight || 300;
+    canvas.width = W * window.devicePixelRatio;
+    canvas.height = H * window.devicePixelRatio;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    var pad = { top: 20, right: 20, bottom: 40, left: 60 };
+    var cw = W - pad.left - pad.right;
+    var ch = H - pad.top - pad.bottom;
+
+    ctx.fillStyle = '#0b1220';
+    ctx.fillRect(0, 0, W, H);
+
+    var snaps = _payoffSnaps;
+    var vals = [];
+    snaps.forEach(function(s) {
+      vals.push(s.total_mark_pnl_usd || 0);
+      vals.push(s.realized_pnl_usd || 0);
+      vals.push(s.unrealized_pnl_usd || 0);
+    });
+    var yMin = 0, yMax = 0;
+    for (var vi = 0; vi < vals.length; vi++) {
+      var vv = vals[vi];
+      if (vv < yMin) yMin = vv;
+      if (vv > yMax) yMax = vv;
+    }
+    var yPad = (yMax - yMin) * 0.15 || 5;
+    yMin -= yPad; yMax += yPad;
+    if (yMin === yMax) { yMin -= 10; yMax += 10; }
+
+    function xPx(i) { return pad.left + (i / Math.max(1, snaps.length - 1)) * cw; }
+    function yPx(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+
+    // grid
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= 5; i++) {
+      var y = pad.top + (ch * i / 5);
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+      var val = yMax - (yMax - yMin) * i / 5;
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px Segoe UI';
+      ctx.textAlign = 'right';
+      ctx.fillText((val >= 0 ? '+' : '') + val.toFixed(2), pad.left - 6, y + 4);
+    }
+    var zeroY = yPx(0);
+    ctx.strokeStyle = '#334155';
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(pad.left + cw, zeroY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    function drawSeries(key, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      snaps.forEach(function(s, i) {
+        var x = xPx(i), y = yPx(s[key] || 0);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+    drawSeries('total_mark_pnl_usd', '#22c55e');
+    drawSeries('unrealized_pnl_usd', '#3b82f6');
+    drawSeries('realized_pnl_usd', '#f59e0b');
+
+    var xNow = xPx(idx);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xNow, pad.top); ctx.lineTo(xNow, pad.top + ch); ctx.stroke();
+
+    function dot(y, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(xNow, y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    dot(yPx(snap.total_mark_pnl_usd || 0), '#22c55e');
+    dot(yPx(snap.unrealized_pnl_usd || 0), '#3b82f6');
+    dot(yPx(snap.realized_pnl_usd || 0), '#f59e0b');
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('Time', pad.left + cw / 2, H - 8);
+    ctx.save();
+    ctx.translate(14, pad.top + ch / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('P&L (USD)', 0, 0);
+    ctx.restore();
+
+    var _curSnapTime = snap.ts ? new Date(snap.ts + ':00Z').getTime() : 0;
+    var _tradeCount = _fpTrades.filter(function(t){ return t.action === 'tp_fill' && t.ts && new Date(t.ts+':00Z').getTime() <= _curSnapTime; }).length;
+    document.getElementById('pm-instrument').textContent = 'ETH-PERPETUAL · Trades: ' + _tradeCount;
+    document.getElementById('pm-iv').textContent = snap.avg_entry != null ? ('$' + snap.avg_entry.toFixed(2)) : '—';
+    document.getElementById('pm-sell').textContent = snap.avg_tp != null ? ('$' + snap.avg_tp.toFixed(2)) : '—';
+    var pnlEl = document.getElementById('pm-pnl');
+    var pnlNow = snap.total_mark_pnl_usd || 0;
+    pnlEl.textContent = (pnlNow >= 0 ? '+' : '') + pnlNow.toFixed(2) + ' USD';
+    pnlEl.style.color = pnlNow >= 0 ? '#34d399' : '#f87171';
+
+    document.getElementById('tl-slider').value = idx;
+    document.getElementById('tl-date').textContent = snap.ts || '';
+    document.getElementById('tl-stepinfo').textContent = (idx + 1) + ' / ' + _payoffSnaps.length;
+    return;
+  }
+
+  if (!_fixedScale) return;
+  idx = Math.max(0, Math.min(idx, _payoffSnaps.length - 1));
+  _tlIdx = idx;
+
+  var snap = _payoffSnaps[idx];
+
+  // ── Move equity chart marker ──
+  if (eqSeriesGlobal && eqDataGlobal.length && snap && snap.ts) {
+    var snapUnix = Math.floor(new Date(snap.ts.length === 10 ? snap.ts + 'T00:00:00Z' : snap.ts + ':00Z').getTime() / 1000);
+    var closest = eqDataGlobal.reduce(function(best, p) {
+      return Math.abs(p.time - snapUnix) < Math.abs(best.time - snapUnix) ? p : best;
+    }, eqDataGlobal[0]);
+    eqSeriesGlobal.setMarkers([{
+      time: closest.time,
+      position: 'inBar',
+      color: '#fbbf24',
+      shape: 'circle',
+      size: 1,
+    }]);
+    if (spotSeriesGlobal) {
+      spotSeriesGlobal.setMarkers([{
+        time: closest.time,
+        position: 'inBar',
+        color: '#fbbf24',
+        shape: 'circle',
+        size: 1,
+      }]);
+    }
+    if (avgEntrySeriesGlobal) {
+      avgEntrySeriesGlobal.setMarkers([{
+        time: closest.time,
+        position: 'inBar',
+        color: '#f59e0b',
+        shape: 'circle',
+        size: 1,
+      }]);
+    }
+    if (avgTpSeriesGlobal) {
+      avgTpSeriesGlobal.setMarkers([{
+        time: closest.time,
+        position: 'inBar',
+        color: '#a855f7',
+        shape: 'circle',
+        size: 1,
+      }]);
+    }
+  }
+  var canvas = document.getElementById('payoff-canvas');
+  var wrap = canvas.parentElement;
+  var W = wrap.clientWidth;
+  var H = wrap.clientHeight || 300;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  // ── Layout ──
+  var pad = { top: 20, right: 20, bottom: 40, left: 70 };
+  var cw = W - pad.left - pad.right;
+  var ch = H - pad.top - pad.bottom;
+
+  var S0   = snap.spot;
+  var lots = snap.lots * snap.lot_size;
+  var r    = 0.05;
+  var STEPS = 200;
+  var isStrangle = snap.put_strike != null && snap.call_strike != null;
+
+  // ── Fixed scale + zoom ──
+  var fs = _fixedScale;
+  var sCtr  = (fs.sMin + fs.sMax) / 2 + _panX;
+  var sHalf = (fs.sMax - fs.sMin) / 2 / _zoom.x;
+  var sMin  = sCtr - sHalf;
+  var sMax  = sCtr + sHalf;
+
+  var yCtr  = (fs.yMin + fs.yMax) / 2 - _panY;
+  var yHalf = (fs.yMax - fs.yMin) / 2 / _zoom.y;
+  var yMin  = yCtr - yHalf;
+  var yMax  = yCtr + yHalf;
+
+  // ── Compute curves ──
+  var pointsExpiry = [];
+  var pointsToday = [];
+  if (isStrangle) {
+    var Kp = snap.put_strike, Kc = snap.call_strike;
+    var pSell = (snap.put_sell_price_eth || 0) + (snap.call_sell_price_eth || 0);
+    var T  = Math.max(snap.tte_frac, 1/525600);
+    var ivP = (snap.put_iv  || 80) / 100;
+    var ivC = (snap.call_iv || 80) / 100;
+    for (var i = 0; i <= STEPS; i++) {
+      var s = sMin + (sMax - sMin) * i / STEPS;
+      var putExpiryEth  = Math.max(0, Kp - s) / Math.max(s, 1);
+      var callExpiryEth = Math.max(0, s  - Kc) / Math.max(s, 1);
+      var pnlExpiryUSD  = (pSell - putExpiryEth - callExpiryEth) * lots * s;
+      var bsP = bsPut(s, Kp, T, r, ivP);
+      var bsC = bsCall(s, Kc, T, r, ivC);
+      var pnlTodayUSD   = (pSell - bsP.price - bsC.price) * lots * s;
+      pointsExpiry.push({ s: s, pnl: pnlExpiryUSD });
+      pointsToday.push({ s: s, pnl: pnlTodayUSD });
+    }
+  } else {
+    var K = snap.strike, sellPriceEth = snap.sell_price_eth;
+    var T = Math.max(snap.tte_frac, 1/525600);
+    var iv = snap.iv / 100;
+    for (var i = 0; i <= STEPS; i++) {
+      var s = sMin + (sMax - sMin) * i / STEPS;
+      var expiryEth = Math.max(0, K - s) / Math.max(s, 1);
+      var pnlExpiryUSD = (sellPriceEth - expiryEth) * lots * s;
+      var bs = bsPut(s, K, T, r, iv);
+      var pnlTodayUSD = (sellPriceEth - bs.price) * lots * s;
+      pointsExpiry.push({ s: s, pnl: pnlExpiryUSD });
+      pointsToday.push({ s: s, pnl: pnlTodayUSD });
+    }
+  }
+
+  function xPx(s) { return pad.left + (s - sMin) / (sMax - sMin) * cw; }
+  function yPx(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+
+  // ── Nice-ticks helper ──
+  function niceTicks(vMin, vMax, targetCount) {
+    var range = vMax - vMin;
+    if (range === 0) return [vMin];
+    var rawStep = range / targetCount;
+    var mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    var norm = rawStep / mag;
+    var step;
+    if      (norm < 1.5) step = 1;
+    else if (norm < 3)   step = 2.5;
+    else if (norm < 7)   step = 5;
+    else                 step = 10;
+    step *= mag;
+    var first = Math.ceil(vMin / step) * step;
+    var ticks = [];
+    for (var v = first; v <= vMax + step * 0.001; v += step) {
+      var rounded = Math.round(v / step) * step;
+      if (rounded >= vMin - step * 0.001 && rounded <= vMax + step * 0.001) ticks.push(rounded);
+    }
+    return ticks;
+  }
+
+  // ── Background ──
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, W, H);
+
+  var FONT = '11px "Segoe UI", system-ui, sans-serif';
+  var FONT_B = 'bold 11px "Segoe UI", system-ui, sans-serif';
+
+  // ── Y grid + labels ──
+  var yTicks = niceTicks(yMin, yMax, 6);
+  yTicks.forEach(function(yv) {
+    var yp = yPx(yv);
+    if (yp < pad.top - 2 || yp > pad.top + ch + 2) return;
+    // grid line
+    ctx.strokeStyle = yv === 0 ? '#334155' : '#1e293b';
+    ctx.lineWidth = yv === 0 ? 1 : 1;
+    ctx.setLineDash(yv === 0 ? [4,4] : []);
+    ctx.beginPath(); ctx.moveTo(pad.left, yp); ctx.lineTo(pad.left + cw, yp); ctx.stroke();
+    ctx.setLineDash([]);
+    // label
+    ctx.font = yv === 0 ? FONT_B : FONT;
+    ctx.fillStyle = yv === 0 ? '#94a3b8' : '#64748b';
+    ctx.textAlign = 'right';
+    var dec = Math.abs(yv) < 10 ? 2 : Math.abs(yv) < 100 ? 1 : 0;
+    var lbl = (yv > 0 ? '+' : '') + yv.toFixed(dec);
+    ctx.fillText(lbl, pad.left - 7, yp + 4);
+  });
+
+  // ── X grid + labels ──
+  var xTicks = niceTicks(sMin, sMax, 7);
+  xTicks.forEach(function(sv) {
+    var xp = xPx(sv);
+    if (xp < pad.left - 2 || xp > pad.left + cw + 2) return;
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xp, pad.top); ctx.lineTo(xp, pad.top + ch); ctx.stroke();
+    // tick mark
+    ctx.strokeStyle = '#334155';
+    ctx.beginPath(); ctx.moveTo(xp, pad.top + ch); ctx.lineTo(xp, pad.top + ch + 5); ctx.stroke();
+    // label
+    ctx.font = FONT;
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center';
+    ctx.fillText('$' + Math.round(sv).toLocaleString(), xp, H - pad.bottom + 16);
+  });
+
+  // (zero line drawn in Y-ticks loop above)
+
+  // ── Strike line(s) ──
+  var strikeLines = isStrangle
+    ? [{ k: snap.put_strike,  col: '#f87171', rgba: 'rgba(248,113,113,0.4)', label: 'Kp=' },
+       { k: snap.call_strike, col: '#60a5fa', rgba: 'rgba(96,165,250,0.4)',  label: 'Kc=' }]
+    : [{ k: K, col: '#f59e0b', rgba: 'rgba(245,158,11,0.4)', label: 'K=' }];
+  strikeLines.forEach(function(sl, si) {
+    var xK = xPx(sl.k);
+    if (xK < pad.left || xK > pad.left + cw) return;
+    ctx.strokeStyle = sl.rgba; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.moveTo(xK, pad.top); ctx.lineTo(xK, pad.top + ch); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = sl.col; ctx.font = FONT_B; ctx.textAlign = 'center';
+    ctx.fillText(sl.label + Math.round(sl.k).toLocaleString(), xK, pad.top + 14 + si * 14);
+  });
+
+  // ── Spot line ──
+  var xS = xPx(S0);
+  if (xS >= pad.left && xS <= pad.left + cw) {
+    ctx.strokeStyle = 'rgba(251,191,36,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xS, pad.top); ctx.lineTo(xS, pad.top + ch); ctx.stroke();
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = FONT_B;
+    ctx.textAlign = 'center';
+    ctx.fillText('S=' + Math.round(S0).toLocaleString(), xS, pad.top + 14);
+  }
+
+  // ── Fill under expiry curve (above zero = green, below zero = red) ──
+  var y0 = yPx(0);
+  ctx.globalAlpha = 0.15;
+  pointsExpiry.forEach(function(p, i) {
+    if (i === 0) return;
+    var prev = pointsExpiry[i-1];
+    var x1 = xPx(prev.s), x2 = xPx(p.s);
+    var y1e = yPx(prev.pnl), y2e = yPx(p.pnl);
+    var avgPnl = (prev.pnl + p.pnl) / 2;
+    ctx.fillStyle = avgPnl >= 0 ? '#00e676' : '#ff1744';
+    ctx.beginPath();
+    ctx.moveTo(x1, y0); ctx.lineTo(x1, y1e); ctx.lineTo(x2, y2e); ctx.lineTo(x2, y0);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // ── Expiry curve (solid bright green) ──
+  ctx.strokeStyle = '#00e676';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  pointsExpiry.forEach(function(p, i) {
+    var px = xPx(p.s), py = yPx(p.pnl);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // ── Today curve (dashed blue) ──
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  pointsToday.forEach(function(p, i) {
+    var px = xPx(p.s), py = yPx(p.pnl);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── Axis labels ──
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = FONT_B;
+  ctx.textAlign = 'center';
+  ctx.save();
+  ctx.translate(12, pad.top + ch / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('P&L (USD)', 0, 0);
+  ctx.restore();
+
+  // ── Update meta ──
+  if (isStrangle) {
+    document.getElementById('pm-instrument').textContent = snap.put_instrument + ' / ' + snap.call_instrument;
+    document.getElementById('pm-iv').textContent = 'P:' + (snap.put_iv || '—') + ' C:' + (snap.call_iv || '—');
+    var combinedSell = ((snap.put_sell_price_eth || 0) + (snap.call_sell_price_eth || 0));
+    document.getElementById('pm-sell').textContent = combinedSell.toFixed(5);
+  } else {
+    document.getElementById('pm-instrument').textContent = snap.instrument || '—';
+    document.getElementById('pm-iv').textContent = snap.iv != null ? snap.iv.toFixed(1) : '—';
+    document.getElementById('pm-sell').textContent = snap.sell_price_eth != null ? snap.sell_price_eth.toFixed(5) : '—';
+  }
+  var pnlEl = document.getElementById('pm-pnl');
+  var pnlNow = snap.total_mark_pnl_usd != null ? snap.total_mark_pnl_usd : (snap.cumulative_pnl != null ? snap.cumulative_pnl : 0);
+  pnlEl.textContent = (pnlNow >= 0 ? '+' : '') + pnlNow.toFixed(2) + ' USD';
+  pnlEl.style.color = pnlNow >= 0 ? '#34d399' : '#f87171';
+
+  // Update slider & timestamp
+  document.getElementById('tl-slider').value = idx;
+  document.getElementById('tl-date').textContent = snap.ts || snap.date || '';
+  var tteDisp = snap.tte_mins != null
+    ? (snap.tte_mins >= 60 ? (snap.tte_mins/60).toFixed(1) + 'h' : snap.tte_mins.toFixed(0) + 'm')
+    : (snap.tte_days != null ? snap.tte_days + 'd' : '—');
+  document.getElementById('pm-tte').textContent = tteDisp;
+  document.getElementById('tl-stepinfo').textContent = (idx + 1) + ' / ' + _payoffSnaps.length;
+}
+
+function tlStep(delta) {
+  var next = Math.max(0, Math.min(_payoffSnaps.length - 1, _tlIdx + delta));
+  drawPayoffAt(next);
+}
+
+function tlSeek(idx) {
+  if (_tlTimer) { clearInterval(_tlTimer); _tlTimer = null; document.getElementById('tl-play').textContent = '▶'; document.getElementById('tl-play').classList.remove('active'); }
+  drawPayoffAt(idx);
+}
+
+function tlTogglePlay() {
+  if (_tlTimer) {
+    clearInterval(_tlTimer); _tlTimer = null;
+    document.getElementById('tl-play').textContent = '▶';
+    document.getElementById('tl-play').classList.remove('active');
+  } else {
+    document.getElementById('tl-play').textContent = '⏸';
+    document.getElementById('tl-play').classList.add('active');
+    _tlTimer = setInterval(function() {
+      var next = _tlIdx + 1;
+      if (next >= _payoffSnaps.length) {
+        clearInterval(_tlTimer); _tlTimer = null;
+        document.getElementById('tl-play').textContent = '▶';
+        document.getElementById('tl-play').classList.remove('active');
+        return;
+      }
+      drawPayoffAt(next);
+    }, _tlSpeed);
+  }
+}
+
+function tlSetSpeed(ms) { _tlSpeed = ms; if (_tlTimer) { clearInterval(_tlTimer); _tlTimer = null; tlTogglePlay(); } }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Futures Profile Viewer — P&L vs ETH Price (linear, slope = total_size_eth)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function _fpPnlAtPrice(snap, ethPrice) {
+  var realized = snap.realized_pnl_usd || 0;
+  if (snap.viewer_type === 'futures_spread_algo1') {
+    var spread = snap.spread;
+    if (spread == null && snap.short_price != null && snap.long_price != null) {
+      spread = snap.short_price - snap.long_price;
+    }
+    spread = spread || 0;
+    var shortQty = snap.spread_short_qty || 0;
+    var longQty = snap.spread_long_qty || 0;
+    var shortEntryValue = snap.spread_short_entry_value || 0;
+    var longEntryValue = snap.spread_long_entry_value || 0;
+    var projectedShortPrice = ethPrice + spread;
+    var unrealized = shortEntryValue - projectedShortPrice * shortQty + ethPrice * longQty - longEntryValue;
+    return { realized: realized, unrealized: unrealized, total: realized + unrealized };
+  }
+  var sizeEth = snap.total_size_eth || 0;
+  var avgEntry = snap.avg_entry || 0;
+  var unreal = (ethPrice - avgEntry) * sizeEth;
+  return { realized: realized, unrealized: unreal, total: realized + unreal };
+}
+
+function initFuturesProfileViewer(snapshots, tradesData) {
+  _fpSnaps = (snapshots || []).filter(function(s) {
+    return isFuturesSpreadStrategy(_activeStrategyId)
+      ? s.viewer_type === 'futures_spread_algo1'
+      : s.viewer_type === 'futures_algo1_pnl';
+  });
+  _fpTrades = tradesData || [];
+  _fpIdx = 0;
+  _fpZoom = { x: 1.0, y: 1.0 };
+  _fpPanX = 0; _fpPanY = 0;
+  _fpFixedScale = null;
+  _fprCache = null;
+  _futuresSpreadHistory = null;
+
+  if (!_fpSnaps.length) return;
+
+  document.getElementById('futures-profile-section').style.display = 'block';
+  document.getElementById('futures-price-section').style.display = 'block';
+  document.getElementById('futures-price-title').textContent = isFuturesSpreadStrategy(_activeStrategyId)
+    ? 'ETH Price History — Futures Spread Algo 1'
+    : 'ETH Price History — Futures Algo 1';
+  document.getElementById('futures-spread-chart-block').style.display = isFuturesSpreadStrategy(_activeStrategyId) ? 'block' : 'none';
+  renderFuturesPriceLegend();
+
+  // Pre-compute global X/Y scale across all snapshots
+  var STEPS = 200;
+  var allSpots = _fpSnaps.map(function(s) { return s.spot; });
+  var globalCenter = allSpots.reduce(function(a,b){return a+b;},0) / allSpots.length;
+  var globalHalf = globalCenter * 0.20;   // ±20% range
+  var gSmin = globalCenter - globalHalf;
+  var gSmax = globalCenter + globalHalf;
+  var gYmin = Infinity, gYmax = -Infinity;
+
+  _fpSnaps.forEach(function(snap) {
+    for (var i = 0; i <= STEPS; i++) {
+      var s = gSmin + (gSmax - gSmin) * i / STEPS;
+      var pnl = _fpPnlAtPrice(snap, s);
+      if (pnl.total < gYmin) gYmin = pnl.total;
+      if (pnl.total > gYmax) gYmax = pnl.total;
+      if (pnl.unrealized < gYmin) gYmin = pnl.unrealized;
+      if (pnl.unrealized > gYmax) gYmax = pnl.unrealized;
+      if (pnl.realized < gYmin) gYmin = pnl.realized;
+      if (pnl.realized > gYmax) gYmax = pnl.realized;
+    }
+  });
+
+  if (!isFinite(gYmin) || !isFinite(gYmax)) { gYmin = -100; gYmax = 100; }
+  var yPad = (gYmax - gYmin) * 0.15 || 10;
+  gYmin -= yPad; gYmax += yPad;
+  if (gYmax - gYmin < 1) { gYmin -= 50; gYmax += 50; }
+
+  _fpFixedScale = { sMin: gSmin, sMax: gSmax, yMin: gYmin, yMax: gYmax };
+
+  (function buildFuturePriceCache() {
+    var spots = new Array(_fpSnaps.length);
+    var timesMs = new Array(_fpSnaps.length);
+    var tsToIdx = {};
+    var rawMin = Infinity, rawMax = -Infinity;
+    for (var ci = 0; ci < _fpSnaps.length; ci++) {
+      var snap = _fpSnaps[ci];
+      var spot = snap.spot;
+      spots[ci] = spot;
+      timesMs[ci] = snap.ts ? new Date(snap.ts + ':00Z').getTime() : 0;
+      if (snap.ts) tsToIdx[snap.ts] = ci;
+      if (spot < rawMin) rawMin = spot;
+      if (spot > rawMax) rawMax = spot;
+    }
+    _fpTrades.forEach(function(t) {
+      if (t.buy_price) {
+        if (t.buy_price < rawMin) rawMin = t.buy_price;
+        if (t.buy_price > rawMax) rawMax = t.buy_price;
+      }
+      var tpv = t.unified_tp || t.tp_price;
+      if (tpv) {
+        if (tpv < rawMin) rawMin = tpv;
+        if (tpv > rawMax) rawMax = tpv;
+      }
+      if (t.sell_price) {
+        if (t.sell_price < rawMin) rawMin = t.sell_price;
+        if (t.sell_price > rawMax) rawMax = t.sell_price;
+      }
+      if (t.short_sell_price) {
+        if (t.short_sell_price < rawMin) rawMin = t.short_sell_price;
+        if (t.short_sell_price > rawMax) rawMax = t.short_sell_price;
+      }
+      if (t.long_buy_price) {
+        if (t.long_buy_price < rawMin) rawMin = t.long_buy_price;
+        if (t.long_buy_price > rawMax) rawMax = t.long_buy_price;
+      }
+    });
+    _fpSnaps.forEach(function(s) {
+      var lp = s && s.active_limit_order_price != null ? Number(s.active_limit_order_price) : NaN;
+      if (!isFinite(lp)) return;
+      if (lp < rawMin) rawMin = lp;
+      if (lp > rawMax) rawMax = lp;
+    });
+    if (!isFinite(rawMin) || !isFinite(rawMax)) { rawMin = 0; rawMax = 1; }
+    var rawPad = (rawMax - rawMin) * 0.12 || 50;
+    var baseMin = rawMin - rawPad;
+    var baseMax = rawMax + rawPad;
+    var baseCenter = (baseMin + baseMax) / 2;
+    var baseHalf = (baseMax - baseMin) / 2;
+
+    function snapIdxForTradeTs(ts) {
+      if (!ts) return -1;
+      if (tsToIdx.hasOwnProperty(ts)) return tsToIdx[ts];
+      var target = new Date(ts + ':00Z').getTime();
+      if (!isFinite(target)) return -1;
+      var lo = 0, hi = timesMs.length - 1;
+      while (lo <= hi) {
+        var mid = (lo + hi) >> 1;
+        var mv = timesMs[mid];
+        if (mv < target) lo = mid + 1;
+        else if (mv > target) hi = mid - 1;
+        else return mid;
+      }
+      if (lo >= timesMs.length) return timesMs.length - 1;
+      if (hi < 0) return 0;
+      return Math.abs(timesMs[lo] - target) < Math.abs(timesMs[hi] - target) ? lo : hi;
+    }
+
+    var trades = [];
+    for (var ti = 0; ti < _fpTrades.length; ti++) {
+      var tr = _fpTrades[ti];
+      var si = snapIdxForTradeTs(tr.ts);
+      if (si < 0) continue;
+      trades.push({
+        snapIdx: si,
+        action: tr.action,
+        buy_price: tr.buy_price,
+        sell_price: tr.sell_price,
+        short_sell_price: tr.short_sell_price,
+        long_buy_price: tr.long_buy_price,
+        short_ticker: tr.short_ticker,
+        long_ticker: tr.long_ticker,
+        tp_price: tr.tp_price,
+        unified_tp: tr.unified_tp,
+        legacy: !!tr.legacy,
+        tp_level: tr.tp_level
+      });
+    }
+    trades.sort(function(a, b) { return a.snapIdx - b.snapIdx; });
+
+    _fprCache = {
+      spots: spots,
+      timesMs: timesMs,
+      tsToIdx: tsToIdx,
+      trades: trades,
+      orderLimits: _buildFuturesSpreadOrderLimitSegments(),
+      rawMin: rawMin,
+      rawMax: rawMax,
+      baseMin: baseMin,
+      baseMax: baseMax,
+      baseCenter: baseCenter,
+      baseHalf: baseHalf,
+      n: Math.max(1, _fpSnaps.length - 1)
+    };
+  })();
+
+  var slider = document.getElementById('fp-slider');
+  slider.max = _fpSnaps.length - 1;
+  slider.value = 0;
+
+  drawFuturesProfileAt(0);
+  if (isFuturesSpreadStrategy(_activeStrategyId)) loadFuturesSpreadHistory();
+  scheduleFuturePriceDraw(0);
+
+  // Zoom/pan
+  var canvas = document.getElementById('futures-profile-canvas');
+
+  canvas.onwheel = function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.89 : 1.12;
+    var rect = canvas.getBoundingClientRect();
+    var fs = _fpFixedScale;
+    var mouseXfrac = (e.clientX - rect.left) / rect.width;
+    var padL = 70 / rect.width, padR = 20 / rect.width;
+    var chartFracX = Math.max(0, Math.min(1, (mouseXfrac - padL) / (1 - padL - padR)));
+    var sCtr  = (fs.sMin + fs.sMax) / 2 + _fpPanX;
+    var sHalf = (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+    var sAtMouse = sCtr - sHalf + chartFracX * sHalf * 2;
+    _fpZoom.x = Math.max(0.2, Math.min(10, _fpZoom.x * delta));
+    var newSHalf = (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+    _fpPanX = sAtMouse - (fs.sMin + fs.sMax) / 2 - newSHalf * (2 * chartFracX - 1);
+
+    var mouseYfrac = (e.clientY - rect.top) / rect.height;
+    var padT = 20 / rect.height, padB = 40 / rect.height;
+    var chartFracY = Math.max(0, Math.min(1, (mouseYfrac - padT) / (1 - padT - padB)));
+    var yCtr  = (fs.yMin + fs.yMax) / 2 - _fpPanY;
+    var yHalf = (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+    var yAtMouse = yCtr + yHalf - chartFracY * yHalf * 2;
+    _fpZoom.y = Math.max(0.25, Math.min(8, _fpZoom.y * delta));
+    var newYHalf = (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+    _fpPanY = (fs.yMin + fs.yMax) / 2 - (yAtMouse + newYHalf * (2 * chartFracY - 1));
+    drawFuturesProfileAt(_fpIdx);
+  };
+
+  canvas.onmousedown = function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var lx = e.clientX - rect.left, ly = e.clientY - rect.top;
+    var PAD_L = 70, PAD_B = 40, PAD_T = 20, PAD_R = 20;
+    var onXAxis = ly > rect.height - PAD_B;
+    var onYAxis = lx < PAD_L;
+    _fpDrag.active = true;
+    _fpDrag.startX = e.clientX; _fpDrag.startY = e.clientY;
+    _fpDrag.startPanX = _fpPanX; _fpDrag.startPanY = _fpPanY;
+    _fpDrag.startZoomX = _fpZoom.x; _fpDrag.startZoomY = _fpZoom.y;
+    if (onXAxis)      { _fpDrag.mode = 'zoom-x'; canvas.style.cursor = 'ew-resize'; }
+    else if (onYAxis) { _fpDrag.mode = 'zoom-y'; canvas.style.cursor = 'ns-resize'; }
+    else              { _fpDrag.mode = 'pan';    canvas.style.cursor = 'grabbing'; }
+    e.preventDefault();
+  };
+
+
+
+  canvas.onmousemove = function(e) {
+    if (_fpDrag.active) return;  // handled by window listener
+    var rect = canvas.getBoundingClientRect();
+    var lx = e.clientX - rect.left, ly = e.clientY - rect.top;
+    var PAD_L = 70, PAD_T = 20, PAD_R = 20, PAD_B = 40;
+    // cursor by zone
+    if (ly > rect.height - PAD_B)      canvas.style.cursor = 'ew-resize';
+    else if (lx < PAD_L)               canvas.style.cursor = 'ns-resize';
+    else                               canvas.style.cursor = 'crosshair';
+    if (lx < PAD_L || lx > rect.width - PAD_R || ly < PAD_T || ly > rect.height - PAD_B) {
+      drawFuturesProfileAt(_fpIdx); return;
+    }
+    var snap = _fpSnaps[_fpIdx];
+    var fs = _fpFixedScale; if (!fs) return;
+    var W = rect.width, H = rect.height;
+    var cw = W - PAD_L - PAD_R, ch = H - PAD_T - PAD_B;
+    var sMin = (fs.sMin + fs.sMax) / 2 + _fpPanX - (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+    var sMax = (fs.sMin + fs.sMax) / 2 + _fpPanX + (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+    var yMin = (fs.yMin + fs.yMax) / 2 - _fpPanY - (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+    var yMax = (fs.yMin + fs.yMax) / 2 - _fpPanY + (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+    var hoverS = sMin + (lx - PAD_L) / cw * (sMax - sMin);
+    var hoverPnl = _fpPnlAtPrice(snap, hoverS);
+    // redraw + crosshair + tooltip
+    drawFuturesProfileAt(_fpIdx);
+    var cvs = canvas;
+    var ctx2 = cvs.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    ctx2.save();
+    ctx2.scale(dpr, dpr);
+    function xPx2(s) { return PAD_L + (s - sMin) / (sMax - sMin) * cw; }
+    function yPx2(v) { return PAD_T + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+    ctx2.strokeStyle = 'rgba(148,163,184,0.5)';
+    ctx2.lineWidth = 1;
+    ctx2.setLineDash([3,3]);
+    ctx2.beginPath(); ctx2.moveTo(lx, PAD_T); ctx2.lineTo(lx, PAD_T + ch); ctx2.stroke();
+    ctx2.beginPath(); ctx2.moveTo(PAD_L, ly); ctx2.lineTo(PAD_L + cw, ly); ctx2.stroke();
+    ctx2.setLineDash([]);
+    // hoverPnl is computed from position size/entry — this IS unrealized for current pos
+    var initCap2 = _fpSnaps.length ? (_fpSnaps[0].equity - (_fpSnaps[0].total_mark_pnl_usd || 0)) : 10000;
+    if (!initCap2) initCap2 = 10000;
+    var hoverPct = hoverPnl.total / initCap2 * 100;
+    var pnlSign2 = hoverPnl.total >= 0 ? '+' : '';
+    var pnlCol2  = hoverPnl.total >= 0 ? '#22c55e' : '#f87171';
+    var unrealSign = hoverPnl.unrealized >= 0 ? '+' : '';
+    var realizedSign = hoverPnl.realized >= 0 ? '+' : '';
+    var lines = [
+      { label: 'ETH Price', val: '$' + hoverS.toFixed(2), col: '#94a3b8' },
+      { label: 'Total Mark', val: pnlSign2 + hoverPnl.total.toFixed(2) + ' USD', col: pnlCol2 },
+      { label: 'Unrealized', val: unrealSign + hoverPnl.unrealized.toFixed(2) + ' USD', col: hoverPnl.unrealized >= 0 ? '#3b82f6' : '#93c5fd' },
+      { label: 'Realized', val: realizedSign + hoverPnl.realized.toFixed(2) + ' USD', col: '#f59e0b' },
+      { label: 'Return',    val: pnlSign2 + hoverPct.toFixed(2) + '%',    col: pnlCol2 },
+    ];
+    var tW = 160, lineH = 18, tPad = 8;
+    var tH = lines.length * lineH + tPad * 2;
+    var tx = lx + 12, ty = ly - tH / 2;
+    if (tx + tW > PAD_L + cw) tx = lx - tW - 12;
+    if (ty < PAD_T) ty = PAD_T;
+    if (ty + tH > PAD_T + ch) ty = PAD_T + ch - tH;
+    ctx2.fillStyle = 'rgba(15,23,42,0.9)';
+    ctx2.strokeStyle = '#334155'; ctx2.lineWidth = 1;
+    ctx2.beginPath(); ctx2.roundRect(tx, ty, tW, tH, 4); ctx2.fill(); ctx2.stroke();
+    ctx2.font = '11px "Segoe UI", system-ui, sans-serif';
+    lines.forEach(function(ln, i) {
+      var y = ty + tPad + i * lineH + 11;
+      ctx2.fillStyle = '#64748b'; ctx2.textAlign = 'left'; ctx2.fillText(ln.label, tx + tPad, y);
+      ctx2.fillStyle = ln.col; ctx2.textAlign = 'right'; ctx2.fillText(ln.val, tx + tW - tPad, y);
+    });
+    ctx2.restore();
+  };
+  canvas.onmouseleave = function() { if (!_fpDrag.active) { canvas.style.cursor = 'grab'; drawFuturesProfileAt(_fpIdx); } };
+  canvas.style.cursor = 'grab';
+
+  // Register global window handlers once (survive re-runs)
+  if (!_fpListenersRegistered) {
+    _fpListenersRegistered = true;
+    window.addEventListener('mousemove', function(e) {
+      if (!_fpDrag.active) return;
+      var fs = _fpFixedScale; if (!fs) return;
+      var rect = document.getElementById('futures-profile-canvas').getBoundingClientRect();
+      var cw = rect.width - 70 - 20, ch = rect.height - 20 - 40;
+      var dx = e.clientX - _fpDrag.startX, dy = e.clientY - _fpDrag.startY;
+      if (_fpDrag.mode === 'pan') {
+        _fpPanX = _fpDrag.startPanX - (dx / cw) * (fs.sMax - fs.sMin) / _fpDrag.startZoomX;
+        _fpPanY = _fpDrag.startPanY - (dy / ch) * (fs.yMax - fs.yMin) / _fpDrag.startZoomY;
+      } else if (_fpDrag.mode === 'zoom-x') {
+        _fpZoom.x = Math.max(0.2, Math.min(10, _fpDrag.startZoomX * Math.pow(1.005, -dx)));
+        _fpPanX = _fpDrag.startPanX;
+      } else if (_fpDrag.mode === 'zoom-y') {
+        _fpZoom.y = Math.max(0.25, Math.min(8, _fpDrag.startZoomY * Math.pow(1.005, -dy)));
+        _fpPanY = _fpDrag.startPanY;
+      }
+      drawFuturesProfileAt(_fpIdx);
+    });
+    window.addEventListener('mouseup', function() {
+      if (_fpDrag.active) {
+        _fpDrag.active = false;
+        var cvs = document.getElementById('futures-profile-canvas');
+        if (cvs) cvs.style.cursor = _fpDrag.mode === 'pan' ? 'grab' : 'default';
+      }
+    });
+  }
+
+  new ResizeObserver(function() { drawFuturesProfileAt(_fpIdx); }).observe(canvas.parentElement);
+  // Init price panel interaction (deferred until canvas in DOM)
+  setTimeout(function() {
+    if (window._initFuturePriceInteraction) window._initFuturePriceInteraction();
+    if (window._initFuturesSpreadInteraction) window._initFuturesSpreadInteraction();
+  }, 0);
+}
+
+function drawFuturesProfileAt(idx) {
+  if (!_fpSnaps.length || !_fpFixedScale) return;
+  idx = Math.max(0, Math.min(idx, _fpSnaps.length - 1));
+  _fpIdx = idx;
+
+  var snap = _fpSnaps[idx];
+  var canvas = document.getElementById('futures-profile-canvas');
+  var wrap = canvas.parentElement;
+  var W = wrap.clientWidth;
+  var H = wrap.clientHeight || 300;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var PAD_L = 70, PAD_T = 20, PAD_R = 20, PAD_B = 40;
+  var cw = W - PAD_L - PAD_R;
+  var ch = H - PAD_T - PAD_B;
+  var R = 0.05, STEPS = 300;
+
+  var fs = _fpFixedScale;
+  var sMin = (fs.sMin + fs.sMax) / 2 + _fpPanX - (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+  var sMax = (fs.sMin + fs.sMax) / 2 + _fpPanX + (fs.sMax - fs.sMin) / 2 / _fpZoom.x;
+  var yMin = (fs.yMin + fs.yMax) / 2 - _fpPanY - (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+  var yMax = (fs.yMin + fs.yMax) / 2 - _fpPanY + (fs.yMax - fs.yMin) / 2 / _fpZoom.y;
+
+  function xPx(s) { return PAD_L + (s - sMin) / (sMax - sMin) * cw; }
+  function yPx(v) { return PAD_T + (1 - (v - yMin) / (yMax - yMin)) * ch; }
+
+  // Background
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+  var nGridX = 6, nGridY = 5;
+  for (var i = 0; i <= nGridY; i++) {
+    var yv = yMin + (yMax - yMin) * i / nGridY;
+    var y = yPx(yv);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + cw, y); ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'right';
+    ctx.fillText((yv >= 0 ? '+' : '') + yv.toFixed(0), PAD_L - 6, y + 4);
+  }
+  for (var i = 0; i <= nGridX; i++) {
+    var sv = sMin + (sMax - sMin) * i / nGridX;
+    var x = xPx(sv);
+    ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + ch); ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('$' + sv.toFixed(0), x, PAD_T + ch + 18);
+  }
+
+  // Zero line
+  var zeroY = yPx(0);
+  if (zeroY >= PAD_T && zeroY <= PAD_T + ch) {
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(PAD_L, zeroY); ctx.lineTo(PAD_L + cw, zeroY); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  var sizeEth   = snap.total_size_eth || 0;
+  var avgEntry  = snap.avg_entry  || 0;
+  var avgTp     = snap.avg_tp     || 0;
+  var realizedPnl = snap.realized_pnl_usd || 0;
+
+  // ── Draw P&L curves ──
+  // Filled area between curve and zero
+  if (sizeEth > 0 || snap.viewer_type === 'futures_spread_algo1') {
+    // Build path
+    ctx.beginPath();
+    var pts = [];
+    var unrealPts = [];
+    for (var i = 0; i <= STEPS; i++) {
+      var s = sMin + (sMax - sMin) * i / STEPS;
+      var pnl = _fpPnlAtPrice(snap, s);
+      pts.push({ x: xPx(s), y: yPx(pnl.total), pnl: pnl.total });
+      unrealPts.push({ x: xPx(s), y: yPx(pnl.unrealized), pnl: pnl.unrealized });
+    }
+    pts[0] && ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    // Area fill: green above zero, red below
+    var zClamp = Math.min(Math.max(zeroY, PAD_T), PAD_T + ch);
+    // positive fill
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PAD_L, PAD_T, cw, ch);
+    ctx.clip();
+    ctx.beginPath();
+    pts[0] && ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.lineTo(pts[pts.length-1].x, zClamp);
+    ctx.lineTo(pts[0].x, zClamp);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(34,197,94,0.12)';
+    ctx.fill();
+    ctx.restore();
+
+    // Draw total mark line
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PAD_L, PAD_T, cw, ch);
+    ctx.clip();
+    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    pts[0] && ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Unrealized P&L line
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PAD_L, PAD_T, cw, ch);
+    ctx.clip();
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.setLineDash([]);
+    ctx.beginPath();
+    unrealPts[0] && ctx.moveTo(unrealPts[0].x, unrealPts[0].y);
+    for (var i = 1; i < unrealPts.length; i++) ctx.lineTo(unrealPts[i].x, unrealPts[i].y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Realized P&L flat line
+    var realY = yPx(realizedPnl);
+    if (realY >= PAD_T && realY <= PAD_T + ch) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(PAD_L, PAD_T, cw, ch);
+      ctx.clip();
+      ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(PAD_L, realY); ctx.lineTo(PAD_L + cw, realY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  // ── Vertical lines ──
+  // Avg Entry (amber)
+  if (avgEntry > sMin && avgEntry < sMax) {
+    var exX = xPx(avgEntry);
+    ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(exX, PAD_T); ctx.lineTo(exX, PAD_T + ch); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(245,158,11,0.85)'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('Entry $' + avgEntry.toFixed(0), exX, PAD_T + 14);
+  }
+  // Avg TP (purple)
+  if (avgTp > sMin && avgTp < sMax) {
+    var tpX = xPx(avgTp);
+    ctx.strokeStyle = 'rgba(168,85,247,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(tpX, PAD_T); ctx.lineTo(tpX, PAD_T + ch); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(168,85,247,0.85)'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('TP $' + avgTp.toFixed(0), tpX, PAD_T + 26);
+  }
+  // Current Spot (yellow vertical)
+  var spotNow = snap.spot;
+  if (spotNow >= sMin && spotNow <= sMax) {
+    var spX = xPx(spotNow);
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(spX, PAD_T); ctx.lineTo(spX, PAD_T + ch); ctx.stroke();
+    // Dot at intersection
+    var spotPnlData = _fpPnlAtPrice(snap, spotNow);
+    var spotPnl = spotPnlData.total;
+    var spDotY = yPx(spotPnl);
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(spX, spDotY, 5, 0, Math.PI * 2); ctx.fill();
+    // Label: price + P&L USD + P&L %
+    // Use unrealized P&L of current open position (not cumulative)
+    var _spUnreal = snap.unrealized_pnl_usd || spotPnlData.unrealized || 0;
+    var _spInitCap = _fpSnaps.length ? (_fpSnaps[0].equity - (_fpSnaps[0].total_mark_pnl_usd || 0)) : 10000;
+    if (!_spInitCap) _spInitCap = 10000;
+    var _spPct  = _spUnreal / _spInitCap * 100;
+    var _spSign = _spUnreal >= 0 ? '+' : '';
+    var _spCol  = _spUnreal >= 0 ? '#22c55e' : '#f87171';
+    ctx.font = 'bold 11px Segoe UI'; ctx.textAlign = 'left';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('$' + spotNow.toFixed(0), spX + 8, spDotY - 9);
+    ctx.fillStyle = _spCol;
+    ctx.fillText(_spSign + _spUnreal.toFixed(2) + ' USD  (' + _spSign + _spPct.toFixed(2) + '%)', spX + 8, spDotY + 5);
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'center'; ctx.fillText('ETH Price at Entry', PAD_L + cw / 2, H - 6);
+  ctx.save(); ctx.translate(14, PAD_T + ch / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('P&L (USD)', 0, 0); ctx.restore();
+
+  // Meta update
+  document.getElementById('fp-instrument').textContent = snap.viewer_type === 'futures_spread_algo1'
+    ? ((snap.short_ticker || 'Short') + ' / ' + (snap.long_ticker || 'Long') + ' · Run #' + (snap.run || '—'))
+    : 'ETH-PERPETUAL · Run #' + (snap.run || '—');
+  document.getElementById('fp-longs').textContent = snap.open_longs || 0;
+  document.getElementById('fp-size').textContent  = snap.viewer_type === 'futures_spread_algo1'
+    ? ((snap.spread_short_qty || 0).toFixed(4) + ' / ' + (snap.spread_long_qty || 0).toFixed(4))
+    : sizeEth.toFixed(4);
+  document.getElementById('fp-entry').textContent = snap.viewer_type === 'futures_spread_algo1'
+    ? ('$' + (snap.short_price || 0).toFixed(2) + ' / $' + (snap.long_price || 0).toFixed(2))
+    : (avgEntry ? (('$' + ((sizeEth * avgEntry).toFixed(0))) + ' @ ' + avgEntry.toFixed(2)) : '—');
+  document.getElementById('fp-tp').textContent    = snap.viewer_type === 'futures_spread_algo1'
+    ? ((snap.spread != null ? snap.spread.toFixed(2) : '—') + ' spread')
+    : (avgTp ? '$' + avgTp.toFixed(2) : '—');
+
+  document.getElementById('fp-slider').value = idx;
+  document.getElementById('fp-date').textContent = snap.ts || '';
+  document.getElementById('fp-stepinfo').textContent = (idx + 1) + ' / ' + _fpSnaps.length;
+}
+
+// ── Futures Profile timeline controls ──
+function _fpStep(dir) {
+  _fpIdx = Math.max(0, Math.min(_fpSnaps.length - 1, _fpIdx + dir));
+  drawFuturesProfileAt(_fpIdx);
+  scheduleFuturePriceDraw(_fpIdx);
+  _tlSyncFromFp(_fpIdx);
+}
+function _fpSeek(v) { _fpIdx = v; drawFuturesProfileAt(_fpIdx); scheduleFuturePriceDraw(_fpIdx); }
+function _fpSetSpeed(ms) {
+  _fpSpeed = ms;
+  if (_fpTimer) {
+    clearInterval(_fpTimer);
+    var btn = document.getElementById('fp-play');
+    _fpTimer = setInterval(function() {
+      if (_fpIdx >= _fpSnaps.length - 1) { clearInterval(_fpTimer); _fpTimer = null; btn.textContent = '\u25b6'; return; }
+      drawFuturesProfileAt(++_fpIdx); scheduleFuturePriceDraw(_fpIdx); _tlSyncFromFp(_fpIdx);
+    }, _fpSpeed);
+  }
+}
+function _fpTogglePlay() {
+  var btn = document.getElementById('fp-play');
+  if (_fpTimer) {
+    clearInterval(_fpTimer); _fpTimer = null;
+    btn.textContent = '\u25b6';
+  } else {
+    btn.textContent = '\u23f8';
+    _fpTimer = setInterval(function() {
+      if (_fpIdx >= _fpSnaps.length - 1) { clearInterval(_fpTimer); _fpTimer = null; btn.textContent = '\u25b6'; return; }
+      drawFuturesProfileAt(++_fpIdx); scheduleFuturePriceDraw(_fpIdx); _tlSyncFromFp(_fpIdx);
+    }, _fpSpeed);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ETH Price History panel
+// ═══════════════════════════════════════════════════════════════════════
+
+function _minuteKeyFromIso(ts) {
+  if (!ts) return '';
+  return String(ts).slice(0, 16);
+}
+
+	function _alignSeriesToSnaps(points, valueKey) {
+	  var byTs = {};
+	  (points || []).forEach(function(p) {
+	    var k = _minuteKeyFromIso(p.t);
+    var v = p[valueKey];
+    if (k && v != null && isFinite(Number(v))) byTs[k] = Number(v);
+	  });
+	  return _fpSnaps.map(function(s) { return byTs[s.ts] != null ? byTs[s.ts] : null; });
+	}
+
+	function _alignCandlesToSnaps(points) {
+	  var byTs = {};
+	  (points || []).forEach(function(p) {
+	    var k = _minuteKeyFromIso(p.t);
+	    var open = p.open != null ? Number(p.open) : NaN;
+	    var high = p.high != null ? Number(p.high) : NaN;
+	    var low = p.low != null ? Number(p.low) : NaN;
+	    var close = p.close != null ? Number(p.close) : NaN;
+	    if (!k || !isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) return;
+	    byTs[k] = {
+	      open: open,
+	      high: high,
+	      low: low,
+	      close: close
+	    };
+	  });
+	  return _fpSnaps.map(function(s) { return byTs[s.ts] || null; });
+	}
+
+function _seriesMinMax(arrays) {
+  var mn = Infinity, mx = -Infinity;
+  arrays.forEach(function(arr) {
+    (arr || []).forEach(function(v) {
+      if (v == null || !isFinite(v)) return;
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    });
+  });
+	  return isFinite(mn) && isFinite(mx) ? { min: mn, max: mx } : null;
+	}
+
+function _buildFuturesSpreadOrderLimitSegments() {
+  var segments = [];
+  if (!_fpSnaps || !_fpSnaps.length) return segments;
+  for (var i = 0; i < _fpSnaps.length; i++) {
+    var snap = _fpSnaps[i] || {};
+    var orderType = snap.active_limit_order_type;
+    var price = snap.active_limit_order_price != null ? Number(snap.active_limit_order_price) : NaN;
+    if (!orderType || !isFinite(price)) continue;
+    var endIdx = Math.min(i + 1, _fpSnaps.length - 1);
+    segments.push({
+      startIdx: i,
+      endIdx: endIdx,
+      orderType: orderType,
+      ticker: snap.active_limit_order_ticker || null,
+      price: price,
+      startTs: snap.ts || null,
+      endTs: _fpSnaps[endIdx] ? _fpSnaps[endIdx].ts : snap.ts
+    });
+  }
+  return segments;
+}
+
+function _futuresSpreadOrderLimitValues() {
+  return (_fpSnaps || []).map(function(s) {
+    var v = s && s.active_limit_order_price != null ? Number(s.active_limit_order_price) : null;
+    return v != null && isFinite(v) ? v : null;
+  });
+}
+
+	function _candleMinMax(arrays) {
+	  var mn = Infinity, mx = -Infinity;
+	  arrays.forEach(function(arr) {
+	    (arr || []).forEach(function(c) {
+	      if (!c) return;
+	      ['open', 'high', 'low', 'close'].forEach(function(k) {
+	        var v = c[k];
+	        if (v == null || !isFinite(v)) return;
+	        if (v < mn) mn = v;
+	        if (v > mx) mx = v;
+	      });
+	    });
+	  });
+	  return isFinite(mn) && isFinite(mx) ? { min: mn, max: mx } : null;
+	}
+
+var FUTURES_SPREAD_MEAN_WINDOW = 360;
+var FUTURES_SPREAD_SELL_COLOR = '#ef4444';
+var FUTURES_SPREAD_BUY_COLOR = '#22c55e';
+var FUTURES_SPREAD_TRADE_MARKER_SIZE = 4;
+var _fprCrosshair = { active: false, source: null, x: 0, y: 0, idx: 0, value: null };
+var _fsprCrosshair = { active: false, x: 0, y: 0, idx: 0, value: null };
+
+function _rollingSpreadEnvelopes(spreadValues, longValues, windowSize, envelopeStepPct) {
+  var bands = { p1: [], m1: [], p2: [], m2: [], p3: [], m3: [], mean: [], meanRatio: [] };
+  var windowRatios = [];
+  var win = Math.max(2, windowSize || FUTURES_SPREAD_MEAN_WINDOW);
+  var stepPct = envelopeStepPct > 0 && isFinite(envelopeStepPct) ? envelopeStepPct : 0.1;
+  var stepRatio = stepPct / 100;
+  (spreadValues || []).forEach(function(v, i) {
+    var longPrice = longValues && longValues[i];
+    if (v == null || longPrice == null || !isFinite(v) || !isFinite(longPrice) || Math.abs(longPrice) < 1e-9) {
+      bands.mean.push(null);
+      bands.meanRatio.push(null);
+      bands.p1.push(null); bands.m1.push(null);
+      bands.p2.push(null); bands.m2.push(null);
+      bands.p3.push(null); bands.m3.push(null);
+      return;
+    }
+    windowRatios.push(Number(v) / Number(longPrice));
+    if (windowRatios.length > win) windowRatios.shift();
+    if (windowRatios.length < 2) {
+      bands.mean.push(null);
+      bands.meanRatio.push(null);
+      bands.p1.push(null); bands.m1.push(null);
+      bands.p2.push(null); bands.m2.push(null);
+      bands.p3.push(null); bands.m3.push(null);
+      return;
+    }
+    var sum = windowRatios.reduce(function(a, b) { return a + b; }, 0);
+    var meanRatio = sum / windowRatios.length;
+    bands.meanRatio.push(meanRatio);
+    bands.mean.push(meanRatio * Number(longPrice));
+    bands.p1.push((meanRatio + stepRatio) * Number(longPrice)); bands.m1.push((meanRatio - stepRatio) * Number(longPrice));
+    bands.p2.push((meanRatio + stepRatio * 2) * Number(longPrice)); bands.m2.push((meanRatio - stepRatio * 2) * Number(longPrice));
+    bands.p3.push((meanRatio + stepRatio * 3) * Number(longPrice)); bands.m3.push((meanRatio - stepRatio * 3) * Number(longPrice));
+  });
+  return bands;
+}
+
+function _nearestArrayValue(values, idx) {
+  if (!values || !values.length) return null;
+  var start = Math.max(0, Math.min(values.length - 1, idx || 0));
+  if (values[start] != null && isFinite(values[start])) return values[start];
+  for (var offset = 1; offset < values.length; offset++) {
+    var left = start - offset, right = start + offset;
+    if (left >= 0 && values[left] != null && isFinite(values[left])) return values[left];
+    if (right < values.length && values[right] != null && isFinite(values[right])) return values[right];
+  }
+  return null;
+}
+
+function _formatSpreadAxisTick(value, longPrice) {
+  if (value == null || !isFinite(value)) return '';
+  var dollars = '$' + Number(value).toFixed(2);
+  if (longPrice == null || !isFinite(longPrice) || Math.abs(longPrice) < 1e-9) return '--% (' + dollars + ')';
+  var pct = Number(value) / Number(longPrice) * 100;
+  return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '% (' + dollars + ')';
+}
+
+function _formatSpreadCrosshairTime(ts) {
+  if (!ts) return '';
+  var s = String(ts);
+  var m = s.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (m) return m[1] + ' ' + m[2] + ' UTC';
+  return s.length >= 16 ? s.slice(0, 16).replace('T', ' ') + ' UTC' : s + ' UTC';
+}
+
+function _futuresCrosshairIndexFromX(lx, padL, cw, n) {
+  var xCenter = n / 2 + _fprPanX;
+  var xHalf = (n / 2) / _fprZoomX;
+  var xMin = xCenter - xHalf;
+  var xMax = xCenter + xHalf;
+  if (xMax <= xMin) xMax = xMin + 1;
+  return Math.max(0, Math.min(_fpSnaps.length - 1, Math.round(xMin + ((lx - padL) / cw) * (xMax - xMin))));
+}
+
+function _clearFuturesCrosshairs() {
+  var changed = (_fprCrosshair && _fprCrosshair.active) || (_fsprCrosshair && _fsprCrosshair.active);
+  _fprCrosshair = { active: false, source: null, x: 0, y: 0, idx: 0, value: null };
+  _fsprCrosshair = { active: false, source: null, x: 0, y: 0, idx: 0, value: null };
+  if (changed) scheduleFuturePriceDraw(_fpIdx);
+}
+
+function _spreadAxisTicks(minV, maxV, longPrice) {
+  if (longPrice == null || !isFinite(longPrice) || Math.abs(longPrice) < 1e-9) return [];
+  var step = Math.abs(Number(longPrice)) * 0.001;
+  if (!isFinite(step) || step <= 0) return [];
+  var first = Math.ceil((minV - step * 0.001) / step) * step;
+  var ticks = [];
+  var maxTicks = 80;
+  for (var v = first; v <= maxV + step * 0.001 && ticks.length < maxTicks; v += step) {
+    ticks.push(v);
+  }
+  return ticks;
+}
+
+function loadFuturesSpreadHistory() {
+  var req = ++_futuresSpreadHistoryReq;
+  var shortTicker = document.getElementById('p-a1-short-ticker').value || 'ETH-25DEC26';
+  var longTicker = document.getElementById('p-a1-long-ticker').value || 'ETH-PERPETUAL';
+  var url = '/backtester-api/futures-spread-algo1/history'
+    + '?date_from=' + encodeURIComponent(document.getElementById('date-from').value)
+    + '&date_to=' + encodeURIComponent(document.getElementById('date-to').value)
+    + '&short_ticker=' + encodeURIComponent(shortTicker)
+    + '&long_ticker=' + encodeURIComponent(longTicker);
+  document.getElementById('futures-spread-status').textContent = 'Loading spread prices...';
+  fetch(url)
+    .then(function(r) { if (!r.ok) throw new Error('API ' + r.status); return r.json(); })
+    .then(function(d) {
+      if (req !== _futuresSpreadHistoryReq) return;
+	      var shortVals = _alignSeriesToSnaps(d.short_prices || [], 'price');
+	      var longVals = _alignSeriesToSnaps(d.long_prices || [], 'price');
+	      var shortCandles = _alignCandlesToSnaps(d.short_prices || []);
+	      var longCandles = _alignCandlesToSnaps(d.long_prices || []);
+	      var spreadVals = shortVals.map(function(v, i) {
+	        var lv = longVals[i];
+	        return v != null && lv != null && isFinite(v) && isFinite(lv) ? v - lv : null;
+	      });
+	      var orderLimitVals = _futuresSpreadOrderLimitValues();
+	      var priceBounds = _seriesMinMax([shortVals, longVals, orderLimitVals]);
+	      var candleBounds = _candleMinMax([shortCandles, longCandles]);
+	      if (candleBounds) priceBounds = priceBounds ? { min: Math.min(priceBounds.min, candleBounds.min), max: Math.max(priceBounds.max, candleBounds.max) } : candleBounds;
+	      var spreadBounds = _seriesMinMax([spreadVals]);
+	      var envelopeStepPct = getFuturesSpreadEnvelopeStepPct();
+	      var spreadBands = _rollingSpreadEnvelopes(spreadVals, longVals, FUTURES_SPREAD_MEAN_WINDOW, envelopeStepPct);
+      _futuresSpreadHistory = {
+        shortTicker: d.short_ticker,
+        longTicker: d.long_ticker,
+	        shortVals: shortVals,
+	        longVals: longVals,
+	        shortCandles: shortCandles,
+	        longCandles: longCandles,
+	        spreadVals: spreadVals,
+	        spreadBands: spreadBands,
+	        priceBounds: priceBounds,
+	        spreadBounds: spreadBounds,
+	        envelopeStepPct: envelopeStepPct,
+	        candleSource: d.source && d.source.candles ? d.source.candles : null,
+	        candlesAvailable: !!d.candles_available,
+	        candlesUnavailableReason: d.candles_unavailable_reason || null,
+	        missingReason: priceBounds && spreadBounds ? null : 'Short/Long price history missing for selected window'
+	      };
+      if (priceBounds && _fprCache) {
+        var pad = (priceBounds.max - priceBounds.min) * 0.08 || 10;
+        _fprCache.baseCenter = (priceBounds.min + priceBounds.max) / 2;
+        _fprCache.baseHalf = (priceBounds.max - priceBounds.min) / 2 + pad;
+      }
+	      document.getElementById('futures-spread-status').textContent =
+	        'Spread = Short - Long; envelopes use trailing ' + FUTURES_SPREAD_MEAN_WINDOW + ' valid spread/Long points, mean ratio ±' + envelopeStepPct.toFixed(3).replace(/\.?(?:0+)$/, '') + '%/±' + (envelopeStepPct * 2).toFixed(3).replace(/\.?(?:0+)$/, '') + '%/±' + (envelopeStepPct * 3).toFixed(3).replace(/\.?(?:0+)$/, '') + '%' +
+	        (_futuresSpreadChartMode === 'candles' && _futuresSpreadHistory.candleSource && _futuresSpreadHistory.candlesAvailable ? ' · Candles: ' + _futuresSpreadHistory.candleSource : '') +
+	        (_futuresSpreadChartMode === 'candles' && !_futuresSpreadHistory.candlesAvailable ? ' · Candles unavailable: real OHLC missing' : '');
+      scheduleFuturePriceDraw(_fpIdx);
+    })
+    .catch(function(e) {
+      if (req !== _futuresSpreadHistoryReq) return;
+      _futuresSpreadHistory = { shortVals: [], longVals: [], spreadVals: [], missingReason: e.message };
+      document.getElementById('futures-spread-status').textContent = 'Failed to load spread history: ' + e.message;
+      scheduleFuturePriceDraw(_fpIdx);
+    });
+}
+
+	function _drawIndexedLine(ctx, values, visStart, visEnd, xPx, yPx, color, width) {
+	  ctx.strokeStyle = color;
+	  ctx.lineWidth = width || 1.5;
+  ctx.beginPath();
+  var started = false;
+  for (var i = visStart; i <= visEnd; i++) {
+    var v = values[i];
+    if (v == null || !isFinite(v)) { started = false; continue; }
+    var x = xPx(i), y = yPx(v);
+    if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+  }
+	  ctx.stroke();
+	}
+
+	function _drawIndexedCandles(ctx, candles, visStart, visEnd, xPx, yPx, color, offsetPx, bodyWidth) {
+	  ctx.strokeStyle = color;
+	  ctx.fillStyle = color;
+	  ctx.lineWidth = 1;
+	  var half = Math.max(1.5, (bodyWidth || 4) / 2);
+	  for (var i = visStart; i <= visEnd; i++) {
+	    var c = candles && candles[i];
+	    if (!c || c.close == null || !isFinite(c.close)) continue;
+	    var x = xPx(i) + (offsetPx || 0);
+	    var high = c.high != null && isFinite(c.high) ? c.high : c.close;
+	    var low = c.low != null && isFinite(c.low) ? c.low : c.close;
+	    if (high < low) { var tmp = high; high = low; low = tmp; }
+	    var yh = yPx(high), yl = yPx(low), yc = yPx(c.close);
+	    ctx.globalAlpha = 0.88;
+	    ctx.beginPath(); ctx.moveTo(x, yh); ctx.lineTo(x, yl); ctx.stroke();
+	    if (c.open != null && isFinite(c.open)) {
+	      var yo = yPx(c.open);
+	      var top = Math.min(yo, yc), h = Math.max(1, Math.abs(yc - yo));
+	      ctx.globalAlpha = 0.34;
+	      ctx.fillRect(x - half, top, half * 2, h);
+	      ctx.globalAlpha = 0.92;
+	      ctx.strokeRect(x - half, top, half * 2, h);
+	    } else {
+	      ctx.globalAlpha = 0.94;
+	      ctx.beginPath(); ctx.moveTo(x - half, yc); ctx.lineTo(x + half, yc); ctx.stroke();
+	    }
+	  }
+	  ctx.globalAlpha = 1;
+	}
+
+function _drawFuturesSpreadOrderLimits(ctx, cache, visStart, visEnd, idx, xPx, yPx, padT, chartH) {
+  var segments = cache && cache.orderLimits ? cache.orderLimits : _buildFuturesSpreadOrderLimitSegments();
+  if (!segments.length) return;
+  ctx.save();
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([6, 4]);
+  segments.forEach(function(seg) {
+    if (seg.startIdx > idx || seg.endIdx < visStart || seg.startIdx > visEnd) return;
+    var x1i = Math.max(seg.startIdx, visStart);
+    var x2i = Math.min(seg.endIdx, visEnd, idx);
+    if (x2i < x1i) x2i = x1i;
+    var y = yPx(seg.price);
+    if (y < padT || y > padT + chartH) return;
+    var x1 = xPx(x1i);
+    var x2 = xPx(x2i);
+    if (Math.abs(x2 - x1) < 5) x2 = x1 + 5;
+    ctx.strokeStyle = seg.orderType === 'short_sell_limit' ? FUTURES_SPREAD_SELL_COLOR : FUTURES_SPREAD_BUY_COLOR;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function _getFuturesSpreadYBounds(hist) {
+  if (!hist || !hist.spreadBounds) return null;
+  var bands = hist.spreadBands || {};
+  var levelBounds = _seriesMinMax([bands.p1, bands.m1, bands.p2, bands.m2, bands.p3, bands.m3, bands.mean]);
+  var spreadMin = hist.spreadBounds.min;
+  var spreadMax = hist.spreadBounds.max;
+  if (levelBounds) {
+    if (levelBounds.min < spreadMin) spreadMin = levelBounds.min;
+    if (levelBounds.max > spreadMax) spreadMax = levelBounds.max;
+  }
+  var pad = (spreadMax - spreadMin) * 0.12 || 1;
+  return {
+    min: spreadMin - pad,
+    max: spreadMax + pad,
+    center: (spreadMin + spreadMax) / 2,
+    half: (spreadMax - spreadMin) / 2 + pad
+  };
+}
+
+function drawFuturesSpreadNativeChart(idx, xDomain) {
+  var block = document.getElementById('futures-spread-chart-block');
+  if (!block || block.style.display === 'none') return;
+  var canvas = document.getElementById('futures-spread-canvas');
+  if (!canvas) return;
+  var wrap = canvas.parentElement;
+  var W = wrap.clientWidth, H = wrap.clientHeight || 304;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var PAD_L = 20, PAD_T = 16, PAD_R = 126, PAD_B = 34;
+  var cw = W - PAD_L - PAD_R, ch = H - PAD_T - PAD_B;
+  ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, W, H);
+  var hist = _futuresSpreadHistory;
+  if (!hist || !hist.spreadVals || !hist.spreadVals.length || !hist.spreadBounds) {
+    ctx.fillStyle = '#94a3b8'; ctx.font = '12px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText(hist && hist.missingReason ? 'Spread chart unavailable: price source missing' : 'Loading spread prices...', W / 2, H / 2);
+    return;
+  }
+  var bands = hist.spreadBands || {};
+  var yBounds = _getFuturesSpreadYBounds(hist);
+  var minV = yBounds.center + _fsprPanY - yBounds.half / _fsprZoom;
+  var maxV = yBounds.center + _fsprPanY + yBounds.half / _fsprZoom;
+  var visStart = xDomain.visStart, visEnd = xDomain.visEnd;
+  function xPx(i) { return PAD_L + (i - xDomain.xMin) / (xDomain.xMax - xDomain.xMin) * cw; }
+  function yPx(v) { return PAD_T + (1 - (v - minV) / (maxV - minV)) * ch; }
+  ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+  var yTickLongPrice = _nearestArrayValue(hist.longVals, idx);
+  var yTicks = _spreadAxisTicks(minV, maxV, yTickLongPrice);
+  if (!yTicks.length) {
+    for (var gy = 0; gy <= 4; gy++) yTicks.push(minV + (maxV - minV) * gy / 4);
+  }
+  yTicks.forEach(function(v) {
+    var y = yPx(v);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + cw, y); ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'left';
+    ctx.fillText(_formatSpreadAxisTick(v, yTickLongPrice), PAD_L + cw + 6, y + 4);
+  });
+  ctx.save(); ctx.beginPath(); ctx.rect(PAD_L, PAD_T, cw, ch); ctx.clip();
+  if (bands && bands.mean) {
+    var bandDefs = [
+      { plus: bands.p1, minus: bands.m1, color: '#38bdf8', dash: [5, 5] },
+      { plus: bands.p2, minus: bands.m2, color: '#a78bfa', dash: [7, 5] },
+      { plus: bands.p3, minus: bands.m3, color: '#f472b6', dash: [9, 5] }
+    ];
+    bandDefs.forEach(function(b) {
+      ctx.setLineDash(b.dash);
+      _drawIndexedLine(ctx, b.plus, visStart, visEnd, xPx, yPx, b.color, 1);
+      _drawIndexedLine(ctx, b.minus, visStart, visEnd, xPx, yPx, b.color, 1);
+    });
+    ctx.setLineDash([]);
+    ctx.setLineDash([3, 3]);
+    _drawIndexedLine(ctx, bands.mean, visStart, visEnd, xPx, yPx, 'rgba(203,213,225,0.55)', 1);
+    ctx.setLineDash([]);
+  }
+  _drawIndexedLine(ctx, hist.spreadVals, visStart, visEnd, xPx, yPx, '#f59e0b', 1.6);
+  var curX = xPx(idx);
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.2; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(curX, PAD_T); ctx.lineTo(curX, PAD_T + ch); ctx.stroke(); ctx.setLineDash([]);
+  if (_fsprCrosshair && _fsprCrosshair.active) {
+    var crossIdx = Math.max(0, Math.min(_fpSnaps.length - 1, _fsprCrosshair.idx || 0));
+    var cx = Math.max(PAD_L, Math.min(PAD_L + cw, xPx(crossIdx)));
+    var cy = Math.max(PAD_T, Math.min(PAD_T + ch, _fsprCrosshair.y));
+    var isSpreadSource = _fsprCrosshair.source !== 'price';
+    ctx.strokeStyle = 'rgba(226,232,240,0.85)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, PAD_T); ctx.lineTo(cx, PAD_T + ch); ctx.stroke();
+    if (isSpreadSource) {
+      ctx.beginPath(); ctx.moveTo(PAD_L, cy); ctx.lineTo(PAD_L + cw, cy); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+  if (_fsprCrosshair && _fsprCrosshair.active) {
+    var crossIdxLabel = Math.max(0, Math.min(_fpSnaps.length - 1, _fsprCrosshair.idx || 0));
+    var labelX = Math.max(PAD_L, Math.min(PAD_L + cw, xPx(crossIdxLabel)));
+    var labelY = Math.max(PAD_T, Math.min(PAD_T + ch, _fsprCrosshair.y));
+    var snap = _fpSnaps[crossIdxLabel] || {};
+    var timeLabel = _formatSpreadCrosshairTime(snap.ts);
+    var longAtCrosshair = _nearestArrayValue(hist.longVals, crossIdxLabel);
+    var valueLabel = _formatSpreadAxisTick(_fsprCrosshair.value, longAtCrosshair);
+    ctx.font = '11px Segoe UI';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    var tw = Math.min(150, Math.max(92, ctx.measureText(timeLabel).width + 12));
+    var tx = Math.max(PAD_L + tw / 2, Math.min(PAD_L + cw - tw / 2, labelX));
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(tx - tw / 2, PAD_T + ch + 19, tw, 18);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(timeLabel, tx, PAD_T + ch + 28);
+    if (_fsprCrosshair.source !== 'price') {
+      ctx.textAlign = 'left';
+      var vw = Math.max(68, Math.min(PAD_R - 4, ctx.measureText(valueLabel).width + 10));
+      var vy = Math.max(PAD_T + 9, Math.min(PAD_T + ch - 9, labelY));
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(PAD_L + cw + 2, vy - 9, vw, 18);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(valueLabel, PAD_L + cw + 7, vy);
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.fillStyle = '#cbd5e1'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+  var visibleCount = Math.max(1, visEnd - visStart + 1);
+  var labelStep = Math.max(1, Math.floor(visibleCount / 5));
+  for (var li = visStart; li <= visEnd; li += labelStep) {
+    var ts = _fpSnaps[li].ts || '';
+    ctx.fillText(ts.length >= 16 ? ts.slice(5, 16) : ts, xPx(li), PAD_T + ch + 18);
+  }
+}
+
+function drawFuturesSpreadPriceAt(idx, cache, canvas) {
+  var hist = _futuresSpreadHistory;
+  var wrap = canvas.parentElement;
+  var W = wrap.clientWidth;
+  var H = wrap.clientHeight || 260;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  var PAD_L = 20, PAD_T = 20, PAD_R = 70, PAD_B = 40;
+  var cw = W - PAD_L - PAD_R, ch = H - PAD_T - PAD_B;
+  var prMin = cache.baseCenter + _fprPanY - cache.baseHalf / _fprZoom;
+  var prMax = cache.baseCenter + _fprPanY + cache.baseHalf / _fprZoom;
+  if (prMax - prMin < 1) { prMin -= 50; prMax += 50; }
+  var n = cache.n, xCenter = n / 2 + _fprPanX, xHalf = (n / 2) / _fprZoomX;
+  var xMin = xCenter - xHalf, xMax = xCenter + xHalf;
+  var visStart = Math.max(0, Math.floor(xMin));
+  var visEnd = Math.min(idx, _fpSnaps.length - 1, Math.ceil(xMax));
+  function xPx(i) { return PAD_L + (i - xMin) / (xMax - xMin) * cw; }
+  function yPx(v) { return PAD_T + (1 - (v - prMin) / (prMax - prMin)) * ch; }
+  ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+  for (var gy = 0; gy <= 5; gy++) {
+    var pv = prMin + (prMax - prMin) * gy / 5;
+    var py = yPx(pv);
+    ctx.beginPath(); ctx.moveTo(PAD_L, py); ctx.lineTo(PAD_L + cw, py); ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'left';
+    ctx.fillText('$' + pv.toFixed(0), PAD_L + cw + 6, py + 4);
+	  }
+	  ctx.save(); ctx.beginPath(); ctx.rect(PAD_L, PAD_T, cw, ch); ctx.clip();
+	  var mode = _futuresSpreadChartMode === 'candles' ? 'candles' : 'line';
+	  if (mode === 'candles') {
+	    if (hist && hist.candlesAvailable) {
+	      var visiblePtsForCandles = Math.max(1, visEnd - visStart + 1);
+	      var slotW = Math.max(2, Math.min(9, cw / visiblePtsForCandles * 0.58));
+	      _drawIndexedCandles(ctx, hist && hist.shortCandles, visStart, visEnd, xPx, yPx, '#9a3412', -slotW * 0.36, slotW * 0.62);
+	      _drawIndexedCandles(ctx, hist && hist.longCandles, visStart, visEnd, xPx, yPx, '#075985', slotW * 0.36, slotW * 0.62);
+	    } else {
+	      ctx.fillStyle = '#94a3b8';
+	      ctx.font = '12px Segoe UI';
+	      ctx.textAlign = 'center';
+	      ctx.fillText((hist && hist.candlesUnavailableReason) || 'Real OHLC candles unavailable for selected range', PAD_L + cw / 2, PAD_T + ch / 2);
+	    }
+	  } else {
+	    if (hist && hist.shortVals) _drawIndexedLine(ctx, hist.shortVals, visStart, visEnd, xPx, yPx, '#9a3412', 1.5);
+	    if (hist && hist.longVals) _drawIndexedLine(ctx, hist.longVals, visStart, visEnd, xPx, yPx, '#075985', 1.5);
+	  }
+  _drawFuturesSpreadOrderLimits(ctx, cache, visStart, visEnd, idx, xPx, yPx, PAD_T, ch);
+  if (cache && cache.trades && !_fprInteractionFastMode) {
+    cache.trades.forEach(function(t) {
+      var si = t.snapIdx;
+      if (si < visStart || si > visEnd || si > idx) return;
+      var px = xPx(si);
+      if (t.action === 'sell_short_fill' && t.sell_price != null) {
+        var sy = yPx(Number(t.sell_price));
+        if (sy < PAD_T || sy > PAD_T + ch) return;
+        var sm = FUTURES_SPREAD_TRADE_MARKER_SIZE;
+        ctx.fillStyle = FUTURES_SPREAD_SELL_COLOR;
+        ctx.beginPath(); ctx.moveTo(px, sy + sm + 1); ctx.lineTo(px + sm, sy - sm); ctx.lineTo(px - sm, sy - sm); ctx.closePath(); ctx.fill();
+      } else if (t.action === 'spread_sale' && t.long_buy_price != null) {
+        var ly = yPx(Number(t.long_buy_price));
+        if (ly < PAD_T || ly > PAD_T + ch) return;
+        var bm = FUTURES_SPREAD_TRADE_MARKER_SIZE;
+        ctx.fillStyle = FUTURES_SPREAD_BUY_COLOR;
+        ctx.beginPath(); ctx.moveTo(px, ly - bm - 1); ctx.lineTo(px + bm, ly + bm); ctx.lineTo(px - bm, ly + bm); ctx.closePath(); ctx.fill();
+      }
+    });
+  }
+  var curX = xPx(idx);
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(curX, PAD_T); ctx.lineTo(curX, PAD_T + ch); ctx.stroke(); ctx.setLineDash([]);
+  if (_fprCrosshair && _fprCrosshair.active) {
+    var priceCrossIdx = Math.max(0, Math.min(_fpSnaps.length - 1, _fprCrosshair.idx || 0));
+    var priceCx = Math.max(PAD_L, Math.min(PAD_L + cw, xPx(priceCrossIdx)));
+    var priceCy = Math.max(PAD_T, Math.min(PAD_T + ch, _fprCrosshair.y));
+    var isPriceSource = _fprCrosshair.source === 'price';
+    ctx.strokeStyle = 'rgba(226,232,240,0.85)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(priceCx, PAD_T); ctx.lineTo(priceCx, PAD_T + ch); ctx.stroke();
+    if (isPriceSource) {
+      ctx.beginPath(); ctx.moveTo(PAD_L, priceCy); ctx.lineTo(PAD_L + cw, priceCy); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+  if (_fprCrosshair && _fprCrosshair.active) {
+    var priceCrossIdxLabel = Math.max(0, Math.min(_fpSnaps.length - 1, _fprCrosshair.idx || 0));
+    var priceLabelX = Math.max(PAD_L, Math.min(PAD_L + cw, xPx(priceCrossIdxLabel)));
+    var priceSnap = _fpSnaps[priceCrossIdxLabel] || {};
+    var priceTimeLabel = _formatSpreadCrosshairTime(priceSnap.ts);
+    ctx.font = '11px Segoe UI';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    var priceTw = Math.min(150, Math.max(92, ctx.measureText(priceTimeLabel).width + 12));
+    var priceTx = Math.max(PAD_L + priceTw / 2, Math.min(PAD_L + cw - priceTw / 2, priceLabelX));
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(priceTx - priceTw / 2, PAD_T + ch + 19, priceTw, 18);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(priceTimeLabel, priceTx, PAD_T + ch + 28);
+    if (_fprCrosshair.source === 'price' && _fprCrosshair.value != null && isFinite(_fprCrosshair.value)) {
+      var priceValueLabel = '$' + Number(_fprCrosshair.value).toFixed(2);
+      var priceVy = Math.max(PAD_T + 9, Math.min(PAD_T + ch - 9, _fprCrosshair.y));
+      var priceVw = Math.max(58, Math.min(PAD_R - 4, ctx.measureText(priceValueLabel).width + 10));
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(PAD_L + cw + 2, priceVy - 9, priceVw, 18);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(priceValueLabel, PAD_L + cw + 7, priceVy);
+    }
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.fillStyle = '#cbd5e1'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+  var visibleCount = Math.max(1, visEnd - visStart + 1);
+  var labelStep = Math.max(1, Math.floor(visibleCount / 5));
+  for (var li = visStart; li <= visEnd; li += labelStep) {
+    var ts = _fpSnaps[li].ts || '';
+    ctx.fillText(ts.length >= 16 ? ts.slice(5, 16) : ts, xPx(li), PAD_T + ch + 18);
+  }
+	  var shortNow = hist && hist.shortVals ? hist.shortVals[idx] : null;
+	  var longNow = hist && hist.longVals ? hist.longVals[idx] : null;
+	  document.getElementById('fpr-instrument').textContent = (hist ? (hist.shortTicker + ' / ' + hist.longTicker) : 'Loading instruments');
+  document.getElementById('fpr-spot').textContent = 'Short: ' + (shortNow != null ? '$' + shortNow.toFixed(2) : '—') + ' · Long: ' + (longNow != null ? '$' + longNow.toFixed(2) : '—');
+  document.getElementById('fpr-run').textContent = _fpSnaps[idx] ? (_fpSnaps[idx].run || '—') : '—';
+  document.getElementById('fpr-longs').textContent = _fpSnaps[idx] ? (_fpSnaps[idx].open_longs || 0) : 0;
+  document.getElementById('fpr-cycle-entry').textContent = '—';
+	  document.getElementById('fpr-avg-entry').textContent = '—';
+	  document.getElementById('fpr-mark-pnl').textContent = '—';
+	  var statusEl = document.getElementById('futures-spread-status');
+	  if (statusEl && hist && hist.envelopeStepPct != null) {
+	    var envelopeStepPct = hist.envelopeStepPct;
+	    statusEl.textContent =
+	      'Spread = Short - Long; envelopes use trailing ' + FUTURES_SPREAD_MEAN_WINDOW + ' valid spread/Long points, mean ratio ±' + envelopeStepPct.toFixed(3).replace(/\.?(?:0+)$/, '') + '%/±' + (envelopeStepPct * 2).toFixed(3).replace(/\.?(?:0+)$/, '') + '%/±' + (envelopeStepPct * 3).toFixed(3).replace(/\.?(?:0+)$/, '') + '%' +
+	      (mode === 'candles' && hist.candleSource && hist.candlesAvailable ? ' · Candles: ' + hist.candleSource : '') +
+	      (mode === 'candles' && !hist.candlesAvailable ? ' · Candles unavailable: real OHLC missing' : '');
+	  }
+	  drawFuturesSpreadNativeChart(idx, { xMin: xMin, xMax: xMax, visStart: visStart, visEnd: visEnd });
+	}
+
+function drawFuturePriceAt(idx) {
+  if (!_fpSnaps.length) return;
+  idx = Math.max(0, Math.min(idx, _fpSnaps.length - 1));
+  var cache = _fprCache;
+  if (!cache) return;
+
+  var canvas = document.getElementById('futures-price-canvas');
+  if (!canvas) return;
+  if (isFuturesSpreadStrategy(_activeStrategyId)) {
+    drawFuturesSpreadPriceAt(idx, cache, canvas);
+    return;
+  }
+  var wrap = canvas.parentElement;
+  var W = wrap.clientWidth;
+  var H = wrap.clientHeight || 260;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var PAD_L = 70, PAD_T = 20, PAD_R = 20, PAD_B = 40;
+  var cw = W - PAD_L - PAD_R;
+  var ch = H - PAD_T - PAD_B;
+
+  // Y scale (price axis) — with zoom/pan
+  var prMin = cache.baseCenter + _fprPanY - cache.baseHalf / _fprZoom;
+  var prMax = cache.baseCenter + _fprPanY + cache.baseHalf / _fprZoom;
+  if (prMax - prMin < 1) { prMin -= 50; prMax += 50; }
+
+  var _fprN = cache.n;
+  var _fprXCenter = _fprN / 2 + _fprPanX;
+  var _fprXHalf   = (_fprN / 2) / _fprZoomX;
+  var _fprXMin = _fprXCenter - _fprXHalf;
+  var _fprXMax = _fprXCenter + _fprXHalf;
+  function xPx(i) { return PAD_L + (i - _fprXMin) / (_fprXMax - _fprXMin) * cw; }
+  function yPx(v) { return PAD_T + (1 - (v - prMin) / (prMax - prMin)) * ch; }
+
+  // Background
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+  var nGridY = 5;
+  for (var i = 0; i <= nGridY; i++) {
+    var pv = prMin + (prMax - prMin) * i / nGridY;
+    var py = yPx(pv);
+    ctx.beginPath(); ctx.moveTo(PAD_L, py); ctx.lineTo(PAD_L + cw, py); ctx.stroke();
+    ctx.fillStyle = '#cbd5e1'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'right';
+    ctx.fillText('$' + pv.toFixed(0), PAD_L - 6, py + 4);
+  }
+
+  var curTs   = _fpSnaps[idx] ? _fpSnaps[idx].ts : null;
+  var curTime = curTs ? new Date(curTs + ':00Z').getTime() : Infinity;
+  var visStart = Math.max(0, Math.floor(_fprXMin));
+  var visEnd = Math.min(idx, _fpSnaps.length - 1, Math.ceil(_fprXMax));
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(PAD_L, PAD_T, cw, ch); ctx.clip();
+
+  // ── Order markers (grid_start vertical lines — draw first, behind price) ──
+  // removed per-frame ts lookup; markers use cached snapIdx below
+
+  // ── Avg entry / avg TP horizontal levels from current snap ──
+  var snap = _fpSnaps[idx];
+  var showHeavyOverlays = !_fprInteractionFastMode;
+  if (snap) {
+    if (showHeavyOverlays && snap.avg_entry != null) {
+      var ey = yPx(snap.avg_entry);
+      ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(PAD_L, ey); ctx.lineTo(PAD_L + cw, ey); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(245,158,11,0.9)'; ctx.font = '12px Segoe UI'; ctx.textAlign = 'left';
+      var _avgUsdText = ('$' + (((snap.total_size_eth || 0) * snap.avg_entry).toFixed(0))); var _avgEntryLabel = ('Avg Entry ' + _avgUsdText + ' @ ' + snap.avg_entry.toFixed(2)); ctx.fillText(_avgEntryLabel, PAD_L + 4, ey - 3);
+    }
+    // Cycle Avg Entry (cyan) — virtual position for current cycle (resets after TP1)
+    if (showHeavyOverlays && snap.cycle_avg_entry != null && snap.cycle_size_eth > 0) {
+      var cey = yPx(snap.cycle_avg_entry);
+      ctx.strokeStyle = 'rgba(34,211,238,0.65)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,5]);
+      ctx.beginPath(); ctx.moveTo(PAD_L, cey); ctx.lineTo(PAD_L + cw, cey); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(34,211,238,0.95)'; ctx.font = '12px Segoe UI'; ctx.textAlign = 'left';
+      var _cycleSzUsd = snap.cycle_size_eth * snap.cycle_avg_entry;
+      ctx.fillText('Cycle Avg $' + _cycleSzUsd.toFixed(0) + ' @ ' + snap.cycle_avg_entry.toFixed(2), PAD_L + 4, cey + 12);
+    }
+    // Split TP levels
+    // ── TP lines: normal cycle (before TP1) ──
+    if (showHeavyOverlays && snap.tp1 != null && snap.tp2 != null && snap.tp3 != null) {
+      var tpDefs = [
+        { val: snap.tp1, col: 'rgba(249,168,212,0.8)', label: 'TP1 $' + ((snap.tp1_size_usd != null ? snap.tp1_size_usd.toFixed(0) : 0)) + ' @ ' + snap.tp1.toFixed(2), hit: snap.tp1_hit },
+        { val: snap.tp2, col: 'rgba(255,127,110,0.8)', label: 'TP2 $' + ((snap.tp2_size_usd != null ? snap.tp2_size_usd.toFixed(0) : 0)) + ' @ ' + snap.tp2.toFixed(2), hit: snap.tp2_hit },
+        { val: snap.tp3, col: 'rgba(255,59,59,0.98)',  label: 'TP3 $' + ((snap.tp3_size_usd != null ? snap.tp3_size_usd.toFixed(0) : 0)) + ' @ ' + snap.tp3.toFixed(2), hit: false },
+      ];
+      tpDefs.forEach(function(tp) {
+        var ty3 = yPx(tp.val);
+        ctx.strokeStyle = tp.hit ? 'rgba(100,116,139,0.4)' : tp.col;
+        ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(PAD_L, ty3); ctx.lineTo(PAD_L + cw, ty3); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = tp.hit ? 'rgba(100,116,139,0.6)' : tp.col;
+        ctx.font = '12px Segoe UI'; ctx.textAlign = 'right';
+        ctx.fillText(tp.label, PAD_L + cw - 4, ty3 - 3);
+      });
+    }
+    // ── After TP1: legacy TP orders (accumulated across prior cycles) + new cycle TPs ──
+    if (showHeavyOverlays && snap.after_tp1) {
+      var legacyDefs = Array.isArray(snap.legacy_orders) ? snap.legacy_orders.map(function(tp) {
+        return { val: tp.tp_price, label: tp.label || ('Legacy R' + tp.source_run + ' TP' + tp.tp_level + ' $' + Number(tp.tp_price).toFixed(0)) };
+      }) : [];
+      if (!legacyDefs.length) {
+        if (snap.legacy_tp2 != null) legacyDefs.push({ val: snap.legacy_tp2, label: 'Legacy TP2 $' + snap.legacy_tp2.toFixed(0) });
+        if (snap.legacy_tp3 != null) legacyDefs.push({ val: snap.legacy_tp3, label: 'Legacy TP3 $' + snap.legacy_tp3.toFixed(0) });
+      }
+      legacyDefs.forEach(function(tp, idx) {
+        var ty = yPx(tp.val);
+        ctx.strokeStyle = 'rgba(239,68,68,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([5,3]);
+        ctx.beginPath(); ctx.moveTo(PAD_L, ty); ctx.lineTo(PAD_L + cw, ty); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(239,68,68,0.95)'; ctx.font = 'bold 12px Segoe UI'; ctx.textAlign = 'left';
+        ctx.fillText(tp.label, PAD_L + 4, ty - 3 - (idx % 2) * 12);
+      });
+      var newCycleDefs = [];
+      if (snap.new_tp1 == null && snap.new_tp2 != null && snap.new_tp3 == null) {
+        newCycleDefs.push({ val: snap.new_tp2, col: 'rgba(255,127,110,0.75)', label: 'New Avg TP $' + ((snap.new_tp2_size_usd != null ? snap.new_tp2_size_usd.toFixed(0) : 0)) + ' @ ' + snap.new_tp2.toFixed(2) });
+      } else {
+        if (snap.new_tp1 != null) newCycleDefs.push({ val: snap.new_tp1, col: 'rgba(249,168,212,0.65)', label: 'New TP1 $' + ((snap.new_tp1_size_usd != null ? snap.new_tp1_size_usd.toFixed(0) : 0)) + ' @ ' + snap.new_tp1.toFixed(2) });
+        if (snap.new_tp2 != null) newCycleDefs.push({ val: snap.new_tp2, col: 'rgba(255,127,110,0.65)', label: 'New TP2 $' + ((snap.new_tp2_size_usd != null ? snap.new_tp2_size_usd.toFixed(0) : 0)) + ' @ ' + snap.new_tp2.toFixed(2) });
+        if (snap.new_tp3 != null) newCycleDefs.push({ val: snap.new_tp3, col: 'rgba(255,59,59,0.9)',   label: 'New TP3 $' + ((snap.new_tp3_size_usd != null ? snap.new_tp3_size_usd.toFixed(0) : 0)) + ' @ ' + snap.new_tp3.toFixed(2) });
+      }
+      newCycleDefs.forEach(function(tp) {
+        var ty = yPx(tp.val);
+        ctx.strokeStyle = tp.col; ctx.lineWidth = 1; ctx.setLineDash([3,5]);
+        ctx.beginPath(); ctx.moveTo(PAD_L, ty); ctx.lineTo(PAD_L + cw, ty); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = tp.col; ctx.font = '12px Segoe UI'; ctx.textAlign = 'right';
+        ctx.fillText(tp.label, PAD_L + cw - 4, ty - 3);
+      });
+    }
+    if (showHeavyOverlays && !snap.tp1 && !snap.after_tp1 && snap.avg_tp != null) {
+      var ty2 = yPx(snap.avg_tp);
+      ctx.strokeStyle = 'rgba(168,85,247,0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(PAD_L, ty2); ctx.lineTo(PAD_L + cw, ty2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(168,85,247,0.9)'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'left';
+      ctx.fillText('Avg TP $' + snap.avg_tp.toFixed(0), PAD_L + 4, ty2 - 3);
+    }
+  }
+
+  // ── Price line (up to current idx, only visible segment, dynamically decimated) ──
+  if (visEnd > visStart) {
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    var visiblePts = visEnd - visStart + 1;
+    var maxDrawPts = _fprInteractionFastMode ? Math.max(200, Math.floor(cw / 2)) : Math.max(600, Math.floor(cw * 1.5));
+    if (visiblePts <= maxDrawPts) {
+      for (var pi = visStart; pi <= visEnd; pi++) {
+        var px = xPx(pi), py = yPx(cache.spots[pi]);
+        if (pi === visStart) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+    } else {
+      var bucket = visiblePts / maxDrawPts;
+      var first = true;
+      for (var bi = 0; bi < maxDrawPts; bi++) {
+        var from = Math.floor(visStart + bi * bucket);
+        var to = Math.min(visEnd, Math.floor(visStart + (bi + 1) * bucket) - 1);
+        if (to < from) to = from;
+        var minI = from, maxI = from;
+        var minV = cache.spots[from], maxV = cache.spots[from];
+        for (var ii = from + 1; ii <= to; ii++) {
+          var vv = cache.spots[ii];
+          if (vv < minV) { minV = vv; minI = ii; }
+          if (vv > maxV) { maxV = vv; maxI = ii; }
+        }
+        var i1 = minI < maxI ? minI : maxI;
+        var i2 = minI < maxI ? maxI : minI;
+        var p1x = xPx(i1), p1y = yPx(cache.spots[i1]);
+        var p2x = xPx(i2), p2y = yPx(cache.spots[i2]);
+        if (first) { ctx.moveTo(p1x, p1y); first = false; } else { ctx.lineTo(p1x, p1y); }
+        if (i2 !== i1) ctx.lineTo(p2x, p2y);
+      }
+    }
+    ctx.stroke();
+  }
+
+  // ── Buy/TP fill markers ──
+  if (showHeavyOverlays) cache.trades.forEach(function(t) {
+    var si = t.snapIdx;
+    if (si < visStart || si > visEnd || si > idx) return;
+    var px = xPx(si);
+    if (t.action === 'buy_fill') {
+      var py = yPx(t.buy_price);
+      if (py < PAD_T || py > PAD_T + ch) return;
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath(); ctx.moveTo(px, py-7); ctx.lineTo(px+5, py); ctx.lineTo(px-5, py); ctx.closePath(); ctx.fill();
+    } else if (t.action === 'tp_fill') {
+      var _tpPrice = t.tp_price || t.unified_tp;
+      if (!_tpPrice) return;
+      var py = yPx(_tpPrice);
+      if (py < PAD_T || py > PAD_T + ch) return;
+      var _tpLegacy = !!t.legacy;
+      var _tpCol = _tpLegacy ? '#ef4444' : (t.tp_level === 1 ? '#f9a8d4' : (t.tp_level === 2 ? '#ff7f6e' : '#c0392b'));
+      ctx.fillStyle = _tpCol;
+      ctx.beginPath(); ctx.moveTo(px, py+7); ctx.lineTo(px+5, py); ctx.lineTo(px-5, py); ctx.closePath(); ctx.fill();
+    } else if (t.action === 'grid_restart') {
+      var rsnap = _fpSnaps[si];
+      if (!rsnap) return;
+      var py = yPx(rsnap.spot);
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath(); ctx.arc(px, py, 1, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+
+  // Current position vertical line
+  var curX = xPx(idx);
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(curX, PAD_T); ctx.lineTo(curX, PAD_T + ch); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Current price dot + P&L label
+  if (snap) {
+    var curY = yPx(snap.spot);
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath(); ctx.arc(curX, curY, 4, 0, Math.PI*2); ctx.fill();
+
+    var pnlUsd = snap.unrealized_pnl_usd || 0;  // current open position only
+    var initCap = _fpSnaps.length ? (_fpSnaps[0].equity - (_fpSnaps[0].total_mark_pnl_usd || 0)) : 10000;
+    if (initCap === 0) initCap = 10000;
+    var pnlPct = pnlUsd / initCap * 100;
+    var pnlColor = pnlUsd >= 0 ? '#22c55e' : '#f87171';
+    var pnlSign  = pnlUsd >= 0 ? '+' : '';
+
+    var line1 = '$' + snap.spot.toFixed(0);
+    var line2 = pnlSign + pnlUsd.toFixed(2) + ' USD  (' + pnlSign + pnlPct.toFixed(2) + '%)';
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(line1, curX + 8, curY - 7);
+    ctx.font = '11px Segoe UI';
+    ctx.fillStyle = pnlColor;
+    ctx.fillText(line2, curX + 8, curY + 7);
+  }
+
+  ctx.restore();
+
+  // X-axis time labels (sample only visible window)
+  ctx.fillStyle = '#cbd5e1'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+  var visibleCount = Math.max(1, visEnd - visStart + 1);
+  var labelStep = Math.max(1, Math.floor(visibleCount / 5));
+  for (var li = visStart; li <= visEnd; li += labelStep) {
+    var lx = xPx(li);
+    var ts = _fpSnaps[li].ts || '';
+    var label = ts.length >= 16 ? ts.slice(5, 16) : ts;  // MM-DDTHH:MM
+    ctx.fillText(label, lx, PAD_T + ch + 18);
+  }
+
+  // Meta
+  if (snap) {
+    document.getElementById('fpr-spot').textContent = '$' + snap.spot.toFixed(2);
+    document.getElementById('fpr-run').textContent  = snap.run || '—';
+    document.getElementById('fpr-longs').textContent = snap.open_longs || 0;
+    document.getElementById('fpr-cycle-entry').textContent = (snap.cycle_avg_entry != null && snap.cycle_size_eth > 0) ? (('$' + ((snap.cycle_size_eth * snap.cycle_avg_entry).toFixed(0))) + ' @ ' + snap.cycle_avg_entry.toFixed(2)) : '—';
+    var _fprCurSnapTime = snap.ts ? new Date(snap.ts + ':00Z').getTime() : 0;
+    var _fprTradeCount = _fpTrades.filter(function(t){ return t.action === 'tp_fill' && t.ts && new Date(t.ts+':00Z').getTime() <= _fprCurSnapTime; }).length;
+    document.getElementById('fpr-instrument').textContent = 'ETH-PERPETUAL · Trades: ' + _fprTradeCount;
+    document.getElementById('fpr-avg-entry').textContent = snap.avg_entry != null ? (('$' + (((snap.total_size_eth || 0) * snap.avg_entry).toFixed(0))) + ' @ ' + snap.avg_entry.toFixed(2)) : '—';
+    var _fprMarkPnl = snap.total_mark_pnl_usd || 0;
+    var _fprMarkPnlEl = document.getElementById('fpr-mark-pnl');
+    _fprMarkPnlEl.textContent = (_fprMarkPnl >= 0 ? '+' : '') + _fprMarkPnl.toFixed(2) + ' USD';
+    _fprMarkPnlEl.style.color = _fprMarkPnl >= 0 ? '#34d399' : '#f87171';
+  }
+}
+
+// ── Price panel zoom/pan (wheel on X, drag/axis controls) ──
+(function() {
+  var _initDone = false;
+  function initFuturePriceInteraction() {
+    if (_initDone) return; _initDone = true;
+    var canvas = document.getElementById('futures-price-canvas');
+    if (!canvas) return;
+
+    // Wheel → zoom X
+    canvas.onwheel = function(e) {
+      e.preventDefault();
+      _fprInteractionFastMode = true;
+      var delta = e.deltaY > 0 ? 0.89 : 1.12;
+      var rect = canvas.getBoundingClientRect();
+      var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+      var padL = 20 / Math.max(1, rect.width), padR = 126 / Math.max(1, rect.width);
+      var mouseXfrac = (e.clientX - rect.left) / Math.max(1, rect.width);
+      var chartFracX = Math.max(0, Math.min(1, (mouseXfrac - padL) / Math.max(0.001, 1 - padL - padR)));
+      var xCenter = n / 2 + _fprPanX;
+      var xHalf = (n / 2) / _fprZoomX;
+      var xAtMouse = xCenter - xHalf + chartFracX * xHalf * 2;
+      _fprZoomX = Math.max(0.2, Math.min(_fprMaxZoomX(), _fprZoomX * delta));
+      var newXHalf = (n / 2) / _fprZoomX;
+      _fprPanX = xAtMouse - n / 2 - newXHalf * (2 * chartFracX - 1);
+      _fsprPanX = _fprPanX;
+      scheduleFuturePriceDraw(_fpIdx);
+      clearTimeout(canvas._fastModeTimer);
+      canvas._fastModeTimer = setTimeout(function() {
+        _fprInteractionFastMode = false;
+        scheduleFuturePriceDraw(_fpIdx);
+      }, 120);
+    };
+
+    // Drag on right Y-axis strip → zoom Y; X-axis strip → zoom X; chart → pan
+    canvas.onmousedown = function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var lx = e.clientX - rect.left;
+      var ly = e.clientY - rect.top;
+      var onYAxis = lx > rect.width - 70;
+      var onXAxis = ly > rect.height - 40;
+      _clearFuturesCrosshairs();
+      _fprDrag.active    = true;
+      _fprDrag.startX    = e.clientX;
+      _fprDrag.startY    = e.clientY;
+      _fprDrag.startPanY  = _fprPanY;
+      _fprDrag.startPanX  = _fprPanX;
+      _fprDrag.startZoom  = _fprZoom;
+      _fprDrag.startZoomX = _fprZoomX;
+      if (onYAxis)       { _fprDrag.mode = 'zoom-y'; canvas.style.cursor = 'ns-resize'; }
+      else if (onXAxis)  { _fprDrag.mode = 'zoom-x'; canvas.style.cursor = 'ew-resize'; }
+      else               { _fprDrag.mode = 'pan';    canvas.style.cursor = 'grabbing'; }
+      _fprInteractionFastMode = true;
+      e.preventDefault();
+    };
+
+    if (!_fprListenersRegistered) {
+      _fprListenersRegistered = true;
+      window.addEventListener('mousemove', function(e) {
+        if (!_fprDrag.active || !_fprCache) return;
+        var dx = e.clientX - _fprDrag.startX;
+        var dy = e.clientY - _fprDrag.startY;
+        var baseHalf = _fprCache.baseHalf;
+        var N = _fprCache.n;
+        if (_fprDrag.mode === 'zoom-y') {
+          _fprZoom = Math.max(0.2, Math.min(12, _fprDrag.startZoom * Math.pow(1.005, -dy)));
+          _fprPanY = _fprDrag.startPanY;
+        } else if (_fprDrag.mode === 'zoom-x') {
+          _fprZoomX = Math.max(0.2, Math.min(_fprMaxZoomX(), _fprDrag.startZoomX * Math.pow(1.005, -dx)));
+          _fprPanX  = _fprDrag.startPanX;
+        } else {
+          // pan both axes
+          _fprPanY = _fprDrag.startPanY + (dy / 260) * (baseHalf * 2 / _fprDrag.startZoom);
+          _fprPanX = _fprDrag.startPanX - (dx / 800) * (N / _fprDrag.startZoomX);
+        }
+        scheduleFuturePriceDraw(_fpIdx);
+      });
+      window.addEventListener('mouseup', function() {
+        if (_fprDrag.active) {
+          _fprDrag.active = false;
+          _fprInteractionFastMode = false;
+          var cvs = document.getElementById('futures-price-canvas');
+          if (cvs) cvs.style.cursor = 'grab';
+          scheduleFuturePriceDraw(_fpIdx);
+        }
+      });
+    }
+
+    canvas.onmousemove = function(e) {
+      if (_fprDrag.active) return;
+      var rect = canvas.getBoundingClientRect();
+      var lx = e.clientX - rect.left, ly = e.clientY - rect.top;
+      if (isFuturesSpreadStrategy(_activeStrategyId) && _fprCache && _fpSnaps.length) {
+        var padLpx = 20, padTpx = 20, padRpx = 70, padBpx = 40;
+        var cwpx = Math.max(1, rect.width - padLpx - padRpx);
+        var chpx = Math.max(1, rect.height - padTpx - padBpx);
+        if (lx >= padLpx && lx <= padLpx + cwpx && ly >= padTpx && ly <= padTpx + chpx) {
+          var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+          var crossIdx = _futuresCrosshairIndexFromX(lx, padLpx, cwpx, n);
+          var prMin = _fprCache.baseCenter + _fprPanY - _fprCache.baseHalf / _fprZoom;
+          var prMax = _fprCache.baseCenter + _fprPanY + _fprCache.baseHalf / _fprZoom;
+          if (prMax - prMin < 1) { prMin -= 50; prMax += 50; }
+          var priceValue = prMax - ((ly - padTpx) / chpx) * (prMax - prMin);
+          _fprCrosshair = { active: true, source: 'price', x: lx, y: ly, idx: crossIdx, value: priceValue };
+          _fsprCrosshair = { active: true, source: 'price', x: 0, y: 0, idx: crossIdx, value: null };
+          canvas.style.cursor = 'crosshair';
+          scheduleFuturePriceDraw(_fpIdx);
+          return;
+        } else if ((_fprCrosshair && _fprCrosshair.active) || (_fsprCrosshair && _fsprCrosshair.active)) {
+          _clearFuturesCrosshairs();
+        }
+      }
+      if (lx > rect.width - 70)       canvas.style.cursor = 'ns-resize';
+      else if (ly > rect.height - 40) canvas.style.cursor = 'ew-resize';
+      else                            canvas.style.cursor = 'grab';
+    };
+    canvas.onmouseleave = function() {
+      if (!_fprDrag.active) canvas.style.cursor = 'grab';
+      if (isFuturesSpreadStrategy(_activeStrategyId)) _clearFuturesCrosshairs();
+    };
+    canvas.style.cursor = 'grab';
+    new ResizeObserver(function() { scheduleFuturePriceDraw(_fpIdx); }).observe(canvas.parentElement);
+  }
+
+  function initFuturesSpreadInteraction() {
+    var canvas = document.getElementById('futures-spread-canvas');
+    if (!canvas || canvas._spreadInteractionReady) return;
+    canvas._spreadInteractionReady = true;
+
+    canvas.onwheel = function(e) {
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? 0.89 : 1.12;
+      var rect = canvas.getBoundingClientRect();
+      var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+      var padL = 20 / Math.max(1, rect.width), padR = 70 / Math.max(1, rect.width);
+      var mouseXfrac = (e.clientX - rect.left) / Math.max(1, rect.width);
+      var chartFracX = Math.max(0, Math.min(1, (mouseXfrac - padL) / Math.max(0.001, 1 - padL - padR)));
+      var xCenter = n / 2 + _fprPanX;
+      var xHalf = (n / 2) / _fprZoomX;
+      var xAtMouse = xCenter - xHalf + chartFracX * xHalf * 2;
+      _fprZoomX = Math.max(0.2, Math.min(_fprMaxZoomX(), _fprZoomX * delta));
+      var newXHalf = (n / 2) / _fprZoomX;
+      _fprPanX = xAtMouse - n / 2 - newXHalf * (2 * chartFracX - 1);
+      _fsprPanX = _fprPanX;
+      scheduleFuturePriceDraw(_fpIdx);
+    };
+
+    canvas.onmousedown = function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var lx = e.clientX - rect.left;
+      _clearFuturesCrosshairs();
+      _fsprDrag.active = true;
+      _fsprDrag.startX = e.clientX;
+      _fsprDrag.startY = e.clientY;
+      _fsprDrag.startPanX = _fprPanX;
+      _fsprDrag.startPanY = _fsprPanY;
+      _fsprDrag.startZoom = _fsprZoom;
+      _fsprDrag.startZoomX = _fprZoomX;
+      _fsprDrag.mode = lx > rect.width - 126 ? 'zoom-y' : 'pan';
+      canvas.style.cursor = _fsprDrag.mode === 'zoom-y' ? 'ns-resize' : 'grabbing';
+      e.preventDefault();
+    };
+
+    if (!_fsprListenersRegistered) {
+      _fsprListenersRegistered = true;
+      window.addEventListener('mousemove', function(e) {
+        if (!_fsprDrag.active) return;
+        var hist = _futuresSpreadHistory;
+        var yBounds = _getFuturesSpreadYBounds(hist);
+        var canvas = document.getElementById('futures-spread-canvas');
+        if (!canvas) return;
+        var rect = canvas.getBoundingClientRect();
+        var cw = Math.max(1, rect.width - 20 - 126);
+        var ch = Math.max(1, rect.height - 16 - 34);
+        var dx = e.clientX - _fsprDrag.startX;
+        var dy = e.clientY - _fsprDrag.startY;
+        if (_fsprDrag.mode === 'zoom-y') {
+          if (!yBounds) return;
+          _fsprZoom = Math.max(0.2, Math.min(12, _fsprDrag.startZoom * Math.pow(1.005, -dy)));
+          _fsprPanY = _fsprDrag.startPanY;
+        } else {
+          var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+          _fprPanX = _fsprDrag.startPanX - (dx / cw) * (n / _fsprDrag.startZoomX);
+          _fsprPanX = _fprPanX;
+          if (yBounds) {
+            _fsprPanY = _fsprDrag.startPanY + (dy / ch) * (yBounds.half * 2 / _fsprDrag.startZoom);
+          }
+        }
+        scheduleFuturePriceDraw(_fpIdx);
+      });
+      window.addEventListener('mouseup', function() {
+        if (!_fsprDrag.active) return;
+        _fsprDrag.active = false;
+        var canvas = document.getElementById('futures-spread-canvas');
+        if (canvas) canvas.style.cursor = 'grab';
+        scheduleFuturePriceDraw(_fpIdx);
+      });
+    }
+
+    canvas.onmousemove = function(e) {
+      if (_fsprDrag.active) return;
+      var rect = canvas.getBoundingClientRect();
+      var lx = e.clientX - rect.left;
+      var ly = e.clientY - rect.top;
+      var hist = _futuresSpreadHistory;
+      var yBounds = _getFuturesSpreadYBounds(hist);
+      if (hist && yBounds && _fpSnaps.length) {
+        var padLpx = 20, padTpx = 16, padRpx = 126, padBpx = 34;
+        var cwpx = Math.max(1, rect.width - padLpx - padRpx);
+        var chpx = Math.max(1, rect.height - padTpx - padBpx);
+        if (lx >= padLpx && lx <= padLpx + cwpx && ly >= padTpx && ly <= padTpx + chpx) {
+          var n = (_fprCache && _fprCache.n) || Math.max(1, _fpSnaps.length - 1);
+          var crossIdx = _futuresCrosshairIndexFromX(lx, padLpx, cwpx, n);
+          var minV = yBounds.center + _fsprPanY - yBounds.half / _fsprZoom;
+          var maxV = yBounds.center + _fsprPanY + yBounds.half / _fsprZoom;
+          _fsprCrosshair = {
+            active: true,
+            source: 'spread',
+            x: lx,
+            y: ly,
+            idx: crossIdx,
+            value: maxV - ((ly - padTpx) / chpx) * (maxV - minV)
+          };
+          _fprCrosshair = { active: true, source: 'spread', x: 0, y: 0, idx: crossIdx, value: null };
+          scheduleFuturePriceDraw(_fpIdx);
+        } else if ((_fsprCrosshair && _fsprCrosshair.active) || (_fprCrosshair && _fprCrosshair.active)) {
+          _clearFuturesCrosshairs();
+        }
+      }
+      canvas.style.cursor = lx > rect.width - 126 ? 'ns-resize' : 'crosshair';
+    };
+    canvas.onmouseleave = function() {
+      if (!_fsprDrag.active) canvas.style.cursor = 'grab';
+      _clearFuturesCrosshairs();
+    };
+    canvas.style.cursor = 'grab';
+    new ResizeObserver(function() { scheduleFuturePriceDraw(_fpIdx); }).observe(canvas.parentElement);
+  }
+
+  // Delay init until canvas exists in DOM
+  document.addEventListener('DOMContentLoaded', function() {});
+  // Patch initFuturesProfileViewer to also init price interaction
+  var _origInit = window.initFuturesProfileViewer;
+  // Use MutationObserver as fallback; simpler: just export and call
+  window._initFuturePriceInteraction = initFuturePriceInteraction;
+  window._initFuturesSpreadInteraction = initFuturesSpreadInteraction;
+})();
+
+// ── Cross-panel sync helpers ──
+function _fpSyncFromTl(tlIdx) {
+  // Map tl-slider index (payoff_snapshots of P&L dynamics) to fp-slider index
+  // Both use _payoffSnaps — same array, same index
+  if (!_fpSnaps.length) return;
+  var idx = Math.max(0, Math.min(_fpSnaps.length - 1, tlIdx));
+  _fpIdx = idx;
+  drawFuturesProfileAt(idx);
+  drawFuturePriceAt(idx);
+  document.getElementById('fp-slider').value = idx;
+}
+
+function _tlSyncFromFp(fpIdx) {
+  // Map fp-slider index to tl-slider
+  var idx = Math.max(0, Math.min(_payoffSnaps.length - 1, fpIdx));
+  _tlIdx = idx;
+  drawPayoffAt(idx);
+  document.getElementById('tl-slider').value = idx;
+}
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

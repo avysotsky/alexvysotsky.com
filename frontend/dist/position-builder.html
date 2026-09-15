@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__VAN_BASE_URL__ = "https://www.alexvysotsky.com";</script>
+  <meta charset="UTF-8"/>
+  <title>VAN Portal · Position Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Header ── */
+    header { border-bottom: 1px solid #1e293b; padding: 6px 24px; }
+    .header-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { height: 48px; filter: invert(1) brightness(1.15); opacity: .96; }
+    .brand-title { font-size: 15px; font-weight: 600; }
+    .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .btn-logout { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-logout:hover { background: #334155; }
+
+    /* ── Nav ── */
+    nav { border-bottom: 1px solid #1e293b; background: #0b1220; }
+    .nav-inner { max-width: 1400px; margin: 0 auto; display: flex; gap: 0; padding: 0 24px; }
+    .nav-item { padding: 8px 10px; font-size: 13px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; white-space: nowrap; }
+    .nav-item:hover { color: #f1f5f9; background: #111827; }
+    .nav-item.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    /* ── Main ── */
+    .main { max-width: 1400px; margin: 0 auto; padding: 16px 24px 40px; }
+
+    /* ── Top Controls ── */
+    .top-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .top-bar .section-title { font-size: 17px; font-weight: 700; color: #f8fafc; margin-right: 8px; }
+    .asset-tabs { display: flex; gap: 6px; }
+    .asset-tab { padding: 5px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8; transition: all .15s; }
+    .asset-tab.active { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+    .spot-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+    .spot-val { font-size: 16px; font-weight: 700; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+    .spot-change { font-size: 12px; }
+    .spot-change.pos { color: #34d399; }
+    .spot-change.neg { color: #f87171; }
+    .btn-small { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 5px 12px; border-radius: 7px; font-size: 12px; cursor: pointer; }
+    .btn-small:hover { background: #334155; color: #f1f5f9; }
+    .btn-primary { background: #1d4ed8; border: 1px solid #2563eb; color: #fff; padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-danger { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-danger:hover { background: #7f1d1d; }
+    .btn-icon { background: none; border: none; color: #475569; padding: 3px 7px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .btn-icon:hover { color: #f87171; background: #1e293b; }
+
+    /* ── Add Position Panel ── */
+    .add-panel { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; padding: 14px 20px; margin-bottom: 16px; }
+    .add-panel-title { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .05em; }
+    .add-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { font-size: 11px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    select, input[type=number], input[type=text] {
+      background: #0f172a; border: 1px solid #334155; color: #f1f5f9; padding: 7px 10px;
+      border-radius: 8px; font-size: 13px; outline: none;
+    }
+    select:focus, input:focus { border-color: #3b82f6; }
+    select { cursor: pointer; }
+    input[type=number] { -moz-appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    #add-expiry { min-width: 130px; }
+    #add-strike { min-width: 110px; }
+    #add-type { min-width: 90px; }
+    #add-direction { min-width: 80px; }
+    #add-qty { width: 90px; }
+    #add-iv-override { width: 80px; }
+
+    /* ── Positions Table ── */
+    .positions-wrap { border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+    .positions-header { background: #0b1220; padding: 10px 16px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .04em; display: flex; justify-content: space-between; align-items: center; }
+    table.positions { border-collapse: collapse; width: 100%; }
+    table.positions th { background: #0f172a; color: #475569; font-size: 11px; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #1e293b; text-align: right; white-space: nowrap; }
+    table.positions th:first-child { text-align: left; }
+    table.positions th.center { text-align: center; }
+    table.positions td { font-size: 12px; padding: 7px 10px; border-bottom: 1px solid #0f172a; text-align: right; white-space: nowrap; vertical-align: middle; }
+    table.positions td:first-child { text-align: left; }
+    table.positions td.center { text-align: center; }
+    table.positions tr.total-row td { background: #0b1220; font-weight: 700; border-top: 1px solid #1e293b; color: #f1f5f9; }
+    table.positions tr:hover:not(.total-row) td { background: #0f1c2e; }
+    .pos-name { font-weight: 600; color: #e2e8f0; font-size: 12px; }
+    .pos-call { color: #34d399; }
+    .pos-put  { color: #f87171; }
+    .pos-fut  { color: #60a5fa; }
+    .pos-buy  { color: #34d399; font-weight: 700; }
+    .pos-sell { color: #f87171; font-weight: 700; }
+    .val-pos  { color: #34d399; }
+    .val-neg  { color: #f87171; }
+    .val-dim  { color: #334155; }
+    .loading-badge { font-size: 10px; color: #64748b; }
+
+    /* ── Greeks Summary ── */
+    .greeks-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .greek-card { background: #0b1220; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 16px; min-width: 110px; }
+    .greek-name { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .greek-val  { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* ── Payoff Chart ── */
+    .chart-section { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; padding: 14px 20px 18px; }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+    .chart-title { font-size: 14px; font-weight: 600; color: #f8fafc; }
+    .chart-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .toggle-group { display: flex; gap: 0; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
+    .toggle-btn { padding: 5px 14px; font-size: 12px; cursor: pointer; background: #0f172a; color: #94a3b8; border: none; transition: all .15s; }
+    .toggle-btn.active { background: #1e3a5f; color: #60a5fa; }
+    .iv-adj-group { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
+    #iv-adj-slider { width: 120px; accent-color: #3b82f6; }
+    #iv-adj-label { font-size: 12px; font-weight: 600; color: #f1f5f9; min-width: 40px; }
+    #payoff-chart { width: 100%; height: 380px; border-radius: 8px; overflow: hidden; }
+    .chart-legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; }
+    .legend-dot { width: 10px; height: 3px; border-radius: 2px; }
+    .breakeven-list { font-size: 11px; color: #64748b; margin-top: 6px; }
+    .breakeven-list span { color: #fbbf24; font-weight: 600; margin-left: 4px; }
+
+    /* ── Empty State ── */
+    .empty-state { text-align: center; padding: 40px; color: #475569; font-size: 13px; }
+
+    /* ── Spinner ── */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .src-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .src-badge.local  { background: #052e16; border: 1px solid #166534; color: #4ade80; }
+    .src-badge.deribit { background: #1e1b4b; border: 1px solid #3730a3; color: #818cf8; }
+    .src-badge.loading { background: #1e293b; border: 1px solid #334155; color: #475569; }
+    .src-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .src-badge.local  .src-dot { background: #4ade80; }
+    .src-badge.deribit .src-dot { background: #818cf8; }
+    .src-badge.loading .src-dot { background: #475569; animation: pulse .8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+    footer { text-align: center; padding: 10px 28px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; margin-top: 20px; }
+
+    @media(max-width: 800px) {
+      .main { padding: 12px 12px 40px; }
+      .nav-item { padding: 8px 8px; font-size: 12px; }
+      .add-row { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN"/>
+      <div>
+        <div class="brand-title">VAN Portal</div>
+        <div class="brand-sub">Position Builder</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="user-label" style="font-size:13px;color:#64748b"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-item" onclick="navTo('/app')">Overview</div>
+    <div class="nav-item" onclick="navTo('/trading')">Trading</div>
+    <div class="nav-item" onclick="navTo('/deribit')">Deribit</div>
+    <div class="nav-item" onclick="navTo('/okx')">OKX</div>
+    <div class="nav-item" onclick="navTo('/bybit')">Bybit</div>
+    <div class="nav-item" onclick="navTo('/coincall-spreads.html')">CoinCall</div>
+    <div class="nav-item" onclick="navTo('/mexc.html')">MEXC</div>
+    <div class="nav-item" onclick="navTo('/binance.html')">Binance</div>
+    <div class="nav-item" onclick="navTo('/hyperliquid.html')">Hyperliquid</div>
+    <div class="nav-item" onclick="navTo('/bitget.html')">Bitget</div>
+    <div class="nav-item" onclick="navTo('/kraken.html')">Kraken</div>
+    <div class="nav-item" onclick="navTo('/kucoin.html')">KuCoin</div>
+    <div class="nav-item" onclick="navTo('/gate.html')">Gate</div>
+    <div class="nav-item" onclick="navTo('/coinbase.html')">Coinbase</div>
+    <div class="nav-item" onclick="navTo('/arbitrage')">Arbitrage</div>
+    <div class="nav-item" onclick="navTo('/market-data')">Market Data</div>
+    <div class="nav-item active">Position Builder</div>
+    <div class="nav-item" onclick="navTo('/backtester')">Backtester</div>
+    <div class="nav-item" onclick="navTo('/app#accounts')">Accounts</div>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="section-title">Position Builder</div>
+    <div class="asset-tabs">
+      <button class="asset-tab active" id="tab-btc" onclick="setAsset('BTC')">BTC</button>
+      <button class="asset-tab" id="tab-eth" onclick="setAsset('ETH')">ETH</button>
+      <button class="asset-tab" id="tab-btc-usdc" onclick="setAsset('BTC_USDC')">BTC_USDC</button>
+      <button class="asset-tab" id="tab-eth-usdc" onclick="setAsset('ETH_USDC')">ETH_USDC</button>
+    </div>
+    <div class="spot-group">
+      <span style="font-size:12px;color:#475569">Index:</span>
+      <span class="spot-val" id="spot-display">—</span>
+      <span class="spot-change" id="spot-change"></span>
+      <span class="src-badge loading" id="data-source-badge"><span class="src-dot"></span><span id="data-source-label">…</span></span>
+      <button class="btn-small" onclick="refreshSpot()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Add Position -->
+  <div class="add-panel">
+    <div class="add-panel-title">Add Leg</div>
+    <div class="add-row">
+      <div class="field-group">
+        <div class="field-label">Expiry</div>
+        <select id="add-expiry" onchange="loadStrikes()">
+          <option value="">Loading…</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Strike</div>
+        <select id="add-strike">
+          <option value="">—</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Type</div>
+        <select id="add-type" onchange="onTypeChange()">
+          <option value="C">Call</option>
+          <option value="P">Put</option>
+          <option value="F">Future</option>
+          <option value="PERP">Perpetual</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Direction</div>
+        <select id="add-direction">
+          <option value="1">Buy (Long)</option>
+          <option value="-1">Sell (Short)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Qty (contracts)</div>
+        <input type="number" id="add-qty" value="1" min="0.1" step="0.1" style="width:90px"/>
+      </div>
+      <div class="field-group">
+        <div class="field-label">IV override (%)</div>
+        <input type="number" id="add-iv-override" placeholder="Auto" min="1" max="500" step="1" style="width:90px"/>
+      </div>
+      <div class="field-group">
+        <div class="field-label">&nbsp;</div>
+        <button class="btn-primary" onclick="addLeg()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Greeks Summary -->
+  <div class="greeks-bar" id="greeks-bar">
+    <div class="greek-card"><div class="greek-name">Net Delta</div><div class="greek-val" id="g-delta">—</div></div>
+    <div class="greek-card"><div class="greek-name">Gamma</div><div class="greek-val" id="g-gamma">—</div></div>
+    <div class="greek-card"><div class="greek-name">Theta ($/day)</div><div class="greek-val" id="g-theta">—</div></div>
+    <div class="greek-card"><div class="greek-name">Vega (per 1% IV)</div><div class="greek-val" id="g-vega">—</div></div>
+    <div class="greek-card"><div class="greek-name">Rho</div><div class="greek-val" id="g-rho">—</div></div>
+    <div class="greek-card"><div class="greek-name">Net Premium</div><div class="greek-val" id="g-premium">—</div></div>
+  </div>
+
+  <!-- Positions Table -->
+  <div class="positions-wrap">
+    <div class="positions-header">
+      <span>Portfolio Legs</span>
+      <button class="btn-small" onclick="clearAll()" style="font-size:11px">Clear All</button>
+    </div>
+    <div id="positions-container">
+      <div class="empty-state">No legs added yet. Use the panel above to add options, futures or perpetuals.</div>
+    </div>
+  </div>
+
+  <!-- Payoff Chart -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title">Payoff Diagram</div>
+      <div class="chart-controls">
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="mode-expiry" onclick="setPayoffMode('expiry')">At Expiry</button>
+          <button class="toggle-btn" id="mode-today" onclick="setPayoffMode('today')">Today (with IV)</button>
+        </div>
+        <div class="iv-adj-group">
+          <span>IV:</span>
+          <input type="range" id="iv-adj-slider" min="-50" max="50" value="0" oninput="onIvAdj()"/>
+          <span id="iv-adj-label">0%</span>
+        </div>
+        <button class="btn-small" onclick="renderPayoff()">↻</button>
+      </div>
+    </div>
+    <div id="payoff-chart"></div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> P&amp;L ($)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;opacity:.5"></div> P&amp;L Today</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#475569;height:1px"></div> Break-even</div>
+    </div>
+    <div class="breakeven-list" id="breakeven-list"></div>
+  </div>
+
+</div>
+
+<footer>VAN Portal · Position Builder · Black-Scholes · Deribit Public API</footer>
+
+<script>
+const BASE = window.__VAN_BASE_URL__ || '';
+const MD_API = BASE + '/market-data-api';
+const DERIBIT = 'https://www.deribit.com/api/v2/public';
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+(function() {
+  let sess = null;
+  try { sess = JSON.parse(localStorage.getItem('van_session') || 'null'); } catch(e) {}
+  if (!sess || !sess.token) { window.location.href = '/'; throw new Error('Not authenticated'); }
+  const u = sess.user;
+  const lbl = document.getElementById('user-label');
+  if (lbl) lbl.textContent = (u && (u.Login || u.login || u.Name || u.name)) || 'Admin';
+})();
+
+function doLogout() { localStorage.removeItem('van_session'); localStorage.removeItem('van_token'); window.location.href = '/'; }
+function navTo(p) { window.location.href = p; }
+
+// ─── State ───────────────────────────────────────────────────────────────────
+var asset = 'BTC';
+var ASSET_CONFIG = {
+  BTC:      { tabId: 'tab-btc',      indexName: 'btc_usd',  localApiAsset: 'BTC', deribitCurrency: 'BTC',  deribitBase: 'BTC' },
+  ETH:      { tabId: 'tab-eth',      indexName: 'eth_usd',  localApiAsset: 'ETH', deribitCurrency: 'ETH',  deribitBase: 'ETH' },
+  BTC_USDC: { tabId: 'tab-btc-usdc', indexName: 'btc_usdc', localApiAsset: 'BTC_USDC', deribitCurrency: 'USDC', deribitBase: 'BTC' },
+  ETH_USDC: { tabId: 'tab-eth-usdc', indexName: 'eth_usdc', localApiAsset: 'ETH_USDC', deribitCurrency: 'USDC', deribitBase: 'ETH' }
+};
+var spotPrice = null;
+var expirations = [];
+var chainCache = {}; // expiry → chain data
+var legs = []; // {id, instrument, type, direction, qty, entryIv, entryPrice, strike, expiry, tte}
+var nextId = 1;
+var payoffMode = 'expiry'; // 'expiry' | 'today'
+var ivAdj = 0; // -50..50
+var payoffChart = null;
+
+// ─── Asset ───────────────────────────────────────────────────────────────────
+function setAsset(a) {
+  asset = a;
+  Object.keys(ASSET_CONFIG).forEach(function(key) {
+    var cfg = ASSET_CONFIG[key];
+    var el = document.getElementById(cfg.tabId);
+    if (el) el.classList.toggle('active', key === a);
+  });
+  chainCache = {};
+  refreshSpot();
+  loadExpirations();
+}
+
+// ─── Spot Price ──────────────────────────────────────────────────────────────
+async function refreshSpot() {
+  const el = document.getElementById('spot-display');
+  const cfg = ASSET_CONFIG[asset] || ASSET_CONFIG.BTC;
+  el.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await fetch(DERIBIT + '/get_index_price?index_name=' + cfg.indexName);
+    const d = await r.json();
+    spotPrice = d.result.index_price;
+    el.textContent = '$' + spotPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    document.getElementById('spot-change').textContent = '';
+    if (legs.length) { updateTable(); renderPayoff(); }
+  } catch(e) {
+    el.textContent = '—';
+    console.error('Spot fetch error', e);
+  }
+}
+
+function setDataSource(src) {
+  var badge = document.getElementById('data-source-badge');
+  var label = document.getElementById('data-source-label');
+  badge.className = 'src-badge ' + src;
+  if (src === 'local')        label.textContent = 'Local API';
+  else if (src === 'deribit') label.textContent = 'Deribit API';
+  else                        label.textContent = '...';
+}
+
+// ─── Expirations ─────────────────────────────────────────────────────────────
+async function loadExpirations() {
+  const sel = document.getElementById('add-expiry');
+  const cfg = ASSET_CONFIG[asset] || ASSET_CONFIG.BTC;
+  sel.innerHTML = '<option>Loading…</option>';
+  try {
+    const r = await fetch(MD_API + '/options/expirations?asset=' + cfg.localApiAsset);
+    if (r.ok) {
+      const d = await r.json();
+      expirations = d.expirations || [];
+      setDataSource('local');
+    } else { throw new Error('local api miss'); }
+  } catch(e) {
+    try {
+      setDataSource('deribit');
+      const r2 = await fetch(DERIBIT + '/get_instruments?currency=' + cfg.deribitCurrency + '&kind=option&expired=false');
+      const d2 = await r2.json();
+      const expSet = new Set();
+      (d2.result || []).forEach(function(ins) {
+        if (cfg.deribitBase && ins.base_currency !== cfg.deribitBase) return;
+        const m = ins.instrument_name.match(/-(\d+[A-Z]+\d+)-/);
+        if (m) expSet.add(m[1]);
+      });
+      const sortExp = function(a, b) {
+        const mo = {JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
+        const parse = function(s) {
+          const m = s.match(/^(\d+)([A-Z]+)(\d+)$/);
+          return m ? new Date(2000+parseInt(m[3]), (mo[m[2]]||0)-1, parseInt(m[1])) : new Date(0);
+        };
+        return parse(a) - parse(b);
+      };
+      expirations = Array.from(expSet).sort(sortExp);
+    } catch(e2) { sel.innerHTML = '<option>Error</option>'; return; }
+  }
+  sel.innerHTML = expirations.map(function(exp) {
+    return '<option value="' + exp + '">' + exp + '</option>';
+  }).join('');
+  if (expirations.length) loadStrikes();
+}
+
+// ─── Strikes ─────────────────────────────────────────────────────────────────
+async function loadStrikes() {
+  const expiry = document.getElementById('add-expiry').value;
+  const sel = document.getElementById('add-strike');
+  sel.innerHTML = '<option>Loading…</option>';
+  const type = document.getElementById('add-type').value;
+  if (type === 'F' || type === 'PERP') { sel.innerHTML = '<option value="0">N/A</option>'; return; }
+  if (!expiry) return;
+
+  // try cache
+  if (chainCache[expiry]) { populateStrikes(chainCache[expiry], expiry); return; }
+
+  const cfg = ASSET_CONFIG[asset] || ASSET_CONFIG.BTC;
+  try {
+    const r = await fetch(MD_API + '/options/chain?asset=' + cfg.localApiAsset + '&expiry=' + expiry);
+    if (r.ok) {
+      const d = await r.json();
+      chainCache[expiry] = d;
+      populateStrikes(d, expiry);
+      return;
+    }
+  } catch(e) {}
+
+  // fallback: Deribit
+  try {
+    const r2 = await fetch(DERIBIT + '/get_instruments?currency=' + cfg.deribitCurrency + '&kind=option&expired=false');
+    const d2 = await r2.json();
+    const strikes = [];
+    (d2.result || []).forEach(function(ins) {
+      if (cfg.deribitBase && ins.base_currency !== cfg.deribitBase) return;
+      if (ins.instrument_name.includes('-' + expiry + '-')) {
+        if (!strikes.includes(ins.strike)) strikes.push(ins.strike);
+      }
+    });
+    strikes.sort(function(a,b){return a-b;});
+    chainCache[expiry] = { chain: strikes.map(function(s){return {strike:s,call:null,put:null};}), underlying: spotPrice };
+    populateStrikes(chainCache[expiry], expiry);
+  } catch(e) {
+    sel.innerHTML = '<option>Error</option>';
+  }
+}
+
+function populateStrikes(chainData, expiry) {
+  const sel = document.getElementById('add-strike');
+  const strikes = (chainData.chain || []).map(function(r){ return r.strike; });
+  const underlying = chainData.underlying || spotPrice;
+  // find ATM
+  let atmStrike = strikes[0];
+  if (underlying) {
+    let best = Infinity;
+    strikes.forEach(function(s){ if (Math.abs(s-underlying) < best) { best = Math.abs(s-underlying); atmStrike = s; } });
+  }
+  sel.innerHTML = strikes.map(function(s) {
+    return '<option value="' + s + '"' + (s === atmStrike ? ' selected' : '') + '>' + s.toLocaleString() + '</option>';
+  }).join('');
+}
+
+function onTypeChange() {
+  const type = document.getElementById('add-type').value;
+  const strikeEl = document.getElementById('add-strike');
+  if (type === 'F' || type === 'PERP') {
+    strikeEl.innerHTML = '<option value="0">N/A</option>';
+  } else {
+    const expiry = document.getElementById('add-expiry').value;
+    if (expiry && chainCache[expiry]) populateStrikes(chainCache[expiry], expiry);
+    else loadStrikes();
+  }
+}
+
+// ─── Black-Scholes ────────────────────────────────────────────────────────────
+function normCDF(x) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422820 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+  return x >= 0 ? 1 - p : p;
+}
+function normPDF(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); }
+
+function bsCalc(S, K, T, r, sigma, type) {
+  if (T <= 0 || sigma <= 0) {
+    // at expiry
+    const intrinsic = type === 'C' ? Math.max(0, S-K) : Math.max(0, K-S);
+    return { price: intrinsic, delta: type === 'C' ? (S>K?1:0) : (S<K?-1:0), gamma:0, vega:0, theta:0, rho:0 };
+  }
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(S/K) + (r + sigma*sigma/2)*T) / (sigma*sqrtT);
+  const d2 = d1 - sigma*sqrtT;
+  let price, delta, rho;
+  if (type === 'C') {
+    price = S*normCDF(d1) - K*Math.exp(-r*T)*normCDF(d2);
+    delta = normCDF(d1);
+    rho   = K*T*Math.exp(-r*T)*normCDF(d2)/100;
+  } else {
+    price = K*Math.exp(-r*T)*normCDF(-d2) - S*normCDF(-d1);
+    delta = normCDF(d1) - 1;
+    rho   = -K*T*Math.exp(-r*T)*normCDF(-d2)/100;
+  }
+  const gamma = normPDF(d1) / (S*sigma*sqrtT);
+  const vega  = S*normPDF(d1)*sqrtT/100; // per 1% IV
+  const theta = -(S*normPDF(d1)*sigma/(2*sqrtT) + (type==='C'?1:-1)*r*K*Math.exp(-r*T)*normCDF(type==='C'?d2:-d2))/365;
+  return { price, delta, gamma, vega, theta, rho };
+}
+
+// Time to expiry from expiry code like "27MAR26"
+function tteYears(expiry) {
+  const mo = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const m = expiry.match(/^(\d+)([A-Z]+)(\d+)$/);
+  if (!m) return 0.1;
+  const day = parseInt(m[1]), mon = mo[m[2]], yr = 2000 + parseInt(m[3]);
+  // Deribit options expire at 08:00 UTC
+  const expDate = new Date(Date.UTC(yr, mon, day, 8, 0, 0));
+  const now = Date.now();
+  return Math.max(0, (expDate - now) / (1000*60*60*24*365));
+}
+
+function isLinearAsset(a) {
+  return a.indexOf('_USDC') !== -1;
+}
+
+function findChainQuote(expiry, strike, type) {
+  const chainData = chainCache[expiry];
+  if (!chainData || !chainData.chain) return null;
+  const side = type === 'C' ? 'call' : type === 'P' ? 'put' : null;
+  if (!side) return null;
+  for (var i = 0; i < chainData.chain.length; i++) {
+    var row = chainData.chain[i];
+    if (Math.abs((parseFloat(row.strike) || 0) - strike) < 1e-9) return row[side] || null;
+  }
+  return null;
+}
+
+async function fetchLocalFutureQuote(instrument) {
+  const r = await fetch(MD_API + '/futures/latest?instrument=' + encodeURIComponent(instrument));
+  if (!r.ok) throw new Error('local future quote miss');
+  return await r.json();
+}
+
+// ─── Add Leg ──────────────────────────────────────────────────────────────────
+async function addLeg() {
+  const expiry    = document.getElementById('add-expiry').value;
+  const strikeRaw = document.getElementById('add-strike').value;
+  const type      = document.getElementById('add-type').value;
+  const direction = parseFloat(document.getElementById('add-direction').value);
+  const qty       = parseFloat(document.getElementById('add-qty').value) || 1;
+  const ivOvr     = parseFloat(document.getElementById('add-iv-override').value) || null;
+
+  if (!expiry && type !== 'PERP') { alert('Select expiry'); return; }
+
+  let instrument, strike = parseFloat(strikeRaw) || 0;
+  let tte = 0, entryIv = ivOvr || 0.5;
+
+  if (type === 'PERP') {
+    instrument = asset + '-PERPETUAL';
+  } else if (type === 'F') {
+    instrument = asset + '-' + expiry;
+    tte = tteYears(expiry);
+  } else {
+    instrument = asset + '-' + expiry + '-' + Math.round(strike) + '-' + type;
+    tte = tteYears(expiry);
+  }
+
+  // Fetch current mark price and IV: local API first, Deribit as fallback
+  let entryPrice = spotPrice || 0;
+  let marketIv = null;
+  let localHit = false;
+
+  try {
+    if (type === 'C' || type === 'P') {
+      const localQuote = findChainQuote(expiry, strike, type);
+      if (localQuote && localQuote.mark !== null && localQuote.mark !== undefined) {
+        entryPrice = isLinearAsset(asset) ? localQuote.mark : localQuote.mark * (spotPrice || 50000);
+        marketIv = localQuote.mark_iv !== null && localQuote.mark_iv !== undefined ? localQuote.mark_iv / 100 : null;
+        localHit = true;
+      }
+    } else {
+      const localFuture = await fetchLocalFutureQuote(instrument);
+      if (localFuture && localFuture.mark !== null && localFuture.mark !== undefined) {
+        entryPrice = localFuture.mark;
+        localHit = true;
+      } else if (localFuture && localFuture.last !== null && localFuture.last !== undefined) {
+        entryPrice = localFuture.last;
+        localHit = true;
+      }
+    }
+  } catch(e) {
+    console.warn('local quote fetch failed:', e);
+  }
+
+  if (!localHit) {
+    try {
+      const r = await fetch(DERIBIT + '/ticker?instrument_name=' + encodeURIComponent(instrument));
+      if (r.ok) {
+        const d = await r.json();
+        const res = d.result || {};
+        entryPrice = res.mark_price * (type === 'PERP' || type === 'F' ? (spotPrice || 50000) : (spotPrice || 50000));
+        if (res.mark_price !== undefined && (type === 'C' || type === 'P')) {
+          entryPrice = isLinearAsset(asset) ? res.mark_price : res.mark_price * (spotPrice || 50000);
+          marketIv = res.mark_iv ? res.mark_iv / 100 : null;
+        } else if (type === 'F') {
+          entryPrice = res.mark_price || spotPrice;
+        } else {
+          entryPrice = res.mark_price || spotPrice;
+        }
+      }
+    } catch(e) { console.warn('ticker fetch failed:', e); }
+  }
+
+  if (!ivOvr && marketIv) entryIv = marketIv;
+  else if (!ivOvr) entryIv = 0.6; // default 60% IV
+
+  const leg = {
+    id: nextId++, instrument, type, direction, qty,
+    strike: strike, expiry: expiry || '', tte,
+    entryIv, entryPrice, marketIv
+  };
+  legs.push(leg);
+  updateTable();
+  renderPayoff();
+}
+
+// ─── Update Table ─────────────────────────────────────────────────────────────
+function updateTable() {
+  if (!legs.length) {
+    document.getElementById('positions-container').innerHTML =
+      '<div class="empty-state">No legs added yet. Use the panel above to add options, futures or perpetuals.</div>';
+    resetGreeks();
+    return;
+  }
+
+  const S = spotPrice || 50000;
+  const r = 0.05;
+  let totDelta=0, totGamma=0, totTheta=0, totVega=0, totRho=0, totPremium=0;
+
+  let html = '<table class="positions"><thead><tr>'
+    + '<th>Instrument</th><th class="center">B/S</th><th>Qty</th><th>Entry $</th><th>Current $</th>'
+    + '<th>P&amp;L $</th><th>Delta</th><th>Gamma</th><th>Theta/d</th><th>Vega/1%</th><th></th>'
+    + '</tr></thead><tbody>';
+
+  legs.forEach(function(leg) {
+    const typeClass = leg.type === 'C' ? 'pos-call' : leg.type === 'P' ? 'pos-put' : 'pos-fut';
+    const dirClass  = leg.direction > 0 ? 'pos-buy' : 'pos-sell';
+    const dirLabel  = leg.direction > 0 ? 'B' : 'S';
+
+    let bs, currentPrice, pnl, delta, gamma, theta, vega, rho;
+    if (leg.type === 'C' || leg.type === 'P') {
+      const adjIv = leg.entryIv * (1 + ivAdj/100);
+      bs = bsCalc(S, leg.strike, leg.tte, r, adjIv, leg.type);
+      currentPrice = bs.price;
+      delta = bs.delta * leg.direction * leg.qty;
+      gamma = bs.gamma * leg.direction * leg.qty;
+      theta = bs.theta * leg.direction * leg.qty * S; // in USD
+      vega  = bs.vega  * leg.direction * leg.qty * S; // in USD per 1% IV
+      rho   = bs.rho   * leg.direction * leg.qty;
+      pnl   = (currentPrice - leg.entryPrice) * leg.direction * leg.qty;
+    } else {
+      // Future / Perp — delta=1 per contract
+      currentPrice = S;
+      delta = leg.direction * leg.qty;
+      gamma = 0; theta = 0; vega = 0; rho = 0;
+      pnl = (S - leg.entryPrice) * leg.direction * leg.qty;
+    }
+
+    totDelta   += delta;
+    totGamma   += gamma;
+    totTheta   += theta;
+    totVega    += vega;
+    totRho     += rho;
+    totPremium += leg.entryPrice * leg.direction * leg.qty;
+
+    const fmt2 = function(v) { return v !== null ? v.toFixed(2) : '—'; };
+    const fmt4 = function(v) { return v !== null ? v.toFixed(4) : '—'; };
+    const fmtPnl = function(v) {
+      if (v === null) return '—';
+      const s = '$' + Math.abs(v).toFixed(0);
+      return '<span class="' + (v >= 0 ? 'val-pos' : 'val-neg') + '">' + (v >= 0 ? '+' : '-') + s + '</span>';
+    };
+
+    html += '<tr>'
+      + '<td><span class="pos-name ' + typeClass + '">' + leg.instrument + '</span></td>'
+      + '<td class="center"><span class="' + dirClass + '">' + dirLabel + '</span></td>'
+      + '<td>' + leg.qty + '</td>'
+      + '<td>$' + leg.entryPrice.toFixed(leg.type==='C'||leg.type==='P'?2:0) + '</td>'
+      + '<td>$' + currentPrice.toFixed(leg.type==='C'||leg.type==='P'?2:0) + '</td>'
+      + '<td>' + fmtPnl(pnl) + '</td>'
+      + '<td class="' + (delta>=0?'val-pos':'val-neg') + '">' + delta.toFixed(3) + '</td>'
+      + '<td>' + fmt4(gamma) + '</td>'
+      + '<td class="' + (theta>=0?'val-pos':'val-neg') + '">' + theta.toFixed(1) + '</td>'
+      + '<td class="val-pos">' + vega.toFixed(1) + '</td>'
+      + '<td><button class="btn-icon" onclick="removeLeg(' + leg.id + ')" title="Remove">✕</button></td>'
+      + '</tr>';
+  });
+
+  // Total row
+  html += '<tr class="total-row">'
+    + '<td colspan="5">Portfolio Total</td>'
+    + '<td></td>'
+    + '<td class="' + (totDelta>=0?'val-pos':'val-neg') + '">' + totDelta.toFixed(3) + '</td>'
+    + '<td>' + totGamma.toFixed(4) + '</td>'
+    + '<td class="' + (totTheta>=0?'val-pos':'val-neg') + '">' + totTheta.toFixed(1) + '</td>'
+    + '<td class="val-pos">' + totVega.toFixed(1) + '</td>'
+    + '<td></td>'
+    + '</tr>';
+  html += '</tbody></table>';
+
+  document.getElementById('positions-container').innerHTML = html;
+
+  // Update greeks cards
+  const gv = function(v, dec) { return isNaN(v) ? '—' : (v >= 0 ? '' : '') + v.toFixed(dec || 3); };
+  const gCls = function(id, v) {
+    const el = document.getElementById(id);
+    el.className = 'greek-val ' + (v > 0 ? 'val-pos' : v < 0 ? 'val-neg' : '');
+  };
+  document.getElementById('g-delta').textContent = totDelta.toFixed(3);   gCls('g-delta', totDelta);
+  document.getElementById('g-gamma').textContent = totGamma.toFixed(4);   gCls('g-gamma', totGamma);
+  document.getElementById('g-theta').textContent = totTheta.toFixed(1);   gCls('g-theta', totTheta);
+  document.getElementById('g-vega').textContent  = totVega.toFixed(1);    gCls('g-vega',  totVega);
+  document.getElementById('g-rho').textContent   = totRho.toFixed(3);     gCls('g-rho',   totRho);
+  document.getElementById('g-premium').textContent = '$' + totPremium.toFixed(0); gCls('g-premium', -totPremium);
+}
+
+function resetGreeks() {
+  ['g-delta','g-gamma','g-theta','g-vega','g-rho','g-premium'].forEach(function(id){
+    document.getElementById(id).textContent = '—';
+    document.getElementById(id).className = 'greek-val';
+  });
+}
+
+function removeLeg(id) {
+  legs = legs.filter(function(l){ return l.id !== id; });
+  updateTable();
+  renderPayoff();
+}
+
+function clearAll() {
+  legs = [];
+  updateTable();
+  renderPayoff();
+}
+
+// ─── Payoff Mode ──────────────────────────────────────────────────────────────
+function setPayoffMode(mode) {
+  payoffMode = mode;
+  document.getElementById('mode-expiry').classList.toggle('active', mode === 'expiry');
+  document.getElementById('mode-today').classList.toggle('active', mode === 'today');
+  renderPayoff();
+}
+
+function onIvAdj() {
+  ivAdj = parseInt(document.getElementById('iv-adj-slider').value);
+  document.getElementById('iv-adj-label').textContent = (ivAdj >= 0 ? '+' : '') + ivAdj + '%';
+  updateTable();
+  renderPayoff();
+}
+
+// ─── Payoff Chart ─────────────────────────────────────────────────────────────
+function renderPayoff() {
+  const container = document.getElementById('payoff-chart');
+  if (!legs.length) {
+    container.innerHTML = '<div class="empty-state" style="height:380px;display:flex;align-items:center;justify-content:center">Add legs to see payoff diagram</div>';
+    document.getElementById('breakeven-list').innerHTML = '';
+    return;
+  }
+  container.innerHTML = '';
+
+  const S = spotPrice || 50000;
+  const r = 0.05;
+  const range = S * 0.4; // ±40% range
+  const steps = 200;
+  const points = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const spot = S - range + (2 * range * i / steps);
+    let pnlExpiry = 0, pnlToday = 0;
+    legs.forEach(function(leg) {
+      const adjIv = leg.entryIv * (1 + ivAdj/100);
+      if (leg.type === 'C' || leg.type === 'P') {
+        // At expiry
+        const payoff = leg.type === 'C' ? Math.max(0, spot - leg.strike) : Math.max(0, leg.strike - spot);
+        pnlExpiry += (payoff - leg.entryPrice) * leg.direction * leg.qty;
+        // Today with IV
+        const bs = bsCalc(spot, leg.strike, leg.tte, r, adjIv, leg.type);
+        pnlToday += (bs.price - leg.entryPrice) * leg.direction * leg.qty;
+      } else {
+        // Future / Perp
+        pnlExpiry += (spot - leg.entryPrice) * leg.direction * leg.qty;
+        pnlToday  += (spot - leg.entryPrice) * leg.direction * leg.qty;
+      }
+    });
+    points.push({ spot, pnlExpiry, pnlToday });
+  }
+
+  // Build chart
+  if (payoffChart) { try { payoffChart.remove(); } catch(e) {} payoffChart = null; }
+
+  const chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#0b1220' }, textColor: '#94a3b8' },
+    grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#334155' },
+    timeScale: { visible: false },
+    width: container.clientWidth,
+    height: 380,
+    localization: { priceFormatter: function(p) { return '$' + p.toFixed(0); } },
+  });
+  payoffChart = chart;
+
+  // Use spot as "time" axis hack: add a price scale override
+  // Actually LightweightCharts needs time-series. Let's use 1..N as time.
+  const toTime = function(i) { return i + 1; };
+
+  const expiryData = points.map(function(p, i) { return { time: toTime(i), value: p.pnlExpiry }; });
+  const todayData  = points.map(function(p, i) { return { time: toTime(i), value: p.pnlToday  }; });
+  const zeroData   = points.map(function(p, i) { return { time: toTime(i), value: 0 }; });
+
+  chart.addLineSeries({ color: '#10b981', lineWidth: 2, priceLineVisible: false, lastValueVisible: false, title: 'Expiry' }).setData(expiryData);
+  if (payoffMode === 'today') {
+    chart.addLineSeries({ color: '#3b82f6', lineWidth: 1.5, lineStyle: LightweightCharts.LineStyle.Dashed, priceLineVisible: false, lastValueVisible: false, title: 'Today' }).setData(todayData);
+  }
+  chart.addLineSeries({ color: '#334155', lineWidth: 1, priceLineVisible: false, lastValueVisible: false }).setData(zeroData);
+
+  // current spot vertical line — add a series with a single point
+  const spotIdx = Math.round(steps / 2);
+  const spotPnl = points[spotIdx].pnlExpiry;
+  chart.addLineSeries({ color: '#fbbf24', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.LargeDashed, priceLineVisible: false, lastValueVisible: false, title: 'Spot' })
+    .setData([{ time: toTime(spotIdx), value: Math.min(...points.map(function(p){return p.pnlExpiry;}))-100 }, { time: toTime(spotIdx), value: Math.max(...points.map(function(p){return p.pnlExpiry;}))+100 }]);
+
+  chart.timeScale().setVisibleLogicalRange({ from: 0, to: steps });
+
+  // Override x-axis labels to show spot prices
+  // LightweightCharts doesn't support custom x-axis labels easily; we'll show them in tooltip via crosshair
+  chart.subscribeCrosshairMove(function(param) {
+    if (!param.time) return;
+    const idx = param.time - 1;
+    if (idx >= 0 && idx < points.length) {
+      const p = points[idx];
+      // could show in a tooltip
+    }
+  });
+
+  new ResizeObserver(function(){ chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+
+  // Break-even
+  const breakevens = [];
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i-1], cur = points[i];
+    if ((prev.pnlExpiry < 0 && cur.pnlExpiry >= 0) || (prev.pnlExpiry >= 0 && cur.pnlExpiry < 0)) {
+      const t = prev.spot + (cur.spot - prev.spot) * (-prev.pnlExpiry / (cur.pnlExpiry - prev.pnlExpiry));
+      breakevens.push(t);
+    }
+  }
+  if (breakevens.length) {
+    document.getElementById('breakeven-list').innerHTML = 'Break-even: ' + breakevens.map(function(b){
+      return '<span>$' + b.toFixed(0) + '</span>';
+    }).join(' · ');
+  } else {
+    document.getElementById('breakeven-list').innerHTML = '';
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+setDataSource('loading');
+refreshSpot();
+loadExpirations();
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

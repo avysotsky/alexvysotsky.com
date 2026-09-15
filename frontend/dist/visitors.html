@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitors Audit — Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b1220; color: #e2e8f0; margin: 0; }
+    .wrap { max-width: 1500px; margin: 0 auto; padding: 20px; }
+    h1 { color: #a78bfa; margin: 0 0 14px; }
+    .toolbar, .filters, .summary { background: #111827; border: 1px solid #374151; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .toolbar, .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input, select, button { background: #0f172a; border: 1px solid #374151; color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+    input, select { min-height: 38px; }
+    button { background: #7c3aed; border-color: #7c3aed; cursor: pointer; }
+    button:hover { background: #6d28d9; }
+    .secondary { background: #1f2937; border-color: #4b5563; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    .metric { background: #0f172a; border: 1px solid #374151; border-radius: 8px; padding: 12px; }
+    .metric .label { color: #94a3b8; font-size: 12px; margin-bottom: 4px; }
+    .metric .value { font-size: 20px; font-weight: 700; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(420px, 1fr); gap: 14px; }
+    .panel { background: #111827; border: 1px solid #374151; border-radius: 10px; overflow: hidden; }
+    .panel h2 { margin: 0; padding: 14px 16px; font-size: 16px; border-bottom: 1px solid #374151; }
+    .table-wrap { overflow: auto; max-height: 72vh; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #1f2937; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; background: #111827; color: #93c5fd; z-index: 1; }
+    tr:hover { background: #0f172a; cursor: pointer; }
+    tr.active { background: #1e293b; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .public { background: #3f3f46; color: #fafafa; }
+    .authenticated { background: #064e3b; color: #a7f3d0; }
+    .app { background: #1d4ed8; color: #dbeafe; }
+    .public-site { background: #7c2d12; color: #fed7aa; }
+    .days { display: flex; gap: 8px; flex-wrap: wrap; }
+    .day { background: #0f172a; border: 1px solid #374151; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+    .day.active { border-color: #7c3aed; background: #2e1065; }
+    .detail { padding: 14px 16px; }
+    .detail-grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px 12px; font-size: 13px; margin-bottom: 12px; }
+    .detail-grid .k { color: #94a3b8; }
+    .event-list { border-top: 1px solid #374151; margin-top: 10px; }
+    .event { padding: 10px 0; border-bottom: 1px solid #1f2937; }
+    .event:last-child { border-bottom: none; }
+    .muted { color: #94a3b8; }
+    .error { color: #fecaca; background: #450a0a; border: 1px solid #7f1d1d; padding: 12px; border-radius: 8px; }
+    .loading { color: #94a3b8; padding: 18px; }
+    .tiny { font-size: 12px; color: #94a3b8; }
+    @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Visitors Audit</h1>
+
+  <div class="toolbar">
+    <input type="password" id="secret" placeholder="Admin secret (optional if already in /app)" style="min-width:320px">
+    <input type="date" id="dateInput">
+    <button onclick="loadDashboard()">Загрузить</button>
+    <button class="secondary" onclick="loadRecent()">Последние события</button>
+    <span class="tiny">Маршрут: <span class="mono">/visitors</span></span><span class="tiny">Auth source: <span class="mono">van_token / van_session</span></span>
+  </div>
+
+  <div id="days" class="days" style="margin-bottom:14px"></div>
+
+  <div class="filters">
+    <select id="authFilter" onchange="renderTable()">
+      <option value="all">Все статусы</option>
+      <option value="authenticated">Только authenticated</option>
+      <option value="public">Только public</option>
+    </select>
+    <select id="sourceFilter" onchange="renderTable()">
+      <option value="all">Все разделы</option>
+    </select>
+    <input id="textFilter" placeholder="Фильтр: login / ip / path / source" oninput="renderTable()" style="min-width:280px">
+  </div>
+
+  <div id="summary" class="summary"></div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2 id="leftTitle">Сводка за день</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Кто</th>
+              <th>Статус</th>
+              <th>IP</th>
+              <th>Хиты</th>
+              <th>Сессии</th>
+              <th>First</th>
+              <th>Last</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 id="detailTitle">Детали</h2>
+      <div id="detail" class="detail"><div class="muted">Выбери строку слева.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/visitor-api';
+let currentDay = new Date().toISOString().slice(0, 10);
+let currentSummary = [];
+let currentRecent = [];
+let currentMode = 'summary';
+let selectedKey = null;
+
+function secret() { return document.getElementById('secret').value.trim(); }
+function getStoredToken() { const direct = localStorage.getItem('van_token'); if (direct) return direct; try { const raw = localStorage.getItem('van_session'); if (!raw) return ''; const sess = JSON.parse(raw); return (sess && (sess.token || sess.Token)) || ''; } catch(e) { return ''; } }
+function headers() { const h = {}; const s = secret(); if (s) h['X-VAN-Admin'] = s; const t = getStoredToken(); if (t) h['Authorization'] = 'Bearer ' + t; return h; }
+function esc(v) { return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds()) + ' UTC';
+}
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds()) + ' UTC';
+}
+function badge(cls, text) { return `<span class="badge ${cls}">${esc(text)}</span>`; }
+function sourceClass(src) { return src === 'public-site' ? 'public-site' : (src === 'app' ? 'app' : ''); }
+
+async function loadDays() {
+  const r = await fetch(`${API}/admin/days?limit=30`, { headers: headers() });
+  if (!r.ok) return;
+  const data = await r.json();
+  const daysEl = document.getElementById('days');
+  daysEl.innerHTML = (data.days || []).map(d => `
+    <button class="day ${d.day === currentDay ? 'active' : ''}" onclick="selectDay('${d.day}')">
+      <div class="mono">${esc(d.day)}</div>
+      <div class="tiny">visitors: ${d.unique_visitors} · views: ${d.page_views} · auth: ${d.authed_views}</div>
+    </button>
+  `).join('');
+}
+
+function fillSourceFilter(items) {
+  const el = document.getElementById('sourceFilter');
+  const values = Array.from(new Set(items.map(x => x.request_source || '').filter(Boolean))).sort();
+  const current = el.value;
+  el.innerHTML = '<option value="all">Все разделы</option>' + values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if (values.includes(current)) el.value = current;
+}
+
+function renderSummaryCards(items) {
+  const totalHits = items.reduce((a, x) => a + Number(x.page_views || 0), 0);
+  const totalSessions = items.reduce((a, x) => a + Number(x.sessions || 0), 0);
+  const authed = items.filter(x => x.authed).length;
+  const publicOnly = items.filter(x => !x.authed).length;
+  document.getElementById('summary').innerHTML = `
+    <div class="metric"><div class="label">День</div><div class="value mono">${esc(currentDay)}</div></div>
+    <div class="metric"><div class="label">Уникальные subjects</div><div class="value">${items.length}</div></div>
+    <div class="metric"><div class="label">Всего hits</div><div class="value">${totalHits}</div></div>
+    <div class="metric"><div class="label">Всего sessions</div><div class="value">${totalSessions}</div></div>
+    <div class="metric"><div class="label">Authenticated subjects</div><div class="value">${authed}</div></div>
+    <div class="metric"><div class="label">Public-only subjects</div><div class="value">${publicOnly}</div></div>
+  `;
+}
+
+function getFilteredSummary() {
+  const auth = document.getElementById('authFilter').value;
+  const source = document.getElementById('sourceFilter').value;
+  const q = document.getElementById('textFilter').value.trim().toLowerCase();
+  return currentSummary.filter(x => {
+    if (auth === 'authenticated' && !x.authed) return false;
+    if (auth === 'public' && x.authed) return false;
+    if (source !== 'all' && (x.request_source || '') !== source) return false;
+    if (!q) return true;
+    const hay = [x.subject, x.last_ip, x.request_source].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderTable() {
+  const rows = document.getElementById('rows');
+  if (currentMode !== 'summary') {
+    const auth = document.getElementById('authFilter').value;
+    const source = document.getElementById('sourceFilter').value;
+    const q = document.getElementById('textFilter').value.trim().toLowerCase();
+    const items = currentRecent.filter(x => {
+      if (auth !== 'all' && x.auth_state !== auth) return false;
+      if (source !== 'all' && (x.request_source || '') !== source) return false;
+      if (!q) return true;
+      const hay = [x.user_login, x.ip, x.path, x.request_source, x.query_string].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+    rows.innerHTML = items.map((x, idx) => `
+      <tr class="${selectedKey === ('recent-' + idx) ? 'active' : ''}" onclick="showRecentDetail(${idx})">
+        <td>${esc(x.user_login || 'public')}</td>
+        <td>${badge(x.auth_state, x.auth_state)}</td>
+        <td class="mono">${esc(x.ip || '-')}</td>
+        <td>1</td>
+        <td>1</td>
+        <td class="mono">${esc(fmtTime(x.visited_at))}</td>
+        <td class="mono">${esc(fmtTime(x.visited_at))}</td>
+        <td>${badge(sourceClass(x.request_source), x.request_source || '-')}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="8" class="muted">Нет данных</td></tr>';
+    return;
+  }
+
+  const items = getFilteredSummary();
+  rows.innerHTML = items.map((x, idx) => `
+    <tr class="${selectedKey === ('summary-' + idx) ? 'active' : ''}" onclick="showSummaryDetail(${idx})">
+      <td>${esc(x.subject)}</td>
+      <td>${badge(x.authed ? 'authenticated' : 'public', x.authed ? 'authenticated' : 'public')}</td>
+      <td class="mono">${esc(x.last_ip || '-')}</td>
+      <td>${x.page_views}</td>
+      <td>${x.sessions}</td>
+      <td class="mono">${esc(fmtTime(x.first_view))}</td>
+      <td class="mono">${esc(fmtTime(x.last_view))}</td>
+      <td>${badge(sourceClass(x.request_source), x.request_source || '-')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" class="muted">Нет данных</td></tr>';
+}
+
+async function loadDashboard() {
+  currentMode = 'summary';
+  selectedKey = null;
+  currentDay = document.getElementById('dateInput').value || currentDay;
+  document.getElementById('leftTitle').textContent = `Сводка за ${currentDay}`;
+  document.getElementById('detailTitle').textContent = 'Детали';
+  document.getElementById('detail').innerHTML = '<div class="loading">Загрузка...</div>';
+  const r = await fetch(`${API}/admin/daily-summary?day=${currentDay}`, { headers: headers() });
+  if (!r.ok) {
+    document.getElementById('detail').innerHTML = `<div class="error">Ошибка: ${r.status} ${r.statusText}</div>`;
+    document.getElementById('rows').innerHTML = '';
+    return;
+  }
+  const data = await r.json();
+  currentSummary = data.subjects || [];
+  fillSourceFilter(currentSummary);
+  renderSummaryCards(currentSummary);
+  renderTable();
+  await loadDays();
+}
+
+async function showSummaryDetail(idx) {
+  const item = getFilteredSummary()[idx];
+  if (!item) return;
+  selectedKey = 'summary-' + idx;
+  renderTable();
+  document.getElementById('detailTitle').textContent = `Детали: ${item.subject}`;
+  document.getElementById('detail').innerHTML = '<div class="loading">Загрузка...</div>';
+  const r = await fetch(`${API}/admin/recent?limit=300`, { headers: headers() });
+  if (!r.ok) {
+    document.getElementById('detail').innerHTML = '<div class="error">Не удалось загрузить recent events</div>';
+    return;
+  }
+  const data = await r.json();
+  const events = (data.items || []).filter(x => (x.user_login || null) === (item.subject === 'public' ? null : item.subject) || (!x.user_login && x.auth_state === 'public' && item.subject !== null && item.subject !== undefined && item.subject !== '' && item.subject === item.subject && item.subject !== 'public' ? false : false));
+  const normalized = (data.items || []).filter(x => {
+    if (item.authed) return (x.user_login || '') === item.subject;
+    return !x.user_login && x.auth_state === 'public';
+  }).slice(0, 100);
+  document.getElementById('detail').innerHTML = `
+    <div class="detail-grid">
+      <div class="k">Subject</div><div>${esc(item.subject)}</div>
+      <div class="k">Auth state</div><div>${badge(item.authed ? 'authenticated' : 'public', item.authed ? 'authenticated' : 'public')}</div>
+      <div class="k">Last IP</div><div class="mono">${esc(item.last_ip || '-')}</div>
+      <div class="k">Hits</div><div>${item.page_views}</div>
+      <div class="k">Sessions</div><div>${item.sessions}</div>
+      <div class="k">First</div><div class="mono">${esc(fmtDateTime(item.first_view))}</div>
+      <div class="k">Last</div><div class="mono">${esc(fmtDateTime(item.last_view))}</div>
+      <div class="k">Top source</div><div>${badge(sourceClass(item.request_source), item.request_source || '-')}</div>
+    </div>
+    <div class="event-list">
+      ${normalized.length ? normalized.map(ev => `
+        <div class="event">
+          <div><span class="mono">${esc(fmtDateTime(ev.visited_at))}</span> ${badge(ev.auth_state, ev.auth_state)} ${badge(sourceClass(ev.request_source), ev.request_source || '-')}</div>
+          <div class="mono" style="margin-top:4px">IP: ${esc(ev.ip || '-')}</div>
+          <div style="margin-top:4px">Path: <span class="mono">${esc(ev.path || '-')}</span>${ev.query_string ? `?${esc(ev.query_string)}` : ''}</div>
+          <div style="margin-top:4px; word-break:break-all">URL: ${esc(ev.url || '-')}</div>
+          <div class="muted" style="margin-top:4px; word-break:break-all">Referrer: ${esc(ev.referer || '-')}</div>
+        </div>
+      `).join('') : '<div class="muted">Нет recent событий для выбранного subject.</div>'}
+    </div>
+  `;
+}
+
+async function loadRecent() {
+  currentMode = 'recent';
+  selectedKey = null;
+  document.getElementById('leftTitle').textContent = 'Последние события';
+  document.getElementById('detailTitle').textContent = 'Детали события';
+  document.getElementById('detail').innerHTML = '<div class="loading">Загрузка...</div>';
+  const r = await fetch(`${API}/admin/recent?limit=300`, { headers: headers() });
+  if (!r.ok) {
+    document.getElementById('detail').innerHTML = `<div class="error">Ошибка: ${r.status} ${r.statusText}</div>`;
+    document.getElementById('rows').innerHTML = '';
+    return;
+  }
+  const data = await r.json();
+  currentRecent = data.items || [];
+  fillSourceFilter(currentRecent);
+  document.getElementById('summary').innerHTML = `
+    <div class="metric"><div class="label">Mode</div><div class="value">Recent</div></div>
+    <div class="metric"><div class="label">Rows loaded</div><div class="value">${currentRecent.length}</div></div>
+  `;
+  renderTable();
+  document.getElementById('detail').innerHTML = '<div class="muted">Выбери событие слева.</div>';
+}
+
+function showRecentDetail(idx) {
+  const auth = document.getElementById('authFilter').value;
+  const source = document.getElementById('sourceFilter').value;
+  const q = document.getElementById('textFilter').value.trim().toLowerCase();
+  const items = currentRecent.filter(x => {
+    if (auth !== 'all' && x.auth_state !== auth) return false;
+    if (source !== 'all' && (x.request_source || '') !== source) return false;
+    if (!q) return true;
+    const hay = [x.user_login, x.ip, x.path, x.request_source, x.query_string].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  const ev = items[idx];
+  if (!ev) return;
+  selectedKey = 'recent-' + idx;
+  renderTable();
+  document.getElementById('detailTitle').textContent = `Событие ${fmtDateTime(ev.visited_at)}`;
+  document.getElementById('detail').innerHTML = `
+    <div class="detail-grid">
+      <div class="k">Visited at</div><div class="mono">${esc(fmtDateTime(ev.visited_at))}</div>
+      <div class="k">IP</div><div class="mono">${esc(ev.ip || '-')}</div>
+      <div class="k">Login</div><div>${esc(ev.user_login || 'public')}</div>
+      <div class="k">User ID</div><div>${esc(ev.user_id || '-')}</div>
+      <div class="k">Auth state</div><div>${badge(ev.auth_state, ev.auth_state)}</div>
+      <div class="k">Source</div><div>${badge(sourceClass(ev.request_source), ev.request_source || '-')}</div>
+      <div class="k">Path</div><div class="mono">${esc(ev.path || '-')}</div>
+      <div class="k">Query</div><div class="mono">${esc(ev.query_string || '-')}</div>
+      <div class="k">URL</div><div style="word-break:break-all">${esc(ev.url || '-')}</div>
+      <div class="k">Referrer</div><div style="word-break:break-all">${esc(ev.referer || '-')}</div>
+    </div>
+  `;
+}
+
+function selectDay(day) {
+  currentDay = day;
+  document.getElementById('dateInput').value = day;
+  loadDashboard();
+}
+
+document.getElementById('dateInput').value = currentDay;
+loadDays();
+</script>
+</body>
+</html>

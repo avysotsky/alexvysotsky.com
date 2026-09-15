@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VAN Portal — Public Statistics</title>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <script>window.__VAN_BASE_URL__ = "http://49.12.121.179";</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#020617;color:#f1f5f9;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+
+    header{border-bottom:1px solid #1e293b;padding:14px 24px}
+    .header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-logo{height:64px;width:auto;display:block;filter:invert(1) brightness(1.15);opacity:.96}
+    .header-title{font-size:15px;font-weight:600;letter-spacing:.01em;color:#f1f5f9}
+    .header-sub{font-size:11px;color:#64748b;margin-top:2px}
+
+    /* Header sign-in */
+    .header-signin{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .header-signin input{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:6px 10px;color:#f1f5f9;font-size:13px;outline:none;width:130px;transition:border-color .15s}
+    .header-signin input:focus{border-color:#3b82f6}
+    .header-signin .btn-primary{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#3b82f6;color:#fff;transition:opacity .15s;white-space:nowrap}
+    .header-signin .btn-primary:hover:not(:disabled){background:#2563eb}
+    .header-signin .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+    #hdr-err{font-size:11px;color:#f87171;white-space:nowrap}
+    @media(max-width:700px){
+      header{padding:14px 16px}
+      .header-inner{padding:0;flex-direction:column;align-items:stretch;gap:12px}
+      .brand{justify-content:center}
+      .brand-logo{height:52px}
+      .header-signin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:4px;align-items:center;margin-top:-2px}
+      .header-signin input{width:100%;min-width:0;padding:3px 6px;font-size:13px;height:30px;border-radius:6px}
+      .header-signin .btn-primary{width:auto;padding:3px 8px;font-size:13px;height:30px;border-radius:6px}
+      #hdr-err{grid-column:1 / -1;white-space:normal;font-size:10px}
+    }
+    @media(max-width:480px){
+      .header-signin{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:3px;margin-top:-3px}
+      .header-signin input{padding:3px 6px;font-size:13px;height:28px}
+      .header-signin .btn-primary{width:auto;padding:3px 8px;font-size:13px;height:28px}
+      #contact-card > div[style*='grid-template-columns:1fr 1fr']{grid-template-columns:1fr !important}
+    }
+
+    .main{max-width:960px;margin:0 auto;padding:32px 20px 60px}
+
+    /* Hero */
+    .hero-card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid #1e293b;border-radius:22px;padding:26px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;position:relative}
+    .hero-card:before{content:'';position:absolute;right:-80px;top:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.18),rgba(59,130,246,0) 70%)}
+    .hero-copy{position:relative;z-index:1;max-width:620px}
+    .hero-title{font-size:28px;font-weight:700;line-height:1.15;margin-bottom:10px;color:#f8fafc;white-space:nowrap}
+    .hero-sub{font-size:14px;color:#94a3b8;max-width:560px}
+    .hero-actions{position:relative;z-index:1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+    .btn-secondary{background:#111827;color:#e5e7eb;border:none}
+    .btn-secondary:hover:not(:disabled){background:#1f2937}
+    .btn-navy{background:#172554;border:none;color:#dbeafe}
+    .btn-navy:hover:not(:disabled){background:#1e3a8a;border:none}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px;margin-bottom:24px}
+    @media(max-width:700px){
+      .hero-card{padding:22px 18px;display:block}
+      .hero-title{font-size:24px;white-space:normal}
+      .hero-actions{display:flex;flex-direction:row;align-items:stretch;justify-content:flex-start;gap:6px;margin-top:10px;flex:0 0 auto}
+      .hero-actions .btn{flex:1 1 0;min-width:0;font-size:13px;border-radius:8px;padding:6px 10px}
+      .stats{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:400px){.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:10px 8px}}
+    .stat{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:12px 12px}
+    .stat-label{font-size:10px;color:#64748b;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+    .stat-value{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+    .stat-value.green{color:#34d399}
+    .metric-tooltip{position:relative;overflow:visible;cursor:help}
+    .metric-tooltip:after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%) translateY(4px);width:min(280px,calc(100vw - 32px));padding:10px 12px;border-radius:10px;background:rgba(15,23,42,.96);border:1px solid #334155;color:#e2e8f0;font-size:12px;line-height:1.35;font-weight:400;text-transform:none;letter-spacing:0;white-space:normal;box-shadow:0 12px 30px rgba(2,6,23,.45);opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:30}
+    .metric-tooltip:before{content:"";position:absolute;left:50%;bottom:calc(100% + 4px);transform:translateX(-50%);border:6px solid transparent;border-top-color:#334155;opacity:0;transition:opacity .15s ease;z-index:31}
+    .metric-tooltip:hover:after,.metric-tooltip:hover:before{opacity:1}
+    .metric-tooltip:hover:after{transform:translateX(-50%) translateY(0)}
+
+    /* Chart card */
+    .card{background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:20px;margin-bottom:24px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .card-title{font-size:12px;font-weight:600;color:#cbd5e1}
+    .card-meta{font-size:11px;color:#64748b;font-family:monospace}
+    .chart-empty{color:#475569;font-size:13px;text-align:center;padding:60px 0}
+
+    /* Forms */
+    .form-card{background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+    .form-card.compact{max-width:560px;width:100%;margin:0 auto}
+    .contact-section{margin-top:8px;padding-top:4px;display:flex;justify-content:center}
+    .contact-trigger{display:inline-flex;align-items:center;justify-content:center;padding:10px 18px;border-radius:12px;border:1px solid #334155;background:#111827;color:#e5e7eb;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+    .contact-trigger:hover{background:#1f2937;border-color:#475569}
+                            .form-card h2{font-size:14px;font-weight:600;color:#f1f5f9}
+    .field{display:flex;flex-direction:column;gap:5px}
+    .field label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+    .field input,.field textarea{background:#020617;border:1px solid #334155;border-radius:10px;padding:8px 12px;color:#f1f5f9;font-size:13px;outline:none;transition:border-color .15s}
+    .field input:focus,.field textarea:focus{border-color:#3b82f6}
+    .field textarea{min-height:90px;resize:vertical;font-family:inherit}
+    .btn{padding:9px 16px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-green{background:#10b981;color:#fff}
+    .btn-green:hover:not(:disabled){background:#059669}
+    .msg-err{font-size:12px;color:#f87171}
+    .msg-ok{font-size:12px;color:#34d399}
+
+    footer{text-align:center;padding:28px;color:#334155;font-size:11px;border-top:1px solid #1e293b}
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN logo"/>
+      <div>
+        <div class="header-title">VAN Portal · Trading</div>
+        <div class="header-sub">Public statistics · Updated every minute</div>
+      </div>
+    </div>
+    <div class="header-signin">
+      <input id="hdr-login" type="text" autocomplete="username" placeholder="Login"/>
+      <input id="hdr-pass" type="password" autocomplete="current-password" placeholder="Password"/>
+      <button class="btn-primary" id="hdr-btn" onclick="doLogin()">Sign in</button>
+      <span id="hdr-err" style="display:none"></span>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Hero -->
+  <div class="hero-card">
+    <div class="hero-copy">
+      <div class="hero-title">Systematic crypto trading strategies · VAN_Combo_1</div>
+      <div class="hero-sub">Explore public equity, drawdown and risk metrics based on daily and 1-minute portfolio data.</div>
+      <div class="hero-actions">
+        <button class="btn btn-secondary btn-navy" type="button" onclick="window.location.href='/'">Main page</button>
+        <button class="btn btn-secondary btn-navy" type="button" onclick="window.location.href='/contact.html'">Contacts</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat metric-tooltip" data-tooltip="Latest equity in USD from the live 1-minute equity series.">
+      <div class="stat-label">Current Equity</div>
+      <div class="stat-value green" id="stat-equity">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Current equity versus initial investment, shown as a percentage.">
+      <div class="stat-label">Total Return</div>
+      <div class="stat-value" id="stat-change">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Number of calendar days covered by the displayed daily equity history.">
+      <div class="stat-label">Days</div>
+      <div class="stat-value" id="stat-days">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Compound Annual Growth Rate, annualized from initial investment, current equity, and displayed days.">
+      <div class="stat-label">CAGR</div>
+      <div class="stat-value" id="stat-apr">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Calmar Ratio = CAGR / Max Drawdown.">
+      <div class="stat-label">Calmar</div>
+      <div class="stat-value" id="stat-calmar">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Sortino Ratio = average daily return / downside deviation, annualized by sqrt(365). Target return = 0% daily. Uses the daily equity series.">
+      <div class="stat-label">Sortino</div>
+      <div class="stat-value" id="stat-sortino">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="Sharpe Ratio = average daily return / standard deviation of daily returns, annualized by sqrt(365). Risk-free rate = 0%. Uses the daily equity series.">
+      <div class="stat-label">Sharpe</div>
+      <div class="stat-value" id="stat-sharpe">—</div>
+    </div>
+    <div class="stat metric-tooltip" data-tooltip="UTC timestamp of the latest point received from the live 1-minute equity series.">
+      <div class="stat-label">Last Update</div>
+      <div class="stat-value" id="stat-time" style="font-size:13px">—</div>
+    </div>
+  </div>
+
+  <!-- Daily Equity Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">VAN_Combo_1 Equity (USD) · Daily</div>
+      <div class="card-meta" id="daily-chart-range"></div>
+    </div>
+    <div id="daily-chart-wrap">
+      <div class="chart-empty" id="daily-chart-empty">Loading daily chart…</div>
+      <canvas id="daily-chart" height="220" style="display:none;width:100%"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Equity (USD) · Last 24 hours · 1-minute resolution</div>
+      <div class="card-meta" id="chart-range"></div>
+    </div>
+    <div id="chart-wrap">
+      <div class="chart-empty" id="chart-empty">Loading chart data…</div>
+      <canvas id="chart" height="220" style="display:none;width:100%"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<footer>VAN Portal · Data from Deribit · Updated every 60 seconds</footer>
+
+<script>
+const BASE = window.__VAN_BASE_URL__ || '';
+let gInitialInvestmentUsd = null;
+let gDaysCount = null;
+let gMaxDrawdownPct = null;
+let gDailyPts = null;
+let gDailyDrawdownMap = null;
+let gCurrentEquity = null;
+
+/* ── Chart (1-min) ── */
+function fmtShort(dt) {
+  const d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt);
+  return d.toISOString().slice(11, 16);
+}
+function fmtUsd(v) {
+  return '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function buildDailyDrawdownMap(drawdownPoints) {
+  const map = new Map();
+  for (const p of (drawdownPoints || [])) {
+    const key = fmtDate(p.dt);
+    const value = Number(p.maxDrawdownPct);
+    if (key && Number.isFinite(value)) map.set(key, value);
+  }
+  return map;
+}
+function buildDailyHistogramValues(points) {
+  if (gDailyDrawdownMap && gDailyDrawdownMap.size > 0) {
+    return points.map(p => {
+      const key = fmtDate(p.dt);
+      if (gDailyDrawdownMap.has(key)) return gDailyDrawdownMap.get(key);
+      return 0;
+    });
+  }
+  let peak = points[0].v;
+  return points.map(p => {
+    if (p.v > peak) peak = p.v;
+    return peak > 0 ? (peak - p.v) / peak * 100 : 0;
+  });
+}
+function computeDailySharpe(points) {
+  if (!points || points.length < 2) return null;
+  const returns = [];
+  for (let i = 1; i < points.length; i++) {
+    const prev = Number(points[i - 1].v);
+    const curr = Number(points[i].v);
+    if (!(prev > 0) || !Number.isFinite(curr)) continue;
+    returns.push(curr / prev - 1);
+  }
+  if (returns.length < 2) return null;
+  const avg = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => {
+    const diff = r - avg;
+    return sum + diff * diff;
+  }, 0) / returns.length;
+  if (!(variance > 0)) return null;
+  return (avg / Math.sqrt(variance)) * Math.sqrt(365);
+}
+function computeDailySortino(points) {
+  if (!points || points.length < 2) return null;
+  const returns = [];
+  for (let i = 1; i < points.length; i++) {
+    const prev = Number(points[i - 1].v);
+    const curr = Number(points[i].v);
+    if (!(prev > 0) || !Number.isFinite(curr)) continue;
+    returns.push(curr / prev - 1);
+  }
+  if (returns.length < 2) return null;
+  const avg = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const downsideVariance = returns.reduce((sum, r) => {
+    const downside = Math.min(0, r);
+    return sum + downside * downside;
+  }, 0) / returns.length;
+  if (!(downsideVariance > 0)) return null;
+  return (avg / Math.sqrt(downsideVariance)) * Math.sqrt(365);
+}
+function setRatioMetric(el, value) {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    el.textContent = '—';
+    el.style.color = '';
+    return;
+  }
+  el.textContent = value.toFixed(2);
+  el.style.color = value >= 1 ? '#34d399' : value >= 0 ? '#fbbf24' : '#f87171';
+}
+function drawChart(points, drawdownPoints) {
+  const canvas = document.getElementById('chart');
+  const empty  = document.getElementById('chart-empty');
+  const wrap   = document.getElementById('chart-wrap');
+  if (!points || points.length < 2) {
+    empty.textContent = 'Not enough data yet. Chart will appear as data accumulates.';
+    empty.style.display = '';
+    canvas.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const W = wrap.clientWidth || 900;
+  const H = 260;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = {top:16, right:62, bottom:32, left:14};
+  const cw = W - pad.left - pad.right;
+  const totalH = H - pad.top - pad.bottom;
+  const gap = 14;
+  const topH = Math.floor((totalH - gap) * (2 / 3));
+  const botH = totalH - gap - topH;
+  const topY = pad.top;
+  const botY = pad.top + topH + gap;
+
+  const vals = points.map(p => p.v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
+  const px = i => pad.left + (i / (points.length - 1)) * cw;
+  const py = v => topY + (1 - (v - minV) / range) * topH;
+
+  let ddVals;
+  if (drawdownPoints && drawdownPoints.length) {
+    const ddKey = dt => { const d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt); return isNaN(d) ? String(dt).slice(0,16) : d.toISOString().slice(0,16); };
+    const ddMap = new Map(drawdownPoints.map(p => [ddKey(p.dt), Number(p.maxDrawdownPct) || 0]));
+    ddVals = points.map(p => ddMap.has(ddKey(p.dt)) ? ddMap.get(ddKey(p.dt)) : 0);
+  } else {
+    let peak = points[0].v;
+    ddVals = points.map(p => {
+      if (p.v > peak) peak = p.v;
+      return peak > 0 ? (peak - p.v) / peak * 100 : 0;
+    });
+  }
+  const maxDd = Math.max(...ddVals, 0.01);
+  const currentDd = ddVals[ddVals.length - 1] || 0;
+  const deepThreshold = maxDd * 0.75;
+  const pyd = v => botY + (1 - v / maxDd) * botH;
+
+  // section separators / grids
+  ctx.strokeStyle = 'rgba(71,85,105,.55)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = topY + (i / 4) * topH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('$' + (maxV - (i / 4) * range).toLocaleString('en-US', {maximumFractionDigits: 0}), pad.left + cw + 6, y + 4);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = botY + (i / 4) * botH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    ctx.fillText((maxDd - (i / 4) * maxDd).toFixed(2) + '%', pad.left + cw + 6, y + 4);
+  }
+
+  // divider between top/bottom
+  ctx.strokeStyle = 'rgba(148,163,184,.9)';
+  ctx.beginPath(); ctx.moveTo(pad.left, topY + topH + gap / 2); ctx.lineTo(pad.left + cw, topY + topH + gap / 2); ctx.stroke();
+
+  // x axis labels
+  const step = Math.max(1, Math.floor(points.length / 8));
+  ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i < points.length; i += step)
+    ctx.fillText(fmtShort(points[i].dt), px(i), H - 8);
+
+  // top: equity area + line
+  const grad = ctx.createLinearGradient(0, topY, 0, topY + topH);
+  grad.addColorStop(0, 'rgba(96,165,250,.22)');
+  grad.addColorStop(1, 'rgba(96,165,250,0)');
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) ctx.lineTo(px(i), py(points[i].v));
+  ctx.lineTo(px(points.length - 1), topY + topH); ctx.lineTo(px(0), topY + topH);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) ctx.lineTo(px(i), py(points[i].v));
+  ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.stroke();
+  const lx = px(points.length - 1), ly = py(points[points.length - 1].v);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#60a5fa'; ctx.fill();
+
+  // bottom: drawdown histogram
+  const barW = Math.max(1, Math.floor(cw / points.length));
+  for (let i = 0; i < points.length; i++) {
+    const x = px(i) - Math.floor(barW / 2);
+    const y = pyd(ddVals[i]);
+    const h = botY + botH - y;
+    if (ddVals[i] >= deepThreshold && ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(107,114,128,.42)';
+    } else if (ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(71,85,105,.30)';
+    } else {
+      ctx.fillStyle = 'rgba(71,85,105,.14)';
+    }
+    ctx.fillRect(x, y, barW, Math.max(1, h));
+  }
+
+  // legend + stats
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#60a5fa'; ctx.fillText('■ Equity', pad.left, topY - 2);
+  ctx.fillStyle = '#6b7280'; ctx.fillText('■ Drawdown histogram', pad.left + 80, topY - 2);
+  ctx.fillStyle = '#d1d5db';
+  ctx.textAlign = 'center';
+  ctx.fillText('Current DD: ' + currentDd.toFixed(2) + '%   Max DD: ' + maxDd.toFixed(2) + '%', pad.left + cw / 2, topY - 2);
+}
+async function loadChart() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/equity-chart')).json();
+    const pts = d.points || [];
+    drawChart(pts, d.drawdownPoints || []);
+    if (pts.length > 0) {
+      const last = pts[pts.length - 1];
+      gCurrentEquity = last.v;
+      document.getElementById('stat-equity').textContent = fmtUsd(last.v);
+      document.getElementById('stat-time').textContent = fmtShort(last.dt) + ' UTC';
+      document.getElementById('chart-range').textContent =
+        fmtShort(pts[0].dt) + ' – ' + fmtShort(pts[pts.length - 1].dt) + ' UTC';
+      updateTotalReturn(last.v);
+      if (gDailyPts) updateEstimated(gDailyPts);
+    }
+  } catch(e) { document.getElementById('chart-empty').textContent = 'Failed to load data.'; }
+}
+function updateEstimated(pts) {
+  if (!gInitialInvestmentUsd || gInitialInvestmentUsd <= 0 || !gDaysCount || gDaysCount < 2) return;
+  const lastV = (gCurrentEquity !== null && gCurrentEquity > 0) ? gCurrentEquity : pts[pts.length - 1].v;
+
+  // CAGR = (lastV / initial) ^ (365 / days) - 1
+  const cagr = (Math.pow(lastV / gInitialInvestmentUsd, 365 / gDaysCount) - 1) * 100;
+  document.getElementById('stat-apr').textContent = (cagr >= 0 ? '+' : '') + cagr.toFixed(1) + '%';
+  document.getElementById('stat-apr').style.color = cagr >= 0 ? '#34d399' : '#f87171';
+
+  // Calmar = CAGR / MaxDrawdown (1-min data from server, fallback to daily)
+  const elCalmar = document.getElementById('stat-calmar');
+  const elSortino = document.getElementById('stat-sortino');
+  const maxDd = gMaxDrawdownPct !== null ? gMaxDrawdownPct : (() => {
+    // fallback: daily equity series
+    let peak = pts[0].v, dd = 0;
+    for (const p of pts) {
+      if (p.v > peak) peak = p.v;
+      const cur = peak > 0 ? (peak - p.v) / peak * 100 : 0;
+      if (cur > dd) dd = cur;
+    }
+    return dd;
+  })();
+
+  if (maxDd > 0) {
+    const calmar = cagr / maxDd;
+    setRatioMetric(elCalmar, calmar);
+  } else {
+    setRatioMetric(elCalmar, null);
+  }
+
+  const elSharpe = document.getElementById('stat-sharpe');
+  setRatioMetric(elSortino, computeDailySortino(pts));
+  setRatioMetric(elSharpe, computeDailySharpe(pts));
+}
+
+function updateTotalReturn(currentEquity) {
+  if (!gInitialInvestmentUsd || gInitialInvestmentUsd <= 0) return;
+  const pct = (currentEquity - gInitialInvestmentUsd) / gInitialInvestmentUsd * 100;
+  const el  = document.getElementById('stat-change');
+  el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  el.style.color = pct >= 0 ? '#34d399' : '#f87171';
+}
+loadChart();
+setInterval(loadChart, 60000);
+window.addEventListener('resize', loadChart);
+
+/* ── Max Drawdown (1-min) ── */
+async function loadMaxDrawdown() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/max-drawdown')).json();
+    if (d.maxDrawdownPct !== null && d.maxDrawdownPct !== undefined) {
+      gMaxDrawdownPct = d.maxDrawdownPct;
+      // Re-trigger Calmar update if daily data already loaded
+      if (gDailyPts) { updateEstimated(gDailyPts); } else if (gInitialInvestmentUsd && gDaysCount) { loadDailyChart(); }
+    }
+  } catch(e) { /* silent: fallback to daily-based drawdown */ }
+}
+loadMaxDrawdown();
+setInterval(loadMaxDrawdown, 60000);
+
+/* ── Daily Chart ── */
+function fmtDate(dt) {
+  const d = new Date(typeof dt === 'string' && !dt.endsWith('Z') ? dt + 'Z' : dt);
+  return d.toISOString().slice(0, 10);
+}
+function drawDailyChart(points) {
+  const canvas = document.getElementById('daily-chart');
+  const empty  = document.getElementById('daily-chart-empty');
+  const wrap   = document.getElementById('daily-chart-wrap');
+  if (!points || points.length < 2) {
+    empty.textContent = 'Not enough data yet. Chart will appear as data accumulates.';
+    empty.style.display = '';
+    canvas.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  const W = wrap.clientWidth || 900;
+  const H = 260;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = {top:16, right:62, bottom:32, left:14};
+  const cw = W - pad.left - pad.right;
+  const totalH = H - pad.top - pad.bottom;
+  const gap = 14;
+  const topH = Math.floor((totalH - gap) * (2 / 3));
+  const botH = totalH - gap - topH;
+  const topY = pad.top;
+  const botY = pad.top + topH + gap;
+
+  const vals = points.map(p => p.v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
+  const px = i => pad.left + (i / (points.length - 1)) * cw;
+  const py = v => topY + (1 - (v - minV) / range) * topH;
+
+  const ddVals = buildDailyHistogramValues(points);
+  const maxDdFromData = Math.max(...ddVals, 0.01);
+  const maxDd = maxDdFromData;
+  const currentDd = ddVals[ddVals.length - 1] || 0;
+  const deepThreshold = maxDd * 0.75;
+  const pyd = v => botY + (1 - v / maxDd) * botH;
+
+  ctx.strokeStyle = 'rgba(71,85,105,.55)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = topY + (i / 4) * topH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('$' + (maxV - (i / 4) * range).toLocaleString('en-US', {maximumFractionDigits: 0}), pad.left + cw + 6, y + 4);
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = botY + (i / 4) * botH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+    ctx.fillStyle = '#9ca3af'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    ctx.fillText((maxDd - (i / 4) * maxDd).toFixed(2) + '%', pad.left + cw + 6, y + 4);
+  }
+
+  ctx.strokeStyle = 'rgba(148,163,184,.9)';
+  ctx.beginPath(); ctx.moveTo(pad.left, topY + topH + gap / 2); ctx.lineTo(pad.left + cw, topY + topH + gap / 2); ctx.stroke();
+
+  const step = Math.max(1, Math.floor(points.length / 8));
+  ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i < points.length; i += step)
+    ctx.fillText(fmtDate(points[i].dt), px(i), H - 8);
+
+  const grad = ctx.createLinearGradient(0, topY, 0, topY + topH);
+  grad.addColorStop(0, 'rgba(52,211,153,.22)');
+  grad.addColorStop(1, 'rgba(52,211,153,0)');
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) ctx.lineTo(px(i), py(points[i].v));
+  ctx.lineTo(px(points.length - 1), topY + topH); ctx.lineTo(px(0), topY + topH);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(px(0), py(points[0].v));
+  for (let i = 1; i < points.length; i++) ctx.lineTo(px(i), py(points[i].v));
+  ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2; ctx.stroke();
+  const lx = px(points.length - 1), ly = py(points[points.length - 1].v);
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = '#34d399'; ctx.fill();
+
+  const barW = Math.max(2, Math.floor(cw / points.length) - 1);
+  for (let i = 0; i < points.length; i++) {
+    const x = px(i) - Math.floor(barW / 2);
+    const y = pyd(ddVals[i]);
+    const h = botY + botH - y;
+    if (ddVals[i] >= deepThreshold && ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(148,163,184,.72)';
+    } else if (ddVals[i] > 0) {
+      ctx.fillStyle = 'rgba(148,163,184,.45)';
+    } else {
+      ctx.fillStyle = 'rgba(148,163,184,.22)';
+    }
+    ctx.fillRect(x, y, barW, Math.max(1, h));
+  }
+
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#34d399'; ctx.fillText('■ Equity', pad.left, topY - 2);
+  ctx.fillStyle = '#94a3b8'; ctx.fillText('■ Drawdown histogram', pad.left + 80, topY - 2);
+  ctx.fillStyle = '#d1d5db';
+  ctx.textAlign = 'center';
+  ctx.fillText('Max DD: ' + maxDd.toFixed(2) + '%', pad.left + cw / 2, topY - 2);
+}
+async function loadDailyChart() {
+  try {
+    const d = await (await fetch(BASE + '/api/public/daily-equity-chart')).json();
+    const pts = d.points || [];
+    gDailyDrawdownMap = buildDailyDrawdownMap(d.drawdownPoints || []);
+    drawDailyChart(pts);
+    if (pts.length > 0) {
+      document.getElementById('daily-chart-range').textContent =
+        fmtDate(pts[0].dt) + ' – ' + fmtDate(pts[pts.length - 1].dt);
+      if (d.initialInvestmentUsd > 0) {
+        gInitialInvestmentUsd = d.initialInvestmentUsd;
+        if (gCurrentEquity !== null) updateTotalReturn(gCurrentEquity);
+      }
+      if (pts.length > 1) {
+        const t0 = new Date(pts[0].dt.endsWith('Z') ? pts[0].dt : pts[0].dt + 'Z');
+        const t1 = new Date(pts[pts.length - 1].dt.endsWith('Z') ? pts[pts.length - 1].dt : pts[pts.length - 1].dt + 'Z');
+        gDaysCount = Math.round((t1 - t0) / 86400000) + 1;
+        document.getElementById('stat-days').textContent = gDaysCount;
+        gDailyPts = pts;
+        updateEstimated(pts);
+      }
+    }
+  } catch(e) { document.getElementById('daily-chart-empty').textContent = 'Failed to load daily data.'; }
+}
+loadDailyChart();
+setInterval(loadDailyChart, 300000);
+window.addEventListener('resize', loadDailyChart);
+
+/* ── Sign in ── */
+async function doLogin() {
+  const btn   = document.getElementById('hdr-btn');
+  const err   = document.getElementById('hdr-err');
+  const login = document.getElementById('hdr-login').value.trim();
+  const pass  = document.getElementById('hdr-pass').value;
+  err.style.display = 'none';
+  if (!login || !pass) { err.textContent = 'Login and password required.'; err.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const r = await fetch(BASE + '/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({Login: login, Password: pass})
+    });
+    if (!r.ok) throw new Error('Invalid credentials');
+    const d = await r.json();
+    const session = {token: d.Token || d.token || '', user: d.User || d.user || {}};
+    localStorage.setItem('van_session', JSON.stringify(session));
+    localStorage.setItem('van_token', session.token);
+    window.location.href = '/app';
+  } catch(e) {
+    err.textContent = e.message || 'Login failed';
+    err.style.display = '';
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+document.getElementById('hdr-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('hdr-login').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+/* ── Contact modal ── */
+function scrollToSignIn() {
+  const el = document.getElementById('hdr-login');
+  if (el) {
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(() => el.focus(), 250);
+  }
+}
+
+/* ── Contact ── */
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

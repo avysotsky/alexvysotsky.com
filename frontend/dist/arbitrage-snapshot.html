@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VAN Portal · Arbitrage Snapshot</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#020617;
+      --panel:#0f172a;
+      --panel2:#111827;
+      --line:#1e293b;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --blue:#60a5fa;
+      --green:#34d399;
+      --red:#f87171;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:13px; }
+    header { height:44px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; padding:0 14px; background:#030712; }
+    header strong { font-size:14px; }
+    header a { color:var(--blue); text-decoration:none; font-weight:700; }
+    main { display:grid; grid-template-rows:auto minmax(0,1fr); min-height:calc(100vh - 44px); }
+    .toolbar { display:flex; align-items:end; gap:8px; flex-wrap:wrap; padding:10px 14px; border-bottom:1px solid var(--line); background:#07111f; }
+    label { display:block; color:var(--muted); font-size:11px; font-weight:700; margin-bottom:4px; }
+    input, select, button { height:32px; border:1px solid #334155; border-radius:6px; background:#0b1220; color:var(--text); font:inherit; }
+    input { width:245px; padding:0 9px; }
+    select { width:110px; padding:0 8px; }
+    button { padding:0 12px; cursor:pointer; font-weight:700; }
+    button:hover { border-color:var(--blue); }
+    .status { min-height:32px; display:flex; align-items:center; color:var(--muted); }
+    .layout { display:grid; grid-template-columns:330px minmax(0,1fr); min-height:0; }
+    .sidebar { border-right:1px solid var(--line); min-height:0; overflow:auto; background:#060d18; }
+    .group-title { position:sticky; top:0; background:#08111f; color:#cbd5e1; padding:8px 10px; border-bottom:1px solid var(--line); font-weight:800; }
+    .token-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; }
+    .token { height:30px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .token.active { border-color:var(--blue); color:#bfdbfe; background:#10213a; }
+    .content { min-width:0; min-height:0; overflow:auto; padding:10px 12px; }
+    .summary { display:grid; grid-template-columns:repeat(5, minmax(130px,1fr)); gap:8px; margin-bottom:10px; }
+    .metric { border:1px solid var(--line); border-radius:8px; background:var(--panel); padding:8px; min-height:54px; }
+    .metric span { display:block; color:var(--muted); font-size:11px; font-weight:700; margin-bottom:5px; }
+    .metric strong { font-size:14px; overflow-wrap:anywhere; }
+    .detail { display:grid; grid-template-columns:minmax(0,360px) minmax(0,1fr); gap:10px; align-items:start; }
+    .card { border:1px solid var(--line); border-radius:8px; background:var(--panel); overflow:hidden; }
+    .card h2 { margin:0; padding:9px 10px; border-bottom:1px solid var(--line); font-size:13px; }
+    .kv { display:grid; grid-template-columns:120px minmax(0,1fr); gap:0; }
+    .kv div { padding:7px 10px; border-bottom:1px solid var(--line); }
+    .kv div:nth-child(odd) { color:var(--muted); background:#0b1220; font-weight:700; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    th, td { padding:7px 8px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+    th { position:sticky; top:0; z-index:1; background:#0b1220; color:var(--muted); font-size:11px; }
+    th:first-child, td:first-child { text-align:left; width:72px; }
+    .bid { color:var(--green); }
+    .ask { color:var(--red); }
+    .all-table { margin-top:10px; max-height:310px; overflow:auto; }
+    .empty { padding:22px; color:var(--muted); }
+    @media (max-width:900px) {
+      .layout { grid-template-columns:1fr; }
+      .sidebar { max-height:320px; border-right:0; border-bottom:1px solid var(--line); }
+      .summary, .detail { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>VAN Portal · Arbitrage Snapshot</strong>
+    <a href="/arbitrage/pair">Pair</a>
+    <a href="/arbitrage">Arbitrage</a>
+  </header>
+  <main>
+    <section class="toolbar">
+      <div>
+        <label for="tsInput">UTC time</label>
+        <input id="tsInput" type="datetime-local" step="1">
+      </div>
+      <div>
+        <label for="tolSelect">Tolerance</label>
+        <select id="tolSelect">
+          <option value="6000">6 sec</option>
+          <option value="15000">15 sec</option>
+          <option value="60000">1 min</option>
+        </select>
+      </div>
+      <button id="loadBtn" type="button">Load</button>
+      <button id="nowBtn" type="button">Now</button>
+      <div class="status" id="status">Ready</div>
+    </section>
+    <section class="layout">
+      <aside class="sidebar" id="sidebar"></aside>
+      <section class="content">
+        <div class="summary" id="summary"></div>
+        <div class="detail">
+          <section class="card" id="metaCard"></section>
+          <section class="card">
+            <h2>Order book levels</h2>
+            <div id="levelsTable"></div>
+          </section>
+        </div>
+        <section class="card all-table">
+          <h2>Snapshot rows</h2>
+          <div id="allRows"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+  <script>
+    const state = { rows: [], selectedKey: "" };
+    const $ = (id) => document.getElementById(id);
+    const fmt = (value, digits = 8) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "—";
+      return Math.abs(n) >= 1000 ? n.toFixed(2) : n.toFixed(digits).replace(/0+$/, "").replace(/\.$/, "");
+    };
+    function inputValueFromDate(date) {
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+    }
+    function isoFromInput() {
+      const raw = $("tsInput").value;
+      if (!raw) return "";
+      return raw.endsWith("Z") ? raw : `${raw}Z`;
+    }
+    function setStatus(text) { $("status").textContent = text; }
+    function rowKey(row) { return `${row.exchange}|${row.coin}|${row.symbol}`; }
+    function renderSummary(payload) {
+      const rows = payload.rows || [];
+      const coins = new Set(rows.map((r) => r.coin));
+      const exchanges = new Set(rows.map((r) => r.exchange));
+      $("summary").innerHTML = [
+        ["Target", payload.target_ts_utc || "—"],
+        ["Matched", payload.matched_ts_utc || "—"],
+        ["Delta", payload.delta_ms == null ? "—" : `${payload.delta_ms} ms`],
+        ["Rows", String(rows.length)],
+        ["Coins", String(coins.size)],
+      ].map(([k, v]) => `<div class="metric"><span>${k}</span><strong>${v}</strong></div>`).join("");
+    }
+    function renderSidebar() {
+      const grouped = {};
+      for (const row of state.rows) {
+        (grouped[row.exchange] ||= []).push(row);
+      }
+      const html = Object.keys(grouped).sort().map((exchange) => {
+        const buttons = grouped[exchange].sort((a, b) => String(a.coin).localeCompare(String(b.coin))).map((row) => {
+          const key = rowKey(row);
+          const active = key === state.selectedKey ? " active" : "";
+          return `<button class="token${active}" type="button" data-key="${key}" title="${row.symbol}">${row.coin}</button>`;
+        }).join("");
+        return `<div class="group-title">${exchange} · ${grouped[exchange].length}</div><div class="token-grid">${buttons}</div>`;
+      }).join("");
+      $("sidebar").innerHTML = html || `<div class="empty">No rows</div>`;
+      $("sidebar").querySelectorAll("button[data-key]").forEach((btn) => {
+        btn.addEventListener("click", () => selectRow(btn.dataset.key));
+      });
+    }
+    function selectRow(key) {
+      state.selectedKey = key;
+      renderSidebar();
+      const row = state.rows.find((item) => rowKey(item) === key);
+      renderDetail(row);
+    }
+    function renderDetail(row) {
+      if (!row) {
+        $("metaCard").innerHTML = `<h2>Instrument</h2><div class="empty">No selection</div>`;
+        $("levelsTable").innerHTML = `<div class="empty">No book data</div>`;
+        return;
+      }
+      $("metaCard").innerHTML = `<h2>${row.exchange} · ${row.coin}</h2><div class="kv">
+        <div>Symbol</div><div>${row.symbol || "—"}</div>
+        <div>Time</div><div>${row.ts_utc || "—"}</div>
+        <div>Mid</div><div>${fmt(row.bid_ask_median)}</div>
+        <div>Funding rate</div><div>${fmt(row.funding_rate, 10)}</div>
+        <div>Funding %</div><div>${fmt(row.funding_pct, 6)}</div>
+      </div>`;
+      const levels = row.levels || [];
+      $("levelsTable").innerHTML = `<table><thead><tr><th>Level</th><th>Bid px</th><th>Bid sz</th><th>Ask px</th><th>Ask sz</th></tr></thead><tbody>
+        ${levels.map((l) => `<tr><td>${l.level}</td><td class="bid">${fmt(l.bid_px)}</td><td>${fmt(l.bid_sz, 4)}</td><td class="ask">${fmt(l.ask_px)}</td><td>${fmt(l.ask_sz, 4)}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    function renderAllRows() {
+      if (!state.rows.length) {
+        $("allRows").innerHTML = `<div class="empty">No rows</div>`;
+        return;
+      }
+      $("allRows").innerHTML = `<table><thead><tr><th>Exchange</th><th>Coin</th><th>Symbol</th><th>Mid</th><th>Funding %</th><th>Best bid</th><th>Best ask</th></tr></thead><tbody>
+        ${state.rows.map((row) => `<tr><td>${row.exchange}</td><td>${row.coin}</td><td>${row.symbol}</td><td>${fmt(row.bid_ask_median)}</td><td>${fmt(row.funding_pct, 6)}</td><td class="bid">${fmt(row.bid_px_1)}</td><td class="ask">${fmt(row.ask_px_1)}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+    async function loadSnapshot() {
+      const ts = isoFromInput();
+      if (!ts) return;
+      setStatus("Loading");
+      const url = `/arbitrage-history/snapshot?ts=${encodeURIComponent(ts)}&tolerance_ms=${encodeURIComponent($("tolSelect").value)}`;
+      const resp = await fetch(url, { cache: "no-store" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const payload = await resp.json();
+      state.rows = payload.rows || [];
+      state.selectedKey = state.rows[0] ? rowKey(state.rows[0]) : "";
+      renderSummary(payload);
+      renderSidebar();
+      renderDetail(state.rows[0]);
+      renderAllRows();
+      setStatus(payload.matched_ts_utc ? `Matched ${payload.matched_ts_utc}` : "No matching snapshot");
+    }
+    $("loadBtn").addEventListener("click", () => loadSnapshot().catch((err) => setStatus(err.message)));
+    $("nowBtn").addEventListener("click", () => {
+      $("tsInput").value = inputValueFromDate(new Date());
+      loadSnapshot().catch((err) => setStatus(err.message));
+    });
+    $("tsInput").value = inputValueFromDate(new Date(Date.now() - 60_000));
+    loadSnapshot().catch((err) => setStatus(err.message));
+  </script>
+</body>
+</html>

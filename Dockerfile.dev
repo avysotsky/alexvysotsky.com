@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY publish-dev/ .
+RUN chmod +x /app/VANWebService
+ENV ASPNETCORE_URLS=http://0.0.0.0:38041
+EXPOSE 38041
+ENTRYPOINT ["./VANWebService", "port=38041"]

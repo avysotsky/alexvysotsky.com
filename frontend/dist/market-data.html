@@ -1,0 +1,3681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__VAN_BASE_URL__ = "https://www.alexvysotsky.com";</script>
+  <meta charset="UTF-8"/>
+  <title>VAN Portal · Market Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/van-logo.png"/>
+  <!-- Lightweight Chart via CDN -->
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Header ── */
+    header { border-bottom: 1px solid #1e293b; padding: 6px 24px; }
+    .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { height: 48px; filter: invert(1) brightness(1.15); opacity: .96; }
+    .brand-title { font-size: 15px; font-weight: 600; }
+    .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .btn-logout { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-logout:hover { background: #334155; }
+
+    /* ── Nav ── */
+    nav { border-bottom: 1px solid #1e293b; background: #0b1220; }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 0; padding: 0 24px; }
+    .nav-item { padding: 8px 10px; font-size: 13px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; white-space: nowrap; }
+    .nav-item:hover { color: #f1f5f9; background: #111827; }
+    .nav-item.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    /* ── Main layout ── */
+    .main { max-width: 1200px; margin: 0 auto; padding: 4px 24px 6px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid #1e293b; margin-bottom: 6px; }
+    .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s; }
+    .tab:hover { color: #f1f5f9; }
+    .tab.active { color: #10b981; border-bottom-color: #10b981; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Spreads Matrix ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 16px; font-weight: 600; color: #f8fafc; }
+    .section-meta { font-size: 12px; color: #64748b; }
+    .spreads-header-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: nowrap; }
+    .badge { display: inline-block; background: #1e293b; border-radius: 6px; padding: 2px 8px; font-size: 11px; color: #94a3b8; }
+
+    .asset-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .asset-tab { padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8; transition: all .15s; }
+    .asset-tab.active { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+
+    /* ── Exchange toggles (Spreads tab) ── */
+    .spreads-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .spreads-header-top { flex: 1 1 auto; min-width: 0; text-align: left; }
+    .spreads-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; margin-left: auto; }
+    .asset-tabs, .exchange-toggles { display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+    .exchange-toggles { gap: 6px; order: 1; }
+    .asset-tabs { order: 2; margin-left: 10px; }
+    .ex-toggle { padding: 5px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8;
+      transition: all .15s; user-select: none; }
+    .ex-toggle:hover { border-color: #475569; color: #e2e8f0; }
+    .ex-toggle.active { border-color: #1d4ed8; color: #93c5fd; background: #0f1c34; }
+    .bybit-matrix-block { margin-top: 12px; }
+    .bybit-matrix-label { font-size: 13px; font-weight: 600; color: #93c5fd; margin-bottom: 6px; padding-left: 4px; }
+
+    /* Matrix table */
+    .matrix-wrap { overflow-x: hidden; border-radius: 12px; border: 1px solid #1e293b; margin-bottom: 10px; }
+    table.matrix { border-collapse: collapse; width: 100%; min-width: 0; table-layout: fixed; }
+    table.matrix th, table.matrix td { text-align: center; font-size: 12px; white-space: nowrap; }
+    table.matrix th { background: #0f172a; color: #64748b; font-weight: 600; padding: 3px 3px; border-bottom: 1px solid #334155; border-right: 1px solid #334155; letter-spacing: 0; line-height: 1.05; }
+    table.matrix th.row-header { text-align: left; }
+    table.matrix th.row-header,
+    table.matrix td.row-label { width: 132px; }
+    .matrix-col-head { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.0; }
+    .matrix-contract-label { font-weight: 700; color: #94a3b8; }
+    .matrix-col-meta { display: inline-flex; align-items: baseline; gap: 3px; white-space: nowrap; margin-top: 1px; }
+    .matrix-expiry-days { display: block; font-size: 12px; font-weight: 600; color: #9ca3af; margin-top: 1px; letter-spacing: 0; }
+    .matrix-expiry-date { font-size: 12px; font-weight: 500; color: #64748b; margin-left: 0; letter-spacing: 0; white-space: nowrap; }
+    .matrix-row-head { display: flex; flex-direction: row; align-items: baseline; justify-content: flex-start; width: 100%; gap: 4px; line-height: 1.05; white-space: nowrap; }
+    .matrix-row-head .matrix-expiry-days { display: inline; margin-top: 0; margin-left: 0; font-size: 12px; text-align: left; color: #9ca3af; }
+    .matrix-row-head .matrix-expiry-date { margin-left: 4px; color: #64748b; }
+    table.matrix tbody tr:nth-child(odd) td { background: #0b1220; }
+    table.matrix tbody tr:nth-child(even) td { background: #0e1628; }
+    table.matrix td { padding: 3px 3px; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b; color: #94a3b8; }
+    table.matrix td.empty { background: #0a1020; color: #334155; }
+    table.matrix th.perp-col { border-right: 2px solid #475569; background: #111827; }
+    table.matrix td.cell-spread {
+      cursor: pointer;
+      transition: background .1s;
+    }
+    table.matrix td.cell-spread:hover { background: #1e3a5f; color: #60a5fa; }
+    table.matrix td.cell-spread.selected { background: #1e3a5f; color: #60a5fa; font-weight: 700; }
+    table.matrix .val-pos { color: #34d399; }
+    table.matrix .val-neg { color: #f87171; }
+    table.matrix td.row-label { text-align: left; background: #0f172a; color: #94a3b8; font-weight: 600; padding: 3px 4px 3px 6px; border-right: 1px solid #1e293b; }
+
+    /* Chart section */
+    .chart-section { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; padding: 10px 20px 16px; margin-top: 8px; }
+    .chart-toolbar { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 14px; margin-bottom: 6px; }
+    .chart-head-inline { display: flex; align-items: center; justify-content: flex-start; min-width: 0; overflow: hidden; }
+    .chart-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chart-sub { font-size: 11px; color: #64748b; margin-bottom: 0; display: none; }
+    .chart-meta-top { font-size: 12px; min-height: 0; color: #94a3b8; white-space: nowrap; text-align: center; justify-self: center; }
+    .chart-meta-top .matrix-contract-label { font-weight: 700; }
+    .chart-meta-top .matrix-expiry-days { display: inline; margin-top: 0; color: #9ca3af; }
+    .chart-meta-top .matrix-expiry-date { color: #64748b; margin-left: 6px; }
+    .chart-days { display: flex; gap: 6px; margin-bottom: 0; flex: 0 0 auto; }
+    .day-btn { padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8; transition: all .15s; }
+    .day-btn.active { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+    .funding-chart-toolbar { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin-bottom: 6px; }
+    .funding-chart-controls { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; width: 100%; }
+    .funding-exchange-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .funding-exchange-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .funding-exchange-action { padding: 4px 9px; border-radius: 6px; font-size: 11px; cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8; transition: all .15s; white-space: nowrap; }
+    .funding-exchange-action:hover { border-color: #475569; color: #e2e8f0; }
+    .funding-exchange-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; line-height: 1; cursor: pointer; user-select: none; }
+    .funding-exchange-toggle input { width: 13px; height: 13px; margin: 0; accent-color: #38bdf8; }
+    .funding-exchange-swatch { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+    .funding-display-toggles { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+    .funding-display-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; line-height: 1; cursor: pointer; user-select: none; }
+    .funding-display-toggle input { width: 13px; height: 13px; margin: 0; accent-color: #38bdf8; }
+    #tab-funding .section-header { margin-bottom: 4px; }
+    #tab-funding .asset-tabs { margin-bottom: 0; }
+    #tab-funding .chart-section { padding-top: 6px; padding-bottom: 8px; margin-top: 4px; }
+    #tab-funding .funding-chart-toolbar { gap: 3px; margin-bottom: 4px; }
+    #tab-funding .funding-chart-controls { gap: 8px; }
+    #tab-funding .funding-exchange-filters { gap: 7px; }
+    #tab-funding .funding-compare-grid { gap: 6px !important; }
+    #tab-funding .funding-compare-grid > div > .chart-title { margin-bottom: 3px !important; }
+    #tab-funding .chart-legend { margin-top: 4px; }
+    .spread-chart-wrap { display: grid; grid-template-columns: minmax(0, 1fr); height: 510px; border-radius: 8px; overflow: hidden; }
+    .spread-chart-wrap.funding-scale-visible { grid-template-columns: minmax(0, 1fr) 76px; }
+    .spread-chart-main { display: grid; grid-template-rows: 1fr; min-width: 0; height: 510px; overflow: hidden; }
+    .spread-chart-wrap.perp-pane-visible .spread-chart-main { grid-template-rows: minmax(0, 330px) minmax(0, 180px); }
+    #spread-chart { width: 100%; height: 510px; overflow: hidden; }
+    .spread-chart-wrap.perp-pane-visible #spread-chart { height: 330px; }
+    #spread-perp-chart { display: none; width: 100%; height: 180px; overflow: hidden; border-top: 1px solid #1e293b; }
+    .spread-chart-wrap.perp-pane-visible #spread-perp-chart { display: block; }
+    #spread-funding-scale { display: none; height: 330px; background: #0b1220; overflow: hidden; }
+    .spread-chart-wrap.funding-scale-visible:not(.perp-pane-visible) #spread-funding-scale { height: 510px; }
+    .spread-chart-wrap.funding-scale-visible #spread-funding-scale { display: block; }
+    .chart-legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; }
+    .legend-dot { width: 10px; height: 3px; border-radius: 2px; }
+    .spread-overlay-controls { margin-left: auto; display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .spread-overlay-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; line-height: 1; cursor: pointer; user-select: none; }
+    .spread-overlay-toggle input { width: 13px; height: 13px; margin: 0; accent-color: #38bdf8; }
+    .spread-overlay-swatch { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+
+    /* No-data state */
+    .no-data { color: #64748b; font-size: 13px; text-align: center; padding: 40px; }
+
+    /* Options placeholder */
+    .placeholder-card { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; padding: 40px; text-align: center; color: #64748b; }
+    .placeholder-card h3 { font-size: 16px; color: #94a3b8; margin-bottom: 8px; }
+
+    /* Loading spinner */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { text-align: center; padding: 10px 28px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; }
+
+    @media(max-width: 700px) {
+      .main { padding: 16px 12px 40px; }
+      .nav-item { padding: 8px 8px; font-size: 12px; }
+    }
+
+    /* ── Options Tab ─────────────────────────────────────────────────────── */
+    .expiry-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .expiry-btn { padding: 5px 13px; border-radius: 7px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid #334155; background: #0f172a; color: #94a3b8;
+      transition: all .15s; white-space: nowrap; }
+    .expiry-btn:hover { border-color: #475569; color: #f1f5f9; }
+    .expiry-btn.active { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+
+    .opt-chain-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #1e293b; margin-bottom: 10px; }
+    table.opt-chain { border-collapse: collapse; width: 100%; min-width: 780px; }
+    table.opt-chain th { background: #0f172a; color: #64748b; font-size: 11px; font-weight: 600;
+      padding: 8px 10px; border-bottom: 1px solid #1e293b; white-space: nowrap; letter-spacing: .03em; }
+    table.opt-chain th.call-hdr  { color: #34d399; text-align: right; }
+    table.opt-chain th.put-hdr   { color: #f87171; text-align: left; }
+    table.opt-chain th.strike-hdr { text-align: center; background: #0a1220; }
+    table.opt-chain td { font-size: 12px; padding: 5px 10px; border-bottom: 1px solid #0f172a;
+      white-space: nowrap; color: #94a3b8; }
+    table.opt-chain .call-side { text-align: right; }
+    table.opt-chain .put-side  { text-align: left; }
+    table.opt-chain .strike-cell { text-align: center; background: #0a1220; font-weight: 700;
+      color: #f1f5f9; font-size: 12px; padding: 5px 14px;
+      border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; }
+    table.opt-chain tr.atm .call-side,
+    table.opt-chain tr.atm .put-side  { background: #0f2420; }
+    table.opt-chain tr.atm .strike-cell { background: #0f2420; color: #10b981; }
+    table.opt-chain tr.selected .call-side,
+    table.opt-chain tr.selected .put-side { background: #1a1f35; }
+    table.opt-chain tr.selected .strike-cell { background: #1a1f35; }
+    table.opt-chain tr.clickable { cursor: pointer; }
+    table.opt-chain tr.clickable:hover td { background: #1e293b !important; }
+    table.opt-chain .val-pos { color: #34d399; }
+    table.opt-chain .val-neg { color: #f87171; }
+    table.opt-chain .val-dim { color: #475569; }
+
+    .opt-chart-section { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px;
+      padding: 12px 20px 16px; margin-top: 10px; display: none; }
+    .opt-chart-row { display: flex; gap: 14px; }
+    .opt-chart-col { flex: 1; min-width: 0; }
+    .opt-chart-col-label { font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; }
+    #opt-price-chart, #opt-iv-chart { width: 100%; height: 240px; border-radius: 8px; overflow: hidden; }
+    .opt-selected-label { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+    .opt-selected-meta  { font-size: 11px; color: #64748b; margin-bottom: 10px; }
+    .opt-chart-day-row  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    @media(max-width: 700px) { .opt-chart-row { flex-direction: column; } }
+
+
+
+    .maintenance-banner { display:none; max-width:1200px; margin:12px auto 0; background:#3b0a0a; border:1px solid #7f1d1d; color:#fecaca; padding:12px 16px; border-radius:12px; font-size:13px; line-height:1.45; }
+    .maintenance-banner.visible { display:block; }
+    .maintenance-banner strong { color:#fff; }
+
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <img class="brand-logo" src="/van-logo.png" alt="VAN"/>
+      <div>
+        <div class="brand-title">VAN Portal</div>
+        <div class="brand-sub">Market Data</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="user-label" style="font-size:13px;color:#64748b"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-item" onclick="navTo('/app')">Overview</div>
+    <div class="nav-item" onclick="navTo('/trading')">Trading</div>
+    <div class="nav-item" onclick="navTo('/deribit')">Deribit</div>
+    <div class="nav-item" onclick="navTo('/okx')">OKX</div>
+    <div class="nav-item" onclick="navTo('/bybit')">Bybit</div>
+    <div class="nav-item" onclick="navTo('/coincall-spreads.html')">CoinCall</div>
+    <div class="nav-item" onclick="navTo('/mexc.html')">MEXC</div>
+    <div class="nav-item" onclick="navTo('/binance.html')">Binance</div>
+    <div class="nav-item" onclick="navTo('/hyperliquid.html')">Hyperliquid</div>
+    <div class="nav-item" onclick="navTo('/bitget.html')">Bitget</div>
+    <div class="nav-item" onclick="navTo('/kraken.html')">Kraken</div>
+    <div class="nav-item" onclick="navTo('/kucoin.html')">KuCoin</div>
+    <div class="nav-item" onclick="navTo('/gate.html')">Gate</div>
+    <div class="nav-item" onclick="navTo('/coinbase.html')">Coinbase</div>
+    <div class="nav-item" onclick="navTo('/arbitrage')">Arbitrage</div>
+    <div class="nav-item active">Market Data</div>
+    <div class="nav-item" onclick="navTo('/position-builder')">Position Builder</div>
+    <div class="nav-item" onclick="navTo('/backtester')">Backtester</div>
+    <div class="nav-item" onclick="navTo('/app#accounts')">Accounts</div>
+  </div>
+</nav>
+
+
+<div class="maintenance-banner" id="maintenance-banner"></div>
+
+<script>
+(function () {
+  const banner = document.getElementById('maintenance-banner');
+  if (!banner) return;
+
+  function fmtUtc(value) {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return String(value);
+    const p = (n) => String(n).padStart(2, '0');
+    return dt.getUTCFullYear() + '-' + p(dt.getUTCMonth() + 1) + '-' + p(dt.getUTCDate()) + ' ' + p(dt.getUTCHours()) + ':' + p(dt.getUTCMinutes()) + ' UTC';
+  }
+  async function refreshMaintenanceBanner() {
+    try {
+      const resp = await fetch('/maintenance-state.json?ts=' + Date.now(), { cache: 'no-store' });
+      if (!resp.ok) return;
+      const state = await resp.json();
+      if (state && state.maintenance_active) {
+        const cooldown = state.cooldown_until ? (' Cooldown until ' + fmtUtc(state.cooldown_until) + '.') : '';
+        banner.innerHTML = '<strong>Maintenance mode:</strong> Deribit maintenance is in progress. Market data, equity updates and backtester calculations are temporarily paused.' + cooldown;
+        banner.classList.add('visible');
+      } else {
+        banner.classList.remove('visible');
+        banner.innerHTML = '';
+      }
+    } catch (err) {
+      console.warn('maintenance banner refresh failed', err);
+    }
+  }
+
+  refreshMaintenanceBanner();
+  setInterval(refreshMaintenanceBanner, 30000);
+  window.refreshMaintenanceBanner = refreshMaintenanceBanner;
+})();
+</script>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="spreads" data-path="/market-data/spreads">Futures Spreads</div>
+    <div class="tab" data-tab="funding" data-path="/market-data/funding">Funding</div>
+    <div class="tab" data-tab="options" data-path="/market-data/options">Options</div>
+  </div>
+
+  <!-- Spreads Tab -->
+  <div class="tab-panel active" id="tab-spreads">
+
+    <div class="spreads-header">
+      <div class="spreads-header-top">
+        <div class="section-title">Futures Spreads Matrix</div>
+        <div class="section-meta" id="matrix-meta">Loading…</div>
+      </div>
+      <div class="spreads-toolbar">
+        <div class="exchange-toggles" id="exchange-toggles">
+          <button class="ex-toggle active" id="toggle-deribit" onclick="toggleExchange('deribit')">Deribit</button>
+          <button class="ex-toggle" id="toggle-bybit" onclick="toggleExchange('bybit')">Bybit</button>
+        </div>
+        <div class="asset-tabs">
+          <button class="asset-tab active" onclick="setAsset('BTC')">BTC</button>
+          <button class="asset-tab" onclick="setAsset('ETH')">ETH</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="matrix-wrap" id="matrix-wrap">
+      <div class="no-data"><span class="spinner"></span> Loading matrix…</div>
+    </div>
+
+    <div id="bybit-matrix-block" class="bybit-matrix-block" style="display:none">
+      <div class="bybit-matrix-label">Bybit Spread Matrix (USDT)</div>
+      <div class="matrix-wrap" id="bybit-matrix-wrap">
+        <div class="no-data"><span class="spinner"></span> Loading Bybit…</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section" id="chart-section" style="display:none">
+      <div class="chart-toolbar">
+        <div class="chart-head-inline">
+          <div class="chart-title" id="chart-title">—</div>
+          <div class="chart-sub" id="chart-sub">Click a spread cell above to load its chart</div>
+        </div>
+        <div class="chart-meta-top" id="chart-meta-top"></div>
+        <div class="chart-days" style="justify-self:end">
+          <button class="day-btn" onclick="setHours(4, this)">4H</button>
+          <button class="day-btn" onclick="setHours(12, this)">12H</button>
+          <button class="day-btn" onclick="setDays(1, this)">1D</button>
+          <button class="day-btn active" onclick="setDays(3, this)">3D</button>
+          <button class="day-btn" onclick="setDays(7, this)">1W</button>
+          <button class="day-btn" onclick="setDays(14, this)">2W</button>
+          <button class="day-btn" onclick="setDays(30, this)">1M</button>
+        </div>
+      </div>
+      <div class="spread-chart-wrap" id="spread-chart-wrap">
+        <div class="spread-chart-main">
+          <div id="spread-chart"></div>
+          <div id="spread-perp-chart"></div>
+        </div>
+        <div id="spread-funding-scale" aria-hidden="true"></div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Mark</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Bid</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> Ask</div>
+        <label class="spread-overlay-toggle"><input type="checkbox" id="spread-bid-ask-toggle" checked>Bid-Ask</label>
+        <div class="spread-overlay-controls" id="spread-overlay-controls" aria-label="Spread chart overlays">
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="equity"><span class="spread-overlay-swatch" style="background:#f59e0b"></span>Equity USD</label>
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="perp"><span class="spread-overlay-swatch" style="background:#94a3b8"></span>PERP</label>
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="van_fs"><span class="spread-overlay-swatch" style="background:#22d3ee"></span>VAN_FS</label>
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="van_f"><span class="spread-overlay-swatch" style="background:#a3e635"></span>VAN_F</label>
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="van_op"><span class="spread-overlay-swatch" style="background:#fb7185"></span>VAN_OP</label>
+          <label class="spread-overlay-toggle"><input type="checkbox" data-spread-overlay="funding"><span class="spread-overlay-swatch" style="background:#f59e0b"></span>Funding</label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Funding Tab -->
+  <div class="tab-panel" id="tab-funding">
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Perpetual Funding Rate</div>
+        <div class="section-meta" id="funding-meta">Loading…</div>
+      </div>
+      <div class="asset-tabs">
+        <button class="asset-tab active" onclick="setFundingAsset('BTC', this)">BTC</button>
+        <button class="asset-tab" onclick="setFundingAsset('ETH', this)">ETH</button>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="funding-chart-toolbar">
+        <div>
+          <div class="chart-title" id="funding-chart-title">BTC-PERPETUAL</div>
+          <div class="chart-sub">Current Funding · Interest 8h — в %</div>
+        </div>
+        <div class="funding-chart-controls">
+          <div class="funding-exchange-filters">
+            <div class="funding-exchange-actions">
+              <button class="funding-exchange-action" type="button" onclick="setFundingExchangesVisible(true)">Show All</button>
+              <button class="funding-exchange-action" type="button" onclick="setFundingExchangesVisible(false)">Hide All</button>
+            </div>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Deribit" checked><span class="funding-exchange-swatch" style="background:#f59e0b"></span>Deribit</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Bybit" checked><span class="funding-exchange-swatch" style="background:#60a5fa"></span>Bybit</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="CoinCall" checked><span class="funding-exchange-swatch" style="background:#34d399"></span>CoinCall</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="OKX" checked><span class="funding-exchange-swatch" style="background:#f472b6"></span>OKX</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Binance" checked><span class="funding-exchange-swatch" style="background:#facc15"></span>Binance</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="MEXC" checked><span class="funding-exchange-swatch" style="background:#fb923c"></span>MEXC</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Gate" checked><span class="funding-exchange-swatch" style="background:#22d3ee"></span>Gate</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Bitget" checked><span class="funding-exchange-swatch" style="background:#a78bfa"></span>Bitget</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="KuCoin" checked><span class="funding-exchange-swatch" style="background:#2dd4bf"></span>KuCoin</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Coinbase" checked><span class="funding-exchange-swatch" style="background:#3b82f6"></span>Coinbase</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Hyperliquid" checked><span class="funding-exchange-swatch" style="background:#e879f9"></span>Hyperliquid</label>
+            <label class="funding-exchange-toggle"><input type="checkbox" data-funding-exchange="Kraken" checked><span class="funding-exchange-swatch" style="background:#8b5cf6"></span>Kraken</label>
+          </div>
+          <div class="funding-display-toggles" aria-label="Funding chart display">
+            <label class="funding-display-toggle"><input type="checkbox" id="funding-curves-toggle" checked>Curves</label>
+            <label class="funding-display-toggle"><input type="checkbox" id="funding-points-toggle" checked>Points</label>
+          </div>
+          <div class="chart-days" style="margin-bottom:0">
+            <button class="day-btn" onclick="setFundingDays(1, this)">1D</button>
+            <button class="day-btn active" onclick="setFundingDays(3, this)">3D</button>
+            <button class="day-btn" onclick="setFundingDays(7, this)">1W</button>
+            <button class="day-btn" onclick="setFundingDays(14, this)">2W</button>
+            <button class="day-btn" onclick="setFundingDays(30, this)">1M</button>
+            <button class="day-btn" onclick="setFundingDays(90, this)">3M</button>
+          </div>
+        </div>
+      </div>
+      <div class="funding-compare-grid" style="display:grid;gap:14px">
+        <div>
+          <div class="chart-title" style="font-size:13px;margin:0 0 6px">Current Funding (%)</div>
+          <div id="funding-current-chart" style="width:100%;height:340px;border-radius:8px;overflow:hidden"></div>
+        </div>
+        <div>
+          <div class="chart-title" style="font-size:13px;margin:0 0 6px">Real 8h Funding (%)</div>
+          <div id="funding-real8h-chart" style="width:100%;height:340px;border-radius:8px;overflow:hidden"></div>
+        </div>
+        <div>
+          <div id="funding-realized-title" class="chart-title" style="font-size:13px;margin:0 0 6px">Normalized_by_BTC_Position_Size x 1000</div>
+          <div id="funding-realized-chart" style="width:100%;height:340px;border-radius:8px;overflow:hidden"></div>
+        </div>
+        <div>
+          <div class="chart-title" style="font-size:13px;margin:0 0 6px">Normalized_to_1_USD_Position_Size x 1000000000</div>
+          <div id="funding-realized-usd-chart" style="width:100%;height:340px;border-radius:8px;overflow:hidden"></div>
+        </div>
+        <div>
+          <div class="chart-title" style="font-size:13px;margin:0 0 6px">Interest 8h (%)</div>
+          <div id="funding-interest-chart" style="width:100%;height:340px;border-radius:8px;overflow:hidden"></div>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Deribit</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Bybit</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div> CoinCall</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f472b6"></div> OKX</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#facc15"></div> Binance</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div> MEXC</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22d3ee"></div> Gate</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> Bitget</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2dd4bf"></div> KuCoin</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Coinbase</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e879f9"></div> Hyperliquid</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Kraken</div>
+        <label class="funding-display-toggle"><input type="checkbox" id="funding-btcusdt-perp-toggle"><span class="funding-exchange-swatch" style="background:#94a3b8"></span>BTCUSDT-Perp</label>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Options Tab -->
+  <div class="tab-panel" id="tab-options">
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Options Chain</div>
+        <div class="section-meta" id="opt-meta">Выберите экспирацию</div>
+      </div>
+      <div class="asset-tabs" id="opt-asset-tabs">
+        <button class="asset-tab active" onclick="setOptAsset('BTC', this)">BTC</button>
+        <button class="asset-tab" onclick="setOptAsset('ETH', this)">ETH</button>
+      </div>
+    </div>
+
+    <div class="expiry-bar" id="opt-expiry-bar">
+      <span class="spinner"></span>
+    </div>
+
+    <div class="opt-chain-wrap" id="opt-chain-wrap">
+      <div class="no-data">Загрузка&#8230;</div>
+    </div>
+
+    <div class="opt-chart-section" id="opt-chart-section">
+      <div class="opt-chart-day-row">
+        <div>
+          <div class="opt-selected-label" id="opt-selected-label">&#8212;</div>
+          <div class="opt-selected-meta"  id="opt-selected-meta">Mark &#183; Bid &#183; Ask &#183; IV (поминутно)</div>
+        </div>
+        <div class="chart-days" style="margin-bottom:0">
+          <button class="day-btn" onclick="setOptDays(1,this)">1D</button>
+          <button class="day-btn active" onclick="setOptDays(3,this)">3D</button>
+          <button class="day-btn" onclick="setOptDays(7,this)">7D</button>
+        </div>
+      </div>
+      <div class="opt-chart-row">
+        <div class="opt-chart-col">
+          <div class="opt-chart-col-label">Цена (BTC)</div>
+          <div id="opt-price-chart"></div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Mark</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#10b981;opacity:.7"></div> Bid</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f87171;opacity:.7"></div> Ask</div>
+          </div>
+        </div>
+        <div class="opt-chart-col">
+          <div class="opt-chart-col-label">IV (%)</div>
+          <div id="opt-iv-chart"></div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> Mark IV</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#10b981;opacity:.7"></div> Bid IV</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f87171;opacity:.7"></div> Ask IV</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>VAN Portal · Market Data · Deribit · Updated every 60 seconds</footer>
+
+<script>
+const BASE = window.__VAN_BASE_URL__ || '';
+const MD_API = BASE + '/market-data-api';
+
+function fmtUtcTime(value) {
+  if (!value) return '';
+  const dt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dt.getTime())) return String(value);
+  const p = (n) => String(n).padStart(2, '0');
+  return p(dt.getUTCHours()) + ':' + p(dt.getUTCMinutes()) + ':' + p(dt.getUTCSeconds()) + ' UTC';
+}
+
+function fmtUtcMonthDayTime(value) {
+  if (!value) return '';
+  const dt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dt.getTime())) return String(value);
+  const p = (n) => String(n).padStart(2, '0');
+  return p(dt.getUTCMonth() + 1) + '-' + p(dt.getUTCDate()) + ' ' + p(dt.getUTCHours()) + ':' + p(dt.getUTCMinutes()) + ':' + p(dt.getUTCSeconds()) + ' UTC';
+}
+
+// ─── Auth guard ─────────────────────────────────────────────────────────────
+(function() {
+  let sess = null;
+  try { sess = JSON.parse(localStorage.getItem('van_session') || 'null'); } catch(e) {}
+  if (!sess || !sess.token) {
+    window.location.href = '/';
+    throw new Error('Not authenticated');
+  }
+  const label = document.getElementById('user-label');
+  if (label) {
+    const u = sess.user;
+    label.textContent = (u && (u.Login || u.login || u.Name || u.name)) || 'Admin';
+  }
+})();
+
+function doLogout() {
+  localStorage.removeItem('van_session');
+  localStorage.removeItem('van_token');
+  window.location.href = '/';
+}
+
+function navTo(path) {
+  window.location.href = path;
+}
+
+// ─── Tab switching ───────────────────────────────────────────────────────────
+const MARKET_DATA_TAB_PATHS = {
+  spreads: '/market-data/spreads',
+  funding: '/market-data/funding',
+  options: '/market-data/options',
+};
+
+function activeMarketDataTabFromPath() {
+  const path = window.location.pathname.replace(/\/$/, '');
+  if (path === '/market-data/funding') return 'funding';
+  if (path === '/market-data/options') return 'options';
+  return 'spreads';
+}
+
+function setActiveMarketDataTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + id));
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const id = tab.dataset.tab;
+    if (document.getElementById('tab-funding')?.classList.contains('active')) persistFundingChartState();
+    const path = tab.dataset.path || MARKET_DATA_TAB_PATHS[id] || '/market-data/spreads';
+    if (window.location.pathname.replace(/\/$/, '') !== path) {
+      window.location.href = path;
+      return;
+    }
+    setActiveMarketDataTab(id);
+    initializeActiveMarketDataTab(id);
+  });
+});
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let matrixData = null;
+let bybitMatrixData = null;
+let currentAsset = 'BTC';
+let currentInstrument = null;
+let currentDays = 3;
+let currentHours = null;
+let lwChart = null;
+let lwSeries = {};
+let spreadChartRuntime = null;
+let deribitPerpMarks = {};
+let deribitIndexMarks = {};
+let spreadBidAskEnabled = true;
+let spreadOverlayState = { equity: false, perp: false, van_fs: false, van_f: false, van_op: false, funding: false };
+let spreadOverlayCache = {};
+let spreadFundingScaleMargins = { top: 0.12, bottom: 0.12 };
+let spreadFundingScaleDrag = null;
+let spreadFundingAxisContext = null;
+let spreadFundingAxisChart = null;
+let spreadFundingAxisSeries = null;
+let spreadFundingAxisScaleDrag = null;
+let spreadChartRestored = false;
+let spreadPriceScaleRanges = {};
+let spreadFundingPriceScaleRanges = {};
+let spreadPerpPriceScaleRanges = {};
+let spreadTimeScaleRanges = {};
+let spreadTabStarted = false;
+let spreadRefreshTimer = null;
+const SPREAD_CHART_SETTINGS_KEY = 'van.marketData.spreadChartSettings.v1';
+
+const SPREAD_OVERLAYS = {
+  equity: { label: 'Equity USD', color: '#f59e0b', priceScaleId: 'overlay-equity', source: 'equity' },
+  perp: { label: 'PERP', color: '#94a3b8', priceScaleId: 'overlay-perp', source: 'deribit-perp' },
+  van_fs: { label: 'VAN_FS', color: '#22d3ee', priceScaleId: 'overlay-van-fs', source: 'van-fs', path: '/van-fs-api/btc-equity-chart' },
+  van_f: { label: 'VAN_F', color: '#a3e635', priceScaleId: 'overlay-van-f', source: 'van-fs', path: '/van-fs-api/eth-equity-chart' },
+  van_op: { label: 'VAN_OP', color: '#fb7185', priceScaleId: 'overlay-van-op', source: 'van-fs', path: '/van-fs-api/usdc-equity-chart' },
+  funding: { label: 'Funding', color: '#f59e0b', priceScaleId: 'right-funding', source: 'funding' },
+};
+const SPREAD_TIME_MIN_BAR_SPACING = 0.001;
+
+function clampNumber(value, min, max) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function loadSpreadChartSettings() {
+  try {
+    const raw = window.localStorage ? localStorage.getItem(SPREAD_CHART_SETTINGS_KEY) : null;
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved && typeof saved === 'object') {
+      if (saved.instrument) currentInstrument = String(saved.instrument);
+      if (saved.hours) {
+        currentHours = Number(saved.hours);
+        currentDays = 1;
+      } else if (saved.days) {
+        currentDays = Number(saved.days) || currentDays;
+        currentHours = null;
+      }
+      if (typeof saved.bidAsk === 'boolean') spreadBidAskEnabled = saved.bidAsk;
+      if (saved.overlays && typeof saved.overlays === 'object') {
+        spreadOverlayState = { ...spreadOverlayState, ...saved.overlays };
+      }
+      if (saved.fundingMargins && typeof saved.fundingMargins === 'object') {
+        spreadFundingScaleMargins = {
+          top: clampNumber(saved.fundingMargins.top, 0.02, 0.88),
+          bottom: clampNumber(saved.fundingMargins.bottom, 0.02, 0.88),
+        };
+      }
+      if (saved.priceScaleRanges && typeof saved.priceScaleRanges === 'object') spreadPriceScaleRanges = saved.priceScaleRanges;
+      if (saved.fundingPriceScaleRanges && typeof saved.fundingPriceScaleRanges === 'object') spreadFundingPriceScaleRanges = saved.fundingPriceScaleRanges;
+      if (saved.perpPriceScaleRanges && typeof saved.perpPriceScaleRanges === 'object') spreadPerpPriceScaleRanges = saved.perpPriceScaleRanges;
+      if (saved.timeScaleRanges && typeof saved.timeScaleRanges === 'object') spreadTimeScaleRanges = saved.timeScaleRanges;
+    }
+  } catch (e) {}
+}
+
+function saveSpreadChartSettings() {
+  try {
+    if (!window.localStorage) return;
+    localStorage.setItem(SPREAD_CHART_SETTINGS_KEY, JSON.stringify({
+      instrument: currentInstrument || '',
+      days: currentDays,
+      hours: currentHours,
+      bidAsk: !!spreadBidAskEnabled,
+      overlays: spreadOverlayState,
+      fundingMargins: spreadFundingScaleMargins,
+      priceScaleRanges: spreadPriceScaleRanges,
+      fundingPriceScaleRanges: spreadFundingPriceScaleRanges,
+      perpPriceScaleRanges: spreadPerpPriceScaleRanges,
+      timeScaleRanges: spreadTimeScaleRanges,
+    }));
+  } catch (e) {}
+}
+
+function applySpreadRangeButtons() {
+  document.querySelectorAll('#chart-section .day-btn').forEach(btn => {
+    const hoursAttr = btn.getAttribute('onclick')?.match(/setHours\((\d+)/);
+    const daysAttr = btn.getAttribute('onclick')?.match(/setDays\((\d+)/);
+    const on = currentHours ? Number(hoursAttr?.[1]) === currentHours : Number(daysAttr?.[1]) === currentDays;
+    btn.classList.toggle('active', !!on);
+  });
+}
+
+loadSpreadChartSettings();
+
+// Exchange toggles
+let showDeribit = true;
+let showBybit = false;
+
+function toggleExchange(exchange) {
+  if (exchange === 'deribit') {
+    // Must keep at least one active
+    if (!showBybit && showDeribit) return;
+    showDeribit = !showDeribit;
+  } else if (exchange === 'bybit') {
+    if (!showDeribit && showBybit) return;
+    showBybit = !showBybit;
+  }
+  document.getElementById('toggle-deribit').classList.toggle('active', showDeribit);
+  document.getElementById('toggle-bybit').classList.toggle('active', showBybit);
+  updateMatrixVisibility();
+  if (showBybit && !bybitMatrixData) loadBybitMatrix();
+}
+
+function updateMatrixVisibility() {
+  document.getElementById('matrix-wrap').style.display = showDeribit ? '' : 'none';
+  document.getElementById('bybit-matrix-block').style.display = showBybit ? '' : 'none';
+  const chartSec = document.getElementById('chart-section');
+  if (chartSec && !showDeribit) chartSec.style.display = 'none';
+}
+
+// ─── Asset selection ─────────────────────────────────────────────────────────
+function setAsset(asset) {
+  currentAsset = asset;
+  document.querySelectorAll('.asset-tab').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === asset);
+  });
+  ensureDeribitPerpMark(asset);
+  ensureDeribitIndexMark(asset);
+  renderMatrix();
+}
+
+// ─── Parse instrument name ───────────────────────────────────────────────────
+// Format: BTC-FS-25SEP26_26JUN26  → legs: [25SEP26, 26JUN26]
+function parseLegs(name) {
+  // BTC-FS-LEG1_LEG2
+  const m = name.match(/^(?:BTC|ETH)-FS-(.+)_(.+)$/);
+  if (!m) return null;
+  return [normalizeLeg(m[1]), normalizeLeg(m[2])];
+}
+
+function shortLeg(leg) {
+  if (leg === 'MARK') return 'Mark';
+  if (leg === 'INDEX') return 'Index';
+  const m = leg.match(/^(\d{1,2})([A-Z]{3})(\d{2})$/);
+  if (m) return String(parseInt(m[1], 10)) + m[2] + m[3];
+  return leg;
+}
+
+function legDaysToExpiryValue(leg) {
+  if (leg === 'MARK' || leg === 'INDEX') return null;
+  const m = leg.match(/^(\d{1,2})([A-Z]{3})(\d{2})$/);
+  if (!m) return null;
+  const [, dd, mon, yy] = m;
+  const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const month = months[mon];
+  if (month === undefined) return null;
+  const expiryUtc = Date.UTC(2000 + parseInt(yy, 10), month, parseInt(dd, 10));
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((expiryUtc - todayUtc) / 86400000);
+}
+
+function legDaysToExpiry(leg) {
+  const days = legDaysToExpiryValue(leg);
+  return days !== null && days >= 0 ? (days + 'd') : '';
+}
+
+function isActiveMatrixLeg(leg) {
+  if (leg === 'MARK' || leg === 'INDEX') return true;
+  const days = legDaysToExpiryValue(leg);
+  return days !== null && days > 0;
+}
+
+async function ensureDeribitPerpMark(asset, force=false) {
+  if (!force && deribitPerpMarks[asset] !== undefined) return deribitPerpMarks[asset];
+  try {
+    const r = await fetch(`${MD_API}/futures/latest?instrument=${encodeURIComponent(asset + '-PERPETUAL')}`);
+    if (!r.ok) throw new Error('perp fetch failed');
+    const q = await r.json();
+    deribitPerpMarks[asset] = q.mark ?? q.last ?? null;
+  } catch (e) {
+    deribitPerpMarks[asset] = null;
+  }
+  renderMatrix();
+  return deribitPerpMarks[asset];
+}
+
+async function ensureDeribitIndexMark(asset, force=false) {
+  if (!force && deribitIndexMarks[asset] !== undefined) return deribitIndexMarks[asset];
+  try {
+    const indexName = String(asset || '').toLowerCase() + '_usd';
+    const r = await fetch(BASE + '/deribit-public-api/public/get_index_price?index_name=' + encodeURIComponent(indexName));
+    if (!r.ok) throw new Error('index fetch failed');
+    const q = await r.json();
+    deribitIndexMarks[asset] = q?.result?.index_price ?? q?.result?.estimated_delivery_price ?? null;
+  } catch (e) {
+    deribitIndexMarks[asset] = null;
+  }
+  renderMatrix();
+  return deribitIndexMarks[asset];
+}
+
+function getDeribitFutureMinusPerp(leg) {
+  if (!matrixData || !matrixData.spreads || leg === 'MARK' || leg === 'INDEX') return null;
+  const names = Object.keys(matrixData.spreads).filter(n => n.startsWith(currentAsset + '-FS-'));
+  for (const name of names) {
+    const ls = parseLegs(name);
+    if (!ls) continue;
+    const d = matrixData.spreads[name];
+    const val = d.mark ?? d.bid ?? d.last;
+    if (val === null || val === undefined) continue;
+    if (ls[0] === leg && ls[1] === 'MARK') return val;
+    if (ls[0] === 'MARK' && ls[1] === leg) return -val;
+  }
+  return null;
+}
+
+function getDeribitLegMark(leg) {
+  if (leg === 'INDEX') return deribitIndexMarks[currentAsset] ?? null;
+  if (leg === 'MARK') return deribitPerpMarks[currentAsset] ?? null;
+  const perp = deribitPerpMarks[currentAsset];
+  const futureMinusPerp = getDeribitFutureMinusPerp(leg);
+  if (!Number.isFinite(Number(perp)) || !Number.isFinite(Number(futureMinusPerp))) return null;
+  return Number(perp) + Number(futureMinusPerp);
+}
+
+function legMonthlyPremiumText(leg) {
+  if (leg === 'MARK' || leg === 'INDEX') return '';
+  const days = legDaysToExpiryValue(leg);
+  const perp = deribitPerpMarks[currentAsset];
+  const futureMinusPerp = getDeribitFutureMinusPerp(leg);
+  if (days === null || days <= 0 || !perp || futureMinusPerp === null) return '';
+  const monthlyPct = (futureMinusPerp / perp) * (30 / days) * 100;
+  if (!Number.isFinite(monthlyPct)) return '';
+  return `${monthlyPct >= 0 ? '+' : ''}${monthlyPct.toFixed(2)}%`;
+}
+
+function legLabelHtml(leg, mode, exchange = 'deribit') {
+  const label = shortLeg(leg);
+  const days = legDaysToExpiry(leg);
+  const premium = exchange === 'deribit' ? legMonthlyPremiumText(leg) : '';
+  if (!days) return label;
+  const meta = premium ? `<span class="matrix-expiry-days">${days}</span><span class="matrix-expiry-date">${premium}</span>` : `<span class="matrix-expiry-days">${days}</span>`;
+  if (mode === 'col') return `<div class="matrix-col-head"><span class="matrix-contract-label">${label}</span><span class="matrix-col-meta">${meta}</span></div>`;
+  return `<span class="matrix-row-head"><span class="matrix-contract-label">${label}</span><span>${meta}</span></span>`;
+}
+
+function chartLegMetaHtml(leg) {
+  if (leg === 'MARK' || leg === 'INDEX') return `<span class="matrix-contract-label">${shortLeg(leg)}</span>`;
+  const label = shortLeg(leg);
+  const days = legDaysToExpiry(leg);
+  const premium = legMonthlyPremiumText(leg);
+  const meta = premium ? `<span class="matrix-expiry-days">${days}</span>&nbsp;&nbsp;<span class="matrix-expiry-date">${premium}</span>` : `<span class="matrix-expiry-days">${days}</span>`;
+  return `<span class="matrix-contract-label">${label}</span>&nbsp;&nbsp;<span>${meta}</span>`;
+}
+
+function spreadChartMetaHtml(name) {
+  const legs = parseLegs(name);
+  if (!legs) return '';
+  const visibleLegs = legs.filter(l => l !== 'MARK' && l !== 'INDEX');
+  if (visibleLegs.length === 0) return '';
+  return visibleLegs.map(chartLegMetaHtml).join(' &nbsp;·&nbsp; ');
+}
+
+function normalizeLeg(leg) {
+  if (leg === 'PERP' || leg === 'MARK') return 'MARK';
+  if (leg === 'SPOT' || leg === 'INDEX') return 'INDEX';
+  const m = leg.match(/^(\d{1,2})([A-Z]{3})(\d{2})$/);
+  if (!m) return leg;
+  return String(parseInt(m[1], 10)) + m[2] + m[3];
+}
+
+function sortLegUnified(leg) {
+  if (leg === 'INDEX') return '0000-00-00';
+  if (leg === 'MARK') return '0000-00-01';
+  const m = leg.match(/^(\d{1,2})([A-Z]{3})(\d{2})$/);
+  if (!m) return '5000-' + leg;
+  const [, dd, mon, yy] = m;
+  const months = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+  return '20' + yy + '-' + (months[mon] || '00') + '-' + dd.padStart(2, '0');
+}
+
+function getUnifiedLegs(asset) {
+  const legSet = new Set();
+  legSet.add('INDEX');
+  legSet.add('MARK');
+
+  if (matrixData && matrixData.spreads) {
+    const instruments = Object.keys(matrixData.spreads).filter(n => n.startsWith(asset + '-FS-'));
+    for (const name of instruments) {
+      const legs = parseLegs(name);
+      if (legs) {
+        if (isActiveMatrixLeg(legs[0])) legSet.add(legs[0]);
+        if (isActiveMatrixLeg(legs[1])) legSet.add(legs[1]);
+      }
+    }
+  }
+
+  if (bybitMatrixData && bybitMatrixData.legs && bybitMatrixData.legs[asset]) {
+    for (const leg of bybitMatrixData.legs[asset]) {
+      const normalized = normalizeLeg(leg);
+      if (normalized !== 'INDEX' && isActiveMatrixLeg(normalized)) legSet.add(normalized);
+    }
+  }
+
+  const legs = Array.from(legSet).sort((a, b) => sortLegUnified(a).localeCompare(sortLegUnified(b)));
+  const datedLegs = legs.filter(l => l !== 'INDEX' && l !== 'MARK');
+  return {
+    legs,
+    colLegs: ['MARK', ...datedLegs],
+    rowLegs: ['INDEX', 'MARK', ...datedLegs.slice(0, -1)],
+  };
+}
+
+// ─── Bybit Matrix ────────────────────────────────────────────────────────────
+async function loadBybitMatrix(silent = false) {
+  const wrap = document.getElementById('bybit-matrix-wrap');
+  if (wrap && showBybit && !silent) wrap.innerHTML = '<div class="no-data"><span class="spinner"></span> Loading Bybit…</div>';
+  try {
+    const r = await fetch(MD_API + '/spreads/bybit/matrix');
+    if (!r.ok) throw new Error('API error: ' + r.status);
+    bybitMatrixData = await r.json();
+    renderMatrix();
+    renderBybitMatrix();
+  } catch(e) {
+    if (wrap && showBybit && !silent) wrap.innerHTML = '<div class="no-data">Bybit load failed: ' + e.message + '</div>';
+  }
+}
+
+function renderBybitMatrix() {
+  if (!bybitMatrixData) return;
+  const wrap = document.getElementById('bybit-matrix-wrap');
+  if (!wrap) return;
+
+  const spreads = bybitMatrixData.spreads;
+  // Filter by asset: BTC-BBFS-... / BTC-BBCT-... / BTC-BBPB-... / BTC-BBFR-...
+  const prefix = currentAsset + '-BB';
+  const instruments = Object.keys(spreads).filter(n => n.startsWith(prefix));
+
+  if (instruments.length === 0) {
+    wrap.innerHTML = '<div class="no-data">No Bybit spreads for ' + currentAsset + '</div>';
+    return;
+  }
+
+  const { colLegs, rowLegs } = getUnifiedLegs(currentAsset);
+
+  // Build lookup: name -> spread entry
+  const lookup = {};
+  for (const name of instruments) {
+    // name: BTC-BBFS-LEG1_LEG2 / BTC-BBCT-LEG1_LEG2 / BTC-BBPB-LEG1_LEG2 / BTC-BBFR-LEG1_LEG2
+    const m = name.match(/^(?:BTC|ETH)-BB[A-Z]+-(.+)_(.+)$/);
+    if (!m) continue;
+    const leg1 = normalizeLeg(m[1]);
+    const leg2 = normalizeLeg(m[2]);
+    if (!isActiveMatrixLeg(leg1) || !isActiveMatrixLeg(leg2)) continue;
+    const entry = spreads[name];
+    lookup[leg1 + '_' + leg2] = { val: entry.mark !== null ? -entry.mark : null, name, entry };
+    // inverse
+    const invMark = entry.mark !== null ? entry.mark : null;
+    lookup[leg2 + '_' + leg1] = { val: invMark, name, entry, inv: true };
+  }
+
+  let html = '<table class="matrix"><thead><tr>';
+  html += '<th class="row-header">Leg ↓ / Leg →</th>';
+    for (const col of colLegs) html += `<th${col === 'MARK' ? ' class="perp-col"' : ''}>${legLabelHtml(col, 'col', 'bybit')}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const row of rowLegs) {
+    html += `<tr><td class="row-label${row === 'MARK' ? ' perp-row-label' : ''}">${legLabelHtml(row, 'row', 'bybit')}</td>`;
+    for (const col of colLegs) {
+      if (row === col) { html += '<td class="empty">—</td>'; continue; }
+      if (sortLegUnified(row) !== '0000-00-00' && sortLegUnified(row) > sortLegUnified(col)) {
+        html += '<td class="empty"></td>'; continue;
+      }
+      const key = row + '_' + col;
+      const e = lookup[key];
+      if (!e || e.val === null) { html += '<td class="empty">—</td>'; continue; }
+      const v = e.val;
+      const cls = v > 0 ? 'val-pos' : v < 0 ? 'val-neg' : '';
+      html += `<td class="cell-spread"><span class="${cls}">${v.toFixed(1)}</span></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ─── Load matrix data ─────────────────────────────────────────────────────────
+async function loadMatrix() {
+  try {
+    const r = await fetch(MD_API + '/spreads/matrix');
+    if (!r.ok) throw new Error('API error: ' + r.status);
+    matrixData = await r.json();
+    document.getElementById('matrix-meta').textContent =
+      'Date: ' + matrixData.date + ' · Updated: ' + fmtUtcTime(matrixData.updated);
+    ensureDeribitPerpMark(currentAsset, true);
+    ensureDeribitIndexMark(currentAsset, true);
+    renderMatrix();
+    applySpreadRangeButtons();
+    if (currentInstrument && !spreadChartRestored) {
+      spreadChartRestored = true;
+      document.getElementById('chart-section').style.display = '';
+      document.getElementById('chart-title').textContent = currentInstrument;
+      document.getElementById('chart-sub').textContent = 'Mark · Bid · Ask · Last — minute bars';
+      document.getElementById('chart-meta-top').innerHTML = spreadChartMetaHtml(currentInstrument);
+      loadChart(currentInstrument, currentDays);
+    }
+  } catch(e) {
+    document.getElementById('matrix-wrap').innerHTML =
+      '<div class="no-data">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+// ─── Render matrix ────────────────────────────────────────────────────────────
+function renderMatrix() {
+  if (!matrixData) return;
+
+  // Filter by asset
+  const spreads = matrixData.spreads;
+  const instruments = Object.keys(spreads).filter(n => n.startsWith(currentAsset + '-FS-'));
+
+  const { colLegs, rowLegs } = getUnifiedLegs(currentAsset);
+
+  // Build lookup: "LEG1_LEG2" → spread value
+  const lookup = {};
+  for (const name of instruments) {
+    const ls = parseLegs(name);
+    if (!ls || !isActiveMatrixLeg(ls[0]) || !isActiveMatrixLeg(ls[1])) continue;
+    const d = spreads[name];
+    const val = d.mark ?? d.bid ?? d.last;
+    lookup[ls[0] + '_' + ls[1]] = { val: val !== null ? -val : null, name, d };
+    lookup[ls[1] + '_' + ls[0]] = { val, name, d, inv: true };
+  }
+  for (const row of rowLegs) {
+    for (const col of colLegs) {
+      const key = row + '_' + col;
+      if (lookup[key] || row === col) continue;
+      if (row !== 'INDEX' && col !== 'INDEX') continue;
+      const rowMark = getDeribitLegMark(row);
+      const colMark = getDeribitLegMark(col);
+      const val = Number.isFinite(Number(rowMark)) && Number.isFinite(Number(colMark)) ? Number(colMark) - Number(rowMark) : null;
+      lookup[key] = { val, synthetic: true };
+    }
+  }
+
+  // Build table
+  let html = '<table class="matrix"><thead><tr><th class="row-header">Leg ↓ / Leg →</th>';
+  for (const col of colLegs) html += `<th>${legLabelHtml(col, 'col', 'deribit')}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const row of rowLegs) {
+    html += `<tr><td class="row-label">${legLabelHtml(row, 'row', 'deribit')}</td>`;
+    for (const col of colLegs) {
+      if (row === col) {
+        html += '<td class="empty">—</td>';
+        continue;
+      }
+      // Hide lower-left triangle (mirror of upper-right)
+      if (sortLegUnified(row) !== '0000-00-00' && sortLegUnified(row) > sortLegUnified(col)) {
+        html += '<td class="empty"></td>';
+        continue;
+      }
+      const key = row + '_' + col;
+      const entry = lookup[key];
+      if (!entry || entry.val === null) {
+        html += '<td class="empty">—</td>';
+        continue;
+      }
+      const v = entry.val;
+      const cls = v > 0 ? 'val-pos' : v < 0 ? 'val-neg' : '';
+      const disp = v.toFixed(1);
+      const sel = (currentInstrument === entry.name) ? ' selected' : '';
+      if (entry.synthetic) {
+        const syntheticName = currentAsset + '-INDEX-' + col;
+        const syntheticSel = (currentInstrument === syntheticName) ? ' selected' : '';
+        html += `<td class="cell-spread synthetic${syntheticSel}" data-name="${syntheticName}" oncontextmenu="event.preventDefault(); selectSpread('${syntheticName}'); return false;"><span class="${cls}">${disp}</span></td>`;
+      } else {
+        html += `<td class="cell-spread${sel}" data-name="${entry.name}" oncontextmenu="event.preventDefault(); selectSpread('${entry.name}'); return false;">
+          <span class="${cls}">${disp}</span>
+        </td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('matrix-wrap').innerHTML = html;
+  if (showBybit && bybitMatrixData) renderBybitMatrix();
+}
+
+// ─── Select spread ────────────────────────────────────────────────────────────
+function selectSpread(name) {
+  persistOpenSpreadChartSettings();
+  currentInstrument = name;
+  saveSpreadChartSettings();
+  // Highlight selected cell
+  document.querySelectorAll('.cell-spread').forEach(td => {
+    td.classList.toggle('selected', td.dataset.name === name);
+  });
+  document.getElementById('chart-section').style.display = '';
+  document.getElementById('chart-title').textContent = name;
+  document.getElementById('chart-sub').textContent = 'Mark · Bid · Ask · Last — minute bars';
+  document.getElementById('chart-meta-top').innerHTML = spreadChartMetaHtml(name);
+  loadChart(name, currentDays);
+}
+
+// ─── Day selector ─────────────────────────────────────────────────────────────
+function setDays(days, btn) {
+  persistOpenSpreadChartSettings();
+  currentDays = days;
+  currentHours = null;
+  document.querySelectorAll('#chart-section .day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  saveSpreadChartSettings();
+  if (currentInstrument) loadChart(currentInstrument, currentDays);
+}
+
+function setHours(hours, btn) {
+  persistOpenSpreadChartSettings();
+  currentHours = hours;
+  currentDays = 1;
+  document.querySelectorAll('#chart-section .day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  saveSpreadChartSettings();
+  if (currentInstrument) loadChart(currentInstrument, currentDays);
+}
+
+function spreadChartVisiblePoints(points) {
+  if (!currentHours || !Array.isArray(points) || !points.length) return points;
+  const times = points
+    .map(p => new Date(p && p.t).getTime())
+    .filter(Number.isFinite);
+  if (!times.length) return points;
+  const cutoff = Math.max(...times) - currentHours * 60 * 60 * 1000;
+  return points.filter(p => {
+    const t = new Date(p && p.t).getTime();
+    return Number.isFinite(t) && t >= cutoff;
+  });
+}
+
+function initSpreadOverlayControls() {
+  const bidAskToggle = document.getElementById('spread-bid-ask-toggle');
+  if (bidAskToggle) {
+    bidAskToggle.checked = !!spreadBidAskEnabled;
+    bidAskToggle.addEventListener('change', () => {
+      persistOpenSpreadChartSettings();
+      spreadBidAskEnabled = bidAskToggle.checked;
+      saveSpreadChartSettings();
+      if (currentInstrument) loadChart(currentInstrument, currentDays);
+    });
+  }
+  document.querySelectorAll('[data-spread-overlay]').forEach(input => {
+    const key = input.dataset.spreadOverlay;
+    input.checked = !!spreadOverlayState[key];
+    input.addEventListener('change', () => {
+      persistOpenSpreadChartSettings();
+      spreadOverlayState[key] = input.checked;
+      saveSpreadChartSettings();
+      if (currentInstrument) loadChart(currentInstrument, currentDays);
+    });
+  });
+}
+
+function spreadOverlayTime(value) {
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : null;
+}
+
+function spreadOverlayDedup(rows) {
+  const out = [];
+  const seen = new Set();
+  rows
+    .filter(p => p && Number.isFinite(p.time) && Number.isFinite(Number(p.value)))
+    .sort((a, b) => a.time - b.time)
+    .forEach(p => {
+      if (seen.has(p.time)) return;
+      seen.add(p.time);
+      out.push({ time: p.time, value: Number(p.value) });
+    });
+  return out;
+}
+
+function parseIndexSpreadName(name) {
+  const m = String(name || '').match(/^(BTC|ETH)-INDEX-(MARK|\d{1,2}[A-Z]{3}\d{2})$/);
+  return m ? { asset: m[1], leg: m[2] } : null;
+}
+
+function deribitInstrumentForLeg(asset, leg) {
+  return leg === 'MARK' ? asset + '-PERPETUAL' : asset + '-' + leg;
+}
+
+async function loadDeribitMinuteCloses(instrument, hours) {
+  const end = Date.now();
+  const start = end - hours * 60 * 60 * 1000;
+  const url = BASE + '/deribit-public-api/public/get_tradingview_chart_data'
+    + '?instrument_name=' + encodeURIComponent(instrument)
+    + '&resolution=1'
+    + '&start_timestamp=' + Math.floor(start)
+    + '&end_timestamp=' + Math.floor(end);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(instrument + ' API ' + r.status);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error.message || instrument + ' API error');
+  const result = data && data.result ? data.result : {};
+  const ticks = Array.isArray(result.ticks) ? result.ticks : [];
+  const closes = Array.isArray(result.close) ? result.close : [];
+  return spreadOverlayDedup(ticks.map((t, i) => {
+    const ts = Number(t);
+    return { time: ts > 100000000000 ? Math.floor(ts / 1000) : Math.floor(ts), value: closes[i] };
+  }));
+}
+
+async function loadDeribitIndexMinuteCloses(asset, days, since=null) {
+  let url = MD_API + '/index/chart?asset=' + encodeURIComponent(asset) + '&days=' + encodeURIComponent(Math.max(1, Number(days) || 1));
+  if (since) url += '&since=' + encodeURIComponent(Math.floor(since));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(asset + ' index API ' + r.status);
+  const data = await r.json();
+  return spreadOverlayDedup((data.points || []).map(p => ({ time: spreadOverlayTime(p.t), value: p.index })));
+}
+
+async function loadDeribitFutureMarkMinuteCloses(instrument, days, since=null) {
+  let url = MD_API + '/futures/chart?instrument=' + encodeURIComponent(instrument) + '&days=' + encodeURIComponent(Math.max(1, Number(days) || 1));
+  if (since) url += '&since=' + encodeURIComponent(Math.floor(since));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(instrument + ' mark API ' + r.status);
+  const data = await r.json();
+  return spreadOverlayDedup((data.points || []).map(p => ({ time: spreadOverlayTime(p.t), value: p.mark })));
+}
+
+async function loadIndexSpreadPoints(name, days, since=null) {
+  const parsed = parseIndexSpreadName(name);
+  if (!parsed) return null;
+  const hours = spreadOverlayHours(days);
+  const fetchDays = Math.ceil(hours / 24);
+  const [futureRows, indexRows] = await Promise.all([
+    loadDeribitFutureMarkMinuteCloses(deribitInstrumentForLeg(parsed.asset, parsed.leg), fetchDays, since),
+    loadDeribitIndexMinuteCloses(parsed.asset, fetchDays, since)
+  ]);
+  const indexByTime = new Map(indexRows.map(row => [row.time, row.value]));
+  return futureRows
+    .map(row => {
+      const index = indexByTime.get(row.time);
+      const mark = Number(row.value) - Number(index);
+      return { t: new Date(row.time * 1000).toISOString(), mark, bid: null, ask: null };
+    })
+    .filter(row => Number.isFinite(row.mark));
+}
+
+function spreadOverlayHours(days) {
+  return currentHours || Math.max(1, Math.min(30, Number(days) || 1)) * 24;
+}
+
+function spreadOverlayRangeKey(key, days) {
+  const assetPart = key === 'funding' ? ':' + currentAsset : '';
+  return key + assetPart + ':' + String(spreadOverlayHours(days));
+}
+
+function normalizedFundingScaleMargins() {
+  let top = clampNumber(spreadFundingScaleMargins.top, 0.02, 0.88);
+  let bottom = clampNumber(spreadFundingScaleMargins.bottom, 0.02, 0.88);
+  if (top + bottom > 0.92) {
+    const scale = 0.92 / (top + bottom);
+    top *= scale;
+    bottom *= scale;
+  }
+  spreadFundingScaleMargins = { top, bottom };
+  return spreadFundingScaleMargins;
+}
+
+function applyFundingScaleMargins(chart) {
+  if (!chart || !spreadOverlayState.funding) return;
+  chart.priceScale(SPREAD_OVERLAYS.funding.priceScaleId).applyOptions({
+    visible: true,
+    borderColor: '#334155',
+    scaleMargins: normalizedFundingScaleMargins(),
+  });
+  renderFundingAxis(spreadFundingAxisContext?.container, spreadFundingAxisContext?.series);
+}
+
+function installSpreadFundingCtrlDrag(container, chart) {
+  if (!container || !chart) return;
+  container.addEventListener('pointerdown', event => {
+    if (!spreadOverlayState.funding || !event.ctrlKey || event.button !== 0) return;
+    const fundingSeries = spreadFundingAxisContext?.series;
+    const fundingContainer = spreadFundingAxisContext?.container || container;
+    const range = savedScaleRange('funding') || readVisibleSeriesRange(fundingSeries, fundingContainer);
+    if (!fundingSeries || !range) return;
+    spreadFundingScaleDrag = {
+      y: event.clientY,
+      range,
+      container: fundingContainer,
+      series: fundingSeries,
+      chart,
+    };
+    event.preventDefault();
+    event.stopPropagation();
+    try { container.setPointerCapture(event.pointerId); } catch(e) {}
+  }, true);
+  container.addEventListener('pointermove', event => {
+    if (!spreadFundingScaleDrag || spreadFundingScaleDrag.chart !== chart) return;
+    const height = Math.max(spreadFundingScaleDrag.container?.clientHeight || container.clientHeight || 340, 1);
+    const delta = (event.clientY - spreadFundingScaleDrag.y) / height;
+    const span = spreadFundingScaleDrag.range.maxValue - spreadFundingScaleDrag.range.minValue;
+    const offset = delta * span;
+    setFundingVisiblePriceRange(spreadFundingScaleDrag.container, spreadFundingScaleDrag.series, {
+      minValue: spreadFundingScaleDrag.range.minValue + offset,
+      maxValue: spreadFundingScaleDrag.range.maxValue + offset,
+    });
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+  const endDrag = event => {
+    if (!spreadFundingScaleDrag || spreadFundingScaleDrag.chart !== chart) return;
+    spreadFundingScaleDrag = null;
+    saveSpreadChartSettings();
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  container.addEventListener('pointerup', endDrag, true);
+  container.addEventListener('pointercancel', endDrag, true);
+}
+
+function validPriceRange(range) {
+  const min = Number(range?.minValue);
+  const max = Number(range?.maxValue);
+  return Number.isFinite(min) && Number.isFinite(max) && max > min ? { minValue: min, maxValue: max } : null;
+}
+
+function currentSpreadScaleKey() {
+  return currentInstrument || '';
+}
+
+function currentFundingScaleKey() {
+  return (currentInstrument || '') + ':' + currentAsset;
+}
+
+function currentPerpScaleKey() {
+  return (currentInstrument || '') + ':perp';
+}
+
+function currentSpreadTimeScaleKey() {
+  const rangeKey = currentHours ? ('h' + currentHours) : ('d' + currentDays);
+  return (currentInstrument || '') + ':' + rangeKey;
+}
+
+function validLogicalRange(range) {
+  const from = Number(range?.from);
+  const to = Number(range?.to);
+  return Number.isFinite(from) && Number.isFinite(to) && to > from ? { from, to } : null;
+}
+
+function savedTimeScaleRange() {
+  return validLogicalRange(spreadTimeScaleRanges[currentSpreadTimeScaleKey()]);
+}
+
+function saveVisibleTimeScaleRange(chart) {
+  const key = currentSpreadTimeScaleKey();
+  const range = validLogicalRange(chart?.timeScale?.()?.getVisibleLogicalRange?.());
+  if (!key || !range) return false;
+  spreadTimeScaleRanges[key] = range;
+  saveSpreadChartSettings();
+  return true;
+}
+
+function savedScaleRange(kind) {
+  const key = kind === 'funding' ? currentFundingScaleKey() : kind === 'perp' ? currentPerpScaleKey() : currentSpreadScaleKey();
+  const store = kind === 'funding' ? spreadFundingPriceScaleRanges : kind === 'perp' ? spreadPerpPriceScaleRanges : spreadPriceScaleRanges;
+  return validPriceRange(store[key]);
+}
+
+function scaleMarginsForKind(kind) {
+  if (kind === 'funding') return normalizedFundingScaleMargins();
+  if (kind === 'perp') return { top: 0.12, bottom: 0.12 };
+  return { top: 0, bottom: 0 };
+}
+
+function autoscaleRangeForVisibleRange(range, kind) {
+  const visible = validPriceRange(range);
+  if (!visible) return null;
+  const margins = scaleMarginsForKind(kind);
+  const top = clampNumber(margins.top, 0, 0.95);
+  const bottom = clampNumber(margins.bottom, 0, 0.95);
+  const span = visible.maxValue - visible.minValue;
+  return validPriceRange({
+    minValue: visible.minValue + span * bottom,
+    maxValue: visible.maxValue - span * top,
+  });
+}
+
+function makeSavedScaleProvider(kind) {
+  return original => {
+    const range = savedScaleRange(kind);
+    const autoscaleRange = autoscaleRangeForVisibleRange(range, kind);
+    if (autoscaleRange) return { priceRange: autoscaleRange };
+    return typeof original === 'function' ? original() : null;
+  };
+}
+
+function readVisibleSeriesRange(series, container) {
+  if (!series || typeof series.coordinateToPrice !== 'function') return null;
+  const height = Math.max(container?.clientHeight || 340, 1);
+  const top = Number(series.coordinateToPrice(0));
+  const bottom = Number(series.coordinateToPrice(height));
+  return validPriceRange({ minValue: Math.min(top, bottom), maxValue: Math.max(top, bottom) });
+}
+
+function setFundingAxisVisible(visible) {
+  const wrap = document.getElementById('spread-chart-wrap');
+  if (wrap) wrap.classList.toggle('funding-scale-visible', !!visible);
+}
+
+function setPerpPaneVisible(visible) {
+  const wrap = document.getElementById('spread-chart-wrap');
+  if (wrap) wrap.classList.toggle('perp-pane-visible', !!visible);
+}
+
+function spreadTopChartHeight() {
+  return spreadOverlayState.perp ? 330 : 510;
+}
+
+function renderFundingAxis(container, fundingSeries, data) {
+  const axis = document.getElementById('spread-funding-scale');
+  if (!axis) return;
+  const enabled = !!(spreadOverlayState.funding && fundingSeries && container);
+  setFundingAxisVisible(enabled);
+  if (!enabled) {
+    if (spreadFundingAxisChart) spreadFundingAxisChart.remove();
+    spreadFundingAxisChart = null;
+    spreadFundingAxisSeries = null;
+    axis.innerHTML = '';
+    return;
+  }
+
+  const points = data || fundingSeries._fundingAxisData || [];
+  if (!spreadFundingAxisChart) {
+    spreadFundingAxisChart = LightweightCharts.createChart(axis, {
+      layout: { background: { color: '#0b1220' }, textColor: '#f59e0b' },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      leftPriceScale: { visible: false },
+      rightPriceScale: { visible: true, borderColor: '#334155', scaleMargins: normalizedFundingScaleMargins() },
+      timeScale: { visible: false, borderColor: '#334155', timeVisible: true, secondsVisible: false },
+      handleScroll: false,
+      handleScale: false,
+      width: Math.max(axis.clientWidth || 76, 60),
+      height: Math.max(container.clientHeight || spreadTopChartHeight(), 1),
+    });
+    spreadFundingAxisSeries = spreadFundingAxisChart.addLineSeries({
+      color: '#f59e0b',
+      lineWidth: 1,
+      priceFormat: { type: 'price', precision: 4, minMove: 0.0001 },
+      priceLineVisible: false,
+      lastValueVisible: true,
+      autoscaleInfoProvider: () => {
+        const range = autoscaleRangeForVisibleRange(savedScaleRange('funding') || readVisibleSeriesRange(fundingSeries, container), 'funding');
+        return range ? { priceRange: range } : null;
+      },
+    });
+    spreadFundingAxisSeries.createPriceLine({
+      price: 0,
+      color: '#7c4a03',
+      lineWidth: 1,
+      lineStyle: LightweightCharts.LineStyle.Solid,
+      axisLabelVisible: false,
+      title: '',
+    });
+    spreadFundingAxisSeries.createPriceLine({
+      price: 0.01,
+      color: '#7c4a03',
+      lineWidth: 1,
+      lineStyle: LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: false,
+      title: '',
+    });
+  }
+
+  spreadFundingAxisChart.applyOptions({
+    width: Math.max(axis.clientWidth || 76, 60),
+    height: Math.max(container.clientHeight || spreadTopChartHeight(), 1),
+    rightPriceScale: { visible: true, borderColor: '#334155', scaleMargins: normalizedFundingScaleMargins() },
+  });
+  if (spreadFundingAxisSeries) spreadFundingAxisSeries.setData(points);
+  const logicalRange = spreadFundingAxisContext?.chart?.timeScale?.()?.getVisibleLogicalRange?.();
+  if (logicalRange) spreadFundingAxisChart.timeScale().setVisibleLogicalRange(logicalRange);
+  installFundingAxisScaleHandlers(axis, container, fundingSeries);
+}
+
+function setFundingVisiblePriceRange(container, fundingSeries, range) {
+  const valid = validPriceRange(range);
+  const key = currentFundingScaleKey();
+  if (!valid || !key || !fundingSeries) return;
+  spreadFundingPriceScaleRanges[key] = valid;
+  saveSpreadChartSettings();
+  const data = fundingSeries._fundingAxisData || [];
+  fundingSeries.setData(data);
+  renderFundingAxis(container, fundingSeries, data);
+}
+
+function scaleFundingRange(container, fundingSeries, factor, anchorValue) {
+  const range = savedScaleRange('funding') || readVisibleSeriesRange(fundingSeries, container);
+  if (!range) return;
+  const span = range.maxValue - range.minValue;
+  if (!(span > 0)) return;
+  const factorSafe = clampNumber(factor, 0.05, 20);
+  const anchor = Number.isFinite(anchorValue) ? anchorValue : (range.minValue + range.maxValue) / 2;
+  setFundingVisiblePriceRange(container, fundingSeries, {
+    minValue: anchor - (anchor - range.minValue) * factorSafe,
+    maxValue: anchor + (range.maxValue - anchor) * factorSafe,
+  });
+}
+
+function installFundingAxisScaleHandlers(axis, container, fundingSeries) {
+  if (!axis || axis.dataset.scaleHandlersInstalled === '1') return;
+  axis.dataset.scaleHandlersInstalled = '1';
+  axis.addEventListener('pointerdown', event => {
+    if (!spreadOverlayState.funding || event.button !== 0) return;
+    const ctx = spreadFundingAxisContext;
+    if (!ctx?.series) return;
+    const range = savedScaleRange('funding') || readVisibleSeriesRange(ctx.series, ctx.container);
+    if (!range) return;
+    spreadFundingAxisScaleDrag = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      startRange: range,
+      container: ctx.container,
+      series: ctx.series,
+    };
+    axis.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+  axis.addEventListener('pointermove', event => {
+    const drag = spreadFundingAxisScaleDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const height = Math.max(drag.container?.clientHeight || 340, 1);
+    const delta = (event.clientY - drag.startY) / height;
+    const factor = Math.exp(delta * 2.4);
+    const mid = (drag.startRange.minValue + drag.startRange.maxValue) / 2;
+    const half = ((drag.startRange.maxValue - drag.startRange.minValue) / 2) * clampNumber(factor, 0.05, 20);
+    setFundingVisiblePriceRange(drag.container, drag.series, {
+      minValue: mid - half,
+      maxValue: mid + half,
+    });
+    event.preventDefault();
+  });
+  const endDrag = event => {
+    if (!spreadFundingAxisScaleDrag || spreadFundingAxisScaleDrag.pointerId !== event.pointerId) return;
+    spreadFundingAxisScaleDrag = null;
+    event.preventDefault();
+  };
+  axis.addEventListener('pointerup', endDrag);
+  axis.addEventListener('pointercancel', endDrag);
+  axis.addEventListener('wheel', event => {
+    const ctx = spreadFundingAxisContext;
+    if (!spreadOverlayState.funding || !ctx?.series || !ctx?.container) return;
+    const rect = ctx.container.getBoundingClientRect();
+    const y = clampNumber(event.clientY - rect.top, 0, Math.max(ctx.container.clientHeight || 340, 1));
+    const anchor = Number(ctx.series.coordinateToPrice(y));
+    const factor = Math.exp(clampNumber(event.deltaY, -600, 600) * 0.0015);
+    scaleFundingRange(ctx.container, ctx.series, factor, anchor);
+    event.preventDefault();
+  }, { passive: false });
+}
+
+function saveVisiblePriceScaleRanges(container, spreadSeries, fundingSeries, chart, perpContainer=null, perpSeries=null) {
+  const spreadRange = readVisibleSeriesRange(spreadSeries, container);
+  const spreadKey = currentSpreadScaleKey();
+  if (spreadRange && spreadKey) spreadPriceScaleRanges[spreadKey] = spreadRange;
+  const fundingRange = readVisibleSeriesRange(fundingSeries, container);
+  const fundingKey = currentFundingScaleKey();
+  if (fundingRange && fundingKey) spreadFundingPriceScaleRanges[fundingKey] = fundingRange;
+  const perpRange = readVisibleSeriesRange(perpSeries, perpContainer);
+  const perpKey = currentPerpScaleKey();
+  if (perpRange && perpKey) spreadPerpPriceScaleRanges[perpKey] = perpRange;
+  const timeSaved = saveVisibleTimeScaleRange(chart);
+  if (spreadRange || fundingRange || perpRange || timeSaved) saveSpreadChartSettings();
+}
+
+function installSpreadScaleRangeMemory(container, spreadSeries, fundingSeries, chart, perpContainer=null, perpSeries=null) {
+  if (!container) return;
+  const save = () => setTimeout(() => saveVisiblePriceScaleRanges(container, spreadSeries, fundingSeries, chart, perpContainer, perpSeries), 0);
+  [container, perpContainer].filter(Boolean).forEach(el => {
+    el.addEventListener('pointerup', save);
+    el.addEventListener('pointercancel', save);
+    el.addEventListener('wheel', () => setTimeout(save, 120), { passive: true });
+  });
+  window.addEventListener('pointerup', save);
+}
+
+function persistOpenSpreadChartSettings() {
+  const rt = spreadChartRuntime;
+  if (!rt?.chart || !rt?.container || !rt?.markSeries) return;
+  saveVisiblePriceScaleRanges(rt.container, rt.markSeries, rt.overlaySeries?.funding || null, rt.chart, rt.perpContainer || null, rt.perpSeries || null);
+}
+
+async function loadSpreadOverlayPoints(key, days, opts={}) {
+  const cfg = SPREAD_OVERLAYS[key];
+  if (!cfg) return [];
+  const since = opts && opts.since ? Math.floor(opts.since) : null;
+  const cacheKey = spreadOverlayRangeKey(key, days);
+  if (!since && spreadOverlayCache[cacheKey]) return spreadOverlayCache[cacheKey];
+
+  let rows = [];
+  const hours = spreadOverlayHours(days);
+  if (cfg.source === 'equity') {
+    const r = await fetch(BASE + '/van-fs-api/equity-chart?hours=' + encodeURIComponent(since ? 1 : hours));
+    if (!r.ok) throw new Error(cfg.label + ' API ' + r.status);
+    const data = await r.json();
+    rows = (data.points || []).map(p => ({ time: spreadOverlayTime(p.dt || p.t), value: p.v ?? p.value }));
+  } else if (cfg.source === 'van-fs') {
+    const r = await fetch(BASE + cfg.path + '?hours=' + encodeURIComponent(since ? 1 : hours));
+    if (!r.ok) throw new Error(cfg.label + ' API ' + r.status);
+    const data = await r.json();
+    rows = (data.points || []).map(p => ({ time: spreadOverlayTime(p.dt || p.t), value: p.v ?? p.value }));
+  } else if (cfg.source === 'deribit-perp') {
+    const daysForPerp = Math.max(1, Math.ceil(hours / 24));
+    let url = MD_API + '/futures/chart?instrument=BTC-PERPETUAL&days=' + encodeURIComponent(daysForPerp);
+    if (since) url += '&since=' + encodeURIComponent(since);
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(cfg.label + ' API ' + r.status);
+    const data = await r.json();
+    rows = (data.points || []).map(p => ({ time: spreadOverlayTime(p.t), value: p.mark }));
+  } else if (cfg.source === 'funding') {
+    const daysForFunding = Math.max(1, Math.ceil(hours / 24));
+    let url = MD_API + '/funding/chart?asset=' + encodeURIComponent(currentAsset) + '&days=' + encodeURIComponent(daysForFunding);
+    if (since) url += '&since=' + encodeURIComponent(since);
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(cfg.label + ' API ' + r.status);
+    const data = await r.json();
+    rows = (data.points || []).map(p => ({ time: spreadOverlayTime(p.t), value: p.current_funding }));
+  }
+
+  const points = spreadOverlayDedup(rows);
+  if (!since) spreadOverlayCache[cacheKey] = points;
+  return points;
+}
+
+async function addActiveSpreadOverlays(chart, seriesRows) {
+  const activeKeys = Object.keys(SPREAD_OVERLAYS).filter(key => key !== 'perp' && spreadOverlayState[key]);
+  const overlaySeries = {};
+  if (!activeKeys.length) return overlaySeries;
+  const allowedTimes = new Set(seriesRows.map(row => row.t));
+  await Promise.all(activeKeys.map(async key => {
+    const cfg = SPREAD_OVERLAYS[key];
+    try {
+      const points = (await loadSpreadOverlayPoints(key, currentDays))
+        .filter(p => allowedTimes.has(p.time));
+      if (!points.length) return;
+      const series = chart.addLineSeries({
+        color: cfg.color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: key !== 'funding',
+        priceScaleId: cfg.priceScaleId,
+        title: cfg.label,
+        priceFormat: key === 'funding' ? { type: 'price', precision: 4, minMove: 0.0001 } : undefined,
+        autoscaleInfoProvider: key === 'funding' ? makeSavedScaleProvider('funding') : undefined,
+      });
+      series.setData(points);
+      if (key === 'funding') {
+        series._lastFundingValue = points[points.length - 1]?.value;
+        series._fundingAxisData = points;
+        series.createPriceLine({
+          price: 0,
+          color: '#7c4a03',
+          lineWidth: 1,
+          lineStyle: LightweightCharts.LineStyle.Solid,
+          axisLabelVisible: false,
+          title: '',
+        });
+        series.createPriceLine({
+          price: 0.01,
+          color: '#7c4a03',
+          lineWidth: 1,
+          lineStyle: LightweightCharts.LineStyle.Dashed,
+          axisLabelVisible: false,
+          title: '',
+        });
+      }
+      overlaySeries[key] = series;
+      chart.priceScale(cfg.priceScaleId).applyOptions({
+        visible: key === 'funding',
+        scaleMargins: key === 'funding' ? normalizedFundingScaleMargins() : { top: 0.12, bottom: 0.12 },
+      });
+    } catch (e) {
+      console.warn('Spread overlay failed:', cfg.label, e);
+    }
+  }));
+  return overlaySeries;
+}
+
+// ─── Load and render chart ────────────────────────────────────────────────────
+async function loadSpreadChartPoints(name, days, since=null) {
+  const indexPoints = await loadIndexSpreadPoints(name, days, since);
+  if (indexPoints) return spreadChartVisiblePoints(indexPoints);
+  let url = `${MD_API}/spreads/chart/${encodeURIComponent(name)}?days=${days}`;
+  if (since) url += '&since=' + encodeURIComponent(Math.floor(since));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('API ' + r.status);
+  const data = await r.json();
+  return spreadChartVisiblePoints(data.points);
+}
+
+const spreadPointTime = p => Math.floor(new Date(p && p.t).getTime() / 1000);
+
+function spreadRowsFromPoints(points) {
+  return (points || [])
+    .map(p => ({
+      t: spreadPointTime(p),
+      o: p.o ?? p.open ?? null,
+      h: p.h ?? p.high ?? null,
+      l: p.l ?? p.low ?? null,
+      c: p.c ?? p.close ?? null,
+      mark: p.mark ?? null,
+      bid: p.bid ?? null,
+      ask: p.ask ?? null,
+    }))
+    .filter(p => Number.isFinite(p.t));
+}
+
+function spreadSeriesSet(points, key) {
+  return (points || [])
+    .filter(p => p[key] !== null && p[key] !== undefined)
+    .map(p => ({ time: spreadPointTime(p), value: p[key] }))
+    .filter((v, i, a) => i === 0 || v.time !== a[i-1].time);
+}
+
+function spreadUpdateSeries(series, time, value) {
+  if (!series || value === null || value === undefined || !Number.isFinite(Number(value))) return;
+  series.update({ time, value });
+}
+
+async function loadChart(name, days) {
+  const container = document.getElementById('spread-chart');
+  const perpContainer = document.getElementById('spread-perp-chart');
+  spreadChartRuntime = null;
+  lwChart = null;
+  lwSeries = {};
+  setPerpPaneVisible(!!spreadOverlayState.perp);
+  container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%"><span class="spinner"></span></div>';
+  if (perpContainer) {
+    perpContainer.innerHTML = spreadOverlayState.perp ? '<div style="display:flex;align-items:center;justify-content:center;height:100%"><span class="spinner"></span></div>' : '';
+  }
+
+  try {
+    await renderChart(container, await loadSpreadChartPoints(name, days));
+  } catch(e) {
+    container.innerHTML = '<div class="no-data">Failed: ' + e.message + '</div>';
+    if (perpContainer) perpContainer.innerHTML = '';
+  }
+}
+
+async function renderChart(container, points) {
+  container.innerHTML = '';
+  const perpContainer = document.getElementById('spread-perp-chart');
+  if (perpContainer) perpContainer.innerHTML = '';
+  const showPerpPane = !!spreadOverlayState.perp;
+  setPerpPaneVisible(showPerpPane);
+
+  if (!points || points.length === 0) {
+    container.innerHTML = '<div class="no-data">No data available</div>';
+    return;
+  }
+  setFundingAxisVisible(!!spreadOverlayState.funding);
+  const topHeight = spreadTopChartHeight();
+
+  const chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#0b1220' }, textColor: '#3b82f6' },
+    grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#3b82f6', scaleMargins: { top: 0, bottom: 0 } },
+    leftPriceScale: { visible: false },
+    timeScale: { visible: !showPerpPane, borderColor: '#334155', timeVisible: true, secondsVisible: false },
+    width: container.clientWidth,
+    height: topHeight,
+  });
+  installSpreadFundingCtrlDrag(container, chart);
+
+  const seriesRows = spreadRowsFromPoints(points);
+  const allowedTimes = new Set(seriesRows.map(row => row.t));
+
+  const topMetaEl = document.getElementById('chart-meta-top');
+  const lastRow = seriesRows[seriesRows.length - 1] || null;
+  const rowByTime = new Map(seriesRows.map(row => [row.t, row]));
+  const fmtRowValue = v => Number.isFinite(Number(v)) ? Number(v).toFixed(Math.abs(Number(v)) >= 100 ? 2 : 6) : '—';
+  const renderTopRow = row => {
+    if (!topMetaEl) return;
+    if (!row) {
+      topMetaEl.innerHTML = '';
+      return;
+    }
+    const o = Number(row.o), h = Number(row.h), l = Number(row.l), c = Number(row.c);
+    if ([o, h, l, c].every(Number.isFinite)) {
+      const delta = c - o;
+      const pct = o ? delta / o * 100 : 0;
+      const color = delta > 0 ? '#45C4A5' : delta < 0 ? '#F04E60' : '#CBD5E1';
+      const sign = delta > 0 ? '+' : '';
+      const v = n => '<span style="color:' + color + '">' + fmtRowValue(n) + '</span>';
+      topMetaEl.innerHTML = 'O' + v(o) + ' H' + v(h) + ' L' + v(l) + ' C' + v(c) + ' <span style="color:' + color + '">' + sign + fmtRowValue(delta) + ' (' + sign + pct.toFixed(2) + '%)</span>';
+      return;
+    }
+    const mark = Number(row.mark), bid = Number(row.bid), ask = Number(row.ask);
+    const when = fmtUtcMonthDayTime(row.t * 1000);
+    topMetaEl.innerHTML = 'Mark ' + fmtRowValue(mark) + ' · Bid ' + fmtRowValue(bid) + ' · Ask ' + fmtRowValue(ask) + ' · ' + when;
+  };
+
+  const markSeries = chart.addLineSeries({ color: '#3b82f6', lineWidth: 1, title: 'Spread', priceLineVisible: false, lastValueVisible: true, autoscaleInfoProvider: makeSavedScaleProvider('spread') });
+  markSeries.setData(spreadSeriesSet(points, 'mark'));
+  markSeries.createPriceLine({
+    price: 0,
+    color: '#2563eb',
+    lineWidth: 1,
+    lineStyle: LightweightCharts.LineStyle.Solid,
+    axisLabelVisible: false,
+    title: '',
+  });
+
+  if (spreadBidAskEnabled) {
+    const bidSeries = chart.addLineSeries({ color: '#10b981', lineWidth: 1, priceLineVisible: false, lastValueVisible: true, autoscaleInfoProvider: makeSavedScaleProvider('spread') });
+    bidSeries.setData(spreadSeriesSet(points, 'bid'));
+
+    const askSeries = chart.addLineSeries({ color: '#f87171', lineWidth: 1, priceLineVisible: false, lastValueVisible: true, autoscaleInfoProvider: makeSavedScaleProvider('spread') });
+    askSeries.setData(spreadSeriesSet(points, 'ask'));
+    lwSeries.bid = bidSeries;
+    lwSeries.ask = askSeries;
+  }
+
+  const overlaySeries = await addActiveSpreadOverlays(chart, seriesRows);
+  let perpChart = null;
+  let perpSeries = null;
+  let syncTimeRange = null;
+  if (showPerpPane && perpContainer) {
+    const perpPoints = (await loadSpreadOverlayPoints('perp', currentDays))
+      .filter(p => allowedTimes.has(p.time));
+    if (perpPoints.length) {
+      perpChart = LightweightCharts.createChart(perpContainer, {
+        layout: { background: { color: '#0b1220' }, textColor: '#94a3b8' },
+        grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#475569', scaleMargins: { top: 0.12, bottom: 0.12 } },
+        leftPriceScale: { visible: false },
+        timeScale: {
+          borderColor: '#334155',
+          timeVisible: true,
+          secondsVisible: false,
+          minBarSpacing: SPREAD_TIME_MIN_BAR_SPACING,
+          fixLeftEdge: false,
+          fixRightEdge: false,
+          rightBarStaysOnScroll: false,
+        },
+        width: perpContainer.clientWidth,
+        height: 180,
+      });
+      perpSeries = perpChart.addLineSeries({
+        color: SPREAD_OVERLAYS.perp.color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        title: SPREAD_OVERLAYS.perp.label,
+        autoscaleInfoProvider: makeSavedScaleProvider('perp'),
+      });
+      perpSeries.setData(perpPoints);
+      let syncing = false;
+      syncTimeRange = (source, target) => {
+        if (!source || !target || syncing) return;
+        const range = source.timeScale().getVisibleLogicalRange?.();
+        if (!range) return;
+        syncing = true;
+        try { target.timeScale().setVisibleLogicalRange(range); } catch(e) {}
+        syncing = false;
+      };
+      chart.timeScale().subscribeVisibleLogicalRangeChange(() => syncTimeRange(chart, perpChart));
+      perpChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+        syncTimeRange(perpChart, chart);
+        renderFundingAxis(container, overlaySeries.funding, overlaySeries.funding?._fundingAxisData);
+        saveVisibleTimeScaleRange(chart);
+      });
+    } else {
+      perpContainer.innerHTML = '<div class="no-data" style="padding:34px">No PERP data available</div>';
+    }
+  }
+  lwChart = chart;
+  lwSeries.mark = markSeries;
+  lwSeries.overlays = overlaySeries;
+  lwSeries.perp = perpSeries;
+  spreadChartRuntime = {
+    key: currentInstrument + ':' + (currentHours ? 'h' + currentHours : 'd' + currentDays),
+    container,
+    chart,
+    markSeries,
+    bidSeries: lwSeries.bid || null,
+    askSeries: lwSeries.ask || null,
+    overlaySeries,
+    perpContainer,
+    perpChart,
+    perpSeries,
+    rowByTime,
+    lastRow,
+    lastTime: seriesRows.length ? seriesRows[seriesRows.length - 1].t : null,
+    renderTopRow,
+  };
+  spreadFundingAxisContext = { container, chart, series: overlaySeries.funding || null };
+  setTimeout(() => renderFundingAxis(container, overlaySeries.funding, overlaySeries.funding?._fundingAxisData), 0);
+  chart.timeScale().subscribeVisibleLogicalRangeChange(() => renderFundingAxis(container, overlaySeries.funding, overlaySeries.funding?._fundingAxisData));
+  installSpreadScaleRangeMemory(container, markSeries, overlaySeries.funding, chart, perpContainer, perpSeries);
+
+  const visiblePoints = spreadSeriesSet(points, 'mark');
+  if (visiblePoints.length >= 2) {
+    const width = Math.max(container.clientWidth || 0, 320);
+    const rightOffset = currentDays >= 7 ? 2 : 1;
+    const barSpacing = Math.max(SPREAD_TIME_MIN_BAR_SPACING, width / (visiblePoints.length + rightOffset));
+    chart.applyOptions({
+      timeScale: {
+        minBarSpacing: SPREAD_TIME_MIN_BAR_SPACING,
+        barSpacing,
+        rightOffset,
+        fixLeftEdge: false,
+        fixRightEdge: false,
+        rightBarStaysOnScroll: false,
+      }
+    });
+    chart.timeScale().setVisibleLogicalRange(savedTimeScaleRange() || {
+      from: 0,
+      to: visiblePoints.length - 1 + rightOffset,
+    });
+    if (perpChart) syncTimeRange?.(chart, perpChart);
+  } else {
+    chart.timeScale().fitContent();
+    if (perpChart) syncTimeRange?.(chart, perpChart);
+  }
+
+  renderTopRow(lastRow);
+  chart.subscribeCrosshairMove(param => {
+    if (!param || param.time === undefined || param.time === null) {
+      renderTopRow(lastRow);
+      return;
+    }
+    const time = typeof param.time === 'object' ? param.time.timestamp : param.time;
+    const row = rowByTime.get(Number(time)) || lastRow;
+    renderTopRow(row);
+  });
+
+  // Resize observer
+  const ro = new ResizeObserver(() => {
+    const width = Math.max(container.clientWidth || 0, 320);
+    chart.applyOptions({ width, height: spreadTopChartHeight() });
+    if (perpChart && perpContainer) perpChart.applyOptions({ width: Math.max(perpContainer.clientWidth || 0, 320), height: 180 });
+    if (visiblePoints.length >= 2) {
+      const rightOffset = currentDays >= 7 ? 2 : 1;
+      const barSpacing = Math.max(SPREAD_TIME_MIN_BAR_SPACING, width / (visiblePoints.length + rightOffset));
+      chart.applyOptions({
+        timeScale: {
+          minBarSpacing: SPREAD_TIME_MIN_BAR_SPACING,
+          barSpacing,
+          rightOffset,
+          fixLeftEdge: false,
+          fixRightEdge: false,
+          rightBarStaysOnScroll: false,
+        }
+      });
+      chart.timeScale().setVisibleLogicalRange(savedTimeScaleRange() || { from: 0, to: visiblePoints.length - 1 + rightOffset });
+      if (perpChart) syncTimeRange?.(chart, perpChart);
+    }
+    renderFundingAxis(container, overlaySeries.funding, overlaySeries.funding?._fundingAxisData);
+  });
+  ro.observe(container);
+}
+
+
+// ─── Funding ──────────────────────────────────────────────────────────────────
+let fundingAsset = 'BTC';
+let fundingDays  = 3;
+let fundingCharts = { current: null, real8h: null, realized: null, realizedUsd: null, interest: null };
+const FUNDING_CHART_KINDS = ['current', 'real8h', 'realized', 'realizedUsd', 'interest'];
+let fundingResizeObserver = null;
+let fundingRefreshTimer = null;
+let fundingRefreshBusy = false;
+let fundingChartSyncingRange = false;
+let fundingChartSyncingCrosshair = false;
+let fundingRowsByExchangeCache = null;
+let fundingTimeAnchorData = [];
+let fundingForceDefaultRange = false;
+let fundingShowCurves = true;
+let fundingShowPoints = true;
+let fundingShowBtcusdtPerp = false;
+let fundingBtcusdtPerpRowsCache = [];
+let fundingDeribitPositionStream = null;
+let fundingDeribitPositionStreamUrl = '';
+let fundingDeribitPositionStreamRetry = null;
+const FUNDING_VIEW_KEY = 'van_market_data_funding_1m_view_v4';
+const FUNDING_SETTINGS_KEY = 'van_market_data_funding_settings_v1';
+const FUNDING_PRICE_AXIS_WIDTH = 90;
+const FUNDING_PRICE_SCALE_MARGINS = { top: 0.12, bottom: 0.12 };
+const FUNDING_DAY_LABELS = { 1: '1D', 3: '3D', 7: '1W', 14: '2W', 30: '1M', 90: '3M' };
+const FUNDING_MINUTE_LIMIT_MAX = 129600;
+
+const FUNDING_EXCHANGES = [
+  { name: 'Deribit', color: '#f59e0b' },
+  { name: 'Bybit', color: '#60a5fa' },
+  { name: 'CoinCall', color: '#34d399' },
+  { name: 'OKX', color: '#f472b6' },
+  { name: 'Binance', color: '#facc15' },
+  { name: 'MEXC', color: '#fb923c' },
+  { name: 'Gate', color: '#22d3ee' },
+  { name: 'Bitget', color: '#a78bfa' },
+  { name: 'KuCoin', color: '#2dd4bf' },
+  { name: 'Coinbase', color: '#3b82f6' },
+  { name: 'Hyperliquid', color: '#e879f9' },
+  { name: 'Kraken', color: '#8b5cf6' },
+];
+
+function loadFundingSettings() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FUNDING_SETTINGS_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+const fundingInitialSettings = loadFundingSettings();
+let fundingSavedExchangeNames = Array.isArray(fundingInitialSettings.exchanges)
+  ? fundingInitialSettings.exchanges.filter(name => FUNDING_EXCHANGES.some(ex => ex.name === name))
+  : null;
+if (['BTC', 'ETH'].includes(fundingInitialSettings.asset)) fundingAsset = fundingInitialSettings.asset;
+if (Object.prototype.hasOwnProperty.call(FUNDING_DAY_LABELS, Number(fundingInitialSettings.days))) fundingDays = Number(fundingInitialSettings.days);
+if (typeof fundingInitialSettings.showCurves === 'boolean') fundingShowCurves = fundingInitialSettings.showCurves;
+if (typeof fundingInitialSettings.showPoints === 'boolean') fundingShowPoints = fundingInitialSettings.showPoints;
+if (typeof fundingInitialSettings.showBtcusdtPerp === 'boolean') fundingShowBtcusdtPerp = fundingInitialSettings.showBtcusdtPerp;
+
+function persistFundingSettings() {
+  try {
+    const boxes = Array.from(document.querySelectorAll('#tab-funding input[data-funding-exchange]'));
+    const exchanges = boxes.length
+      ? boxes.filter(box => box.checked).map(box => box.dataset.fundingExchange)
+      : (fundingSavedExchangeNames || FUNDING_EXCHANGES.map(ex => ex.name));
+    localStorage.setItem(FUNDING_SETTINGS_KEY, JSON.stringify({
+      asset: fundingAsset,
+      days: fundingDays,
+      exchanges,
+      showCurves: fundingShowCurves,
+      showPoints: fundingShowPoints,
+      showBtcusdtPerp: fundingShowBtcusdtPerp,
+    }));
+  } catch {}
+}
+
+function applyFundingControlState() {
+  document.querySelectorAll('#tab-funding .asset-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === fundingAsset);
+  });
+  document.querySelectorAll('#tab-funding .day-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === fundingRangeLabel());
+  });
+  const title = document.getElementById('funding-chart-title');
+  if (title) title.textContent = fundingAsset + '-PERPETUAL';
+  const realizedTitle = document.getElementById('funding-realized-title');
+  if (realizedTitle) realizedTitle.textContent = 'Normalized_by_' + fundingAsset + '_Position_Size x 1000';
+}
+
+function fundingEnabledExchangeNames() {
+  const boxes = Array.from(document.querySelectorAll('#tab-funding input[data-funding-exchange]'));
+  if (!boxes.length) return FUNDING_EXCHANGES.map(ex => ex.name);
+  const enabled = boxes.filter(box => box.checked).map(box => box.dataset.fundingExchange);
+  return enabled.length ? enabled : [];
+}
+
+function fundingEnabledExchanges() {
+  const enabled = new Set(fundingEnabledExchangeNames());
+  return FUNDING_EXCHANGES.filter(ex => enabled.has(ex.name));
+}
+
+function redrawFundingChartsFromCache() {
+  if (!fundingRowsByExchangeCache) {
+    loadFundingChart(false);
+    return;
+  }
+  persistFundingChartState();
+  renderFundingComparisonCharts(fundingRowsByExchangeCache);
+}
+
+function fundingRangeLabel(days = fundingDays) {
+  return FUNDING_DAY_LABELS[days] || (days + 'D');
+}
+
+function fundingMinuteLimitForDays(days) {
+  return Math.min(FUNDING_MINUTE_LIMIT_MAX, Math.max(1440, Math.ceil(Number(days) || 1) * 1440 + 240));
+}
+
+function installFundingExchangeFilters() {
+  document.querySelectorAll('#tab-funding input[data-funding-exchange]').forEach(box => {
+    box.checked = fundingSavedExchangeNames ? fundingSavedExchangeNames.includes(box.dataset.fundingExchange) : true;
+    if (box._fundingExchangeInstalled) return;
+    box._fundingExchangeInstalled = true;
+    box.addEventListener('change', () => {
+      fundingSavedExchangeNames = Array.from(document.querySelectorAll('#tab-funding input[data-funding-exchange]:checked')).map(input => input.dataset.fundingExchange);
+      persistFundingSettings();
+      redrawFundingChartsFromCache();
+    });
+  });
+}
+installFundingExchangeFilters();
+applyFundingControlState();
+
+function setFundingExchangesVisible(visible) {
+  document.querySelectorAll('#tab-funding input[data-funding-exchange]').forEach(box => {
+    box.checked = visible;
+  });
+  fundingSavedExchangeNames = visible ? FUNDING_EXCHANGES.map(ex => ex.name) : [];
+  persistFundingSettings();
+  redrawFundingChartsFromCache();
+}
+
+function applyFundingDisplayOptions() {
+  Object.values(fundingCharts).forEach(runtime => {
+    if (!runtime) return;
+    Object.values(runtime.seriesByExchange || {}).forEach(series => {
+      series.applyOptions?.({ lineVisible: fundingShowCurves });
+    });
+    Object.values(runtime.markerSeriesByExchange || {}).forEach(series => {
+      series.applyOptions?.({ pointMarkersVisible: fundingShowPoints });
+    });
+  });
+}
+
+function installFundingDisplayToggles() {
+  const curves = document.getElementById('funding-curves-toggle');
+  const points = document.getElementById('funding-points-toggle');
+  const btcusdtPerp = document.getElementById('funding-btcusdt-perp-toggle');
+  if (curves && !curves._fundingDisplayInstalled) {
+    curves._fundingDisplayInstalled = true;
+    curves.checked = fundingShowCurves;
+    curves.addEventListener('change', () => {
+      fundingShowCurves = curves.checked;
+      persistFundingSettings();
+      applyFundingDisplayOptions();
+    });
+  }
+  if (points && !points._fundingDisplayInstalled) {
+    points._fundingDisplayInstalled = true;
+    points.checked = fundingShowPoints;
+    points.addEventListener('change', () => {
+      fundingShowPoints = points.checked;
+      persistFundingSettings();
+      applyFundingDisplayOptions();
+    });
+  }
+  if (btcusdtPerp && !btcusdtPerp._fundingDisplayInstalled) {
+    btcusdtPerp._fundingDisplayInstalled = true;
+    btcusdtPerp.checked = fundingShowBtcusdtPerp;
+    btcusdtPerp.addEventListener('change', () => {
+      fundingShowBtcusdtPerp = btcusdtPerp.checked;
+      persistFundingSettings();
+      loadFundingChart(true);
+    });
+  }
+}
+installFundingDisplayToggles();
+
+function clearFundingVisibleRangeMemory() {
+  updateFundingStoredView(entry => { delete entry.visibleRange; });
+}
+
+function setFundingAsset(asset, btn) {
+  persistFundingChartState();
+  fundingAsset = asset;
+  fundingForceDefaultRange = true;
+  clearFundingVisibleRangeMemory();
+  document.querySelectorAll('#tab-funding .asset-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('funding-chart-title').textContent = asset + '-PERPETUAL';
+  const realizedTitle = document.getElementById('funding-realized-title');
+  if (realizedTitle) realizedTitle.textContent = 'Normalized_by_' + asset + '_Position_Size x 1000';
+  persistFundingSettings();
+  loadFundingChart(false);
+}
+
+function setFundingDays(days, btn) {
+  persistFundingChartState();
+  fundingDays = days;
+  fundingForceDefaultRange = true;
+  clearFundingVisibleRangeMemory();
+  document.querySelectorAll('#tab-funding .day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  persistFundingSettings();
+  loadFundingChart(false);
+}
+
+function fundingRowsFrom(data) {
+  if (Array.isArray(data)) return data;
+  const list = data && (data.rows || data.points || data.items || (data.data && data.data.list));
+  return Array.isArray(list) ? list : [];
+}
+
+function fundingTimeValue(row) {
+  const raw = row && (row.t ?? row.timeUtc ?? row.tsUtc ?? row.observedMinuteUtc ?? row.snapshotMinuteUtc ?? row.snapshot_minute_utc ?? row.minuteUtc ?? row.minute_utc ?? row.recordTimeUtc ?? row.fundingTimeUtc ?? row.funding_time_utc ?? row.time);
+  const n = Number(raw);
+  if (Number.isFinite(n)) return n > 100000000000 ? Math.floor(n / 1000) : n;
+  const d = new Date(typeof raw === 'string' && !/(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(raw) ? raw + 'Z' : raw);
+  return Number.isNaN(d.getTime()) ? NaN : Math.floor(d.getTime() / 1000);
+}
+
+function fundingSeries(rows, key) {
+  const cutoff = Date.now() - fundingDays * 24 * 60 * 60 * 1000;
+  const points = (Array.isArray(rows) ? rows : [])
+    .map(r => {
+      const raw = r && r[key];
+      if (raw === null || raw === undefined || raw === '') return null;
+      return { time: fundingTimeValue(r), value: Number(raw) };
+    })
+    .filter(p => p && Number.isFinite(p.time) && Number.isFinite(p.value) && p.time * 1000 >= cutoff)
+    .sort((a, b) => a.time - b.time)
+    .filter((p, i, a) => i === 0 || p.time !== a[i - 1].time);
+  if (key === 'current_funding' && points.length && !points.some(p => Math.abs(p.value) > 1e-12)) return [];
+  return points;
+}
+
+function fundingAccrualIntervalSeconds(exchange) {
+  if (exchange === 'Coinbase' || exchange === 'Hyperliquid') return 60 * 60;
+  if (exchange === 'Kraken') return 4 * 60 * 60;
+  return 8 * 60 * 60;
+}
+
+function fundingAccrualTimeValue(row) {
+  const raw = row && (
+    row.settlementTimeUtc ?? row.settlement_time_utc ??
+    row.settleTimeUtc ?? row.settle_time_utc ??
+    row.fundingTimeUtc ?? row.funding_time_utc ??
+    row.fundingTime ?? row.funding_time ??
+    row.nextFundingTimeUtc ?? row.next_funding_time_utc ??
+    row.nextFundingTime ?? row.next_funding_time
+  );
+  if (raw === undefined || raw === null || raw === '') return NaN;
+  const n = Number(raw);
+  if (Number.isFinite(n)) return n > 100000000000 ? Math.floor(n / 1000) : n;
+  const d = new Date(typeof raw === 'string' && !/(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(raw) ? raw + 'Z' : raw);
+  return Number.isNaN(d.getTime()) ? NaN : Math.floor(d.getTime() / 1000);
+}
+
+function nearestFundingPoint(points, time, toleranceSeconds) {
+  let best = null;
+  for (const p of points) {
+    const delta = Math.abs(p.time - time);
+    if (delta <= toleranceSeconds && (!best || delta < best.delta)) best = { point: p, delta };
+  }
+  return best?.point || null;
+}
+
+function fundingAccrualPoints(rows, key, exchange, points) {
+  if (!Array.isArray(points) || !points.length) return [];
+  const markers = new Map();
+  const minTime = points[0].time;
+  const maxTime = points[points.length - 1].time;
+  const addNear = (time, toleranceSeconds = 120) => {
+    if (!Number.isFinite(time) || time < minTime - toleranceSeconds || time > maxTime + toleranceSeconds) return;
+    const point = nearestFundingPoint(points, time, toleranceSeconds);
+    if (point) markers.set(point.time, point);
+  };
+
+  (Array.isArray(rows) ? rows : []).forEach(row => addNear(fundingAccrualTimeValue(row)));
+
+  const interval = fundingAccrualIntervalSeconds(exchange);
+  let t = Math.floor(minTime / interval) * interval;
+  if (t < minTime) t += interval;
+  for (; t <= maxTime; t += interval) addNear(t);
+
+  return Array.from(markers.values())
+    .filter(p => Number.isFinite(p.time) && Number.isFinite(p.value))
+    .sort((a, b) => a.time - b.time);
+}
+
+function authToken() {
+  return localStorage.getItem('van_token') || (() => {
+    try { return JSON.parse(localStorage.getItem('van_session') || '{}').token || ''; } catch { return ''; }
+  })();
+}
+
+function authHeaders() {
+  const token = authToken();
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
+}
+
+async function fetchJson(url, auth = false) {
+  const r = await fetch(url, auth ? { headers: authHeaders() } : undefined);
+  if (!r.ok) throw new Error('API ' + r.status);
+  return await r.json();
+}
+
+function percentValue(row, key) {
+  const raw = row && (row[key] ?? (key === 'current_funding'
+    ? (row.currentFunding ?? row.fundingRate ?? row.fundRate)
+    : (row.interest8h ?? row.interestRate ?? row.interest_rate)));
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.abs(n) <= 1 ? n * 100 : n;
+}
+
+function fundingVisibleRangeKey() {
+  return fundingAsset + ':' + fundingRangeLabel();
+}
+
+function fundingStoredViews() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FUNDING_VIEW_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function fundingStoredViewEntry() {
+  return fundingStoredViews()[fundingVisibleRangeKey()];
+}
+
+function updateFundingStoredView(mutator) {
+  try {
+    const views = fundingStoredViews();
+    const key = fundingVisibleRangeKey();
+    const existing = views[key];
+    const entry = existing && typeof existing === 'object'
+      ? { ...existing, priceRanges: { ...(existing.priceRanges || {}) } }
+      : { visibleRange: validFundingVisibleRange(existing), priceRanges: {} };
+    mutator(entry);
+    views[key] = entry;
+    localStorage.setItem(FUNDING_VIEW_KEY, JSON.stringify(views));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validFundingVisibleRange(range) {
+  const from = Number(range?.from);
+  const to = Number(range?.to);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return null;
+  return { from, to };
+}
+
+function validFundingLogicalRange(range) {
+  const from = Number(range?.from);
+  const to = Number(range?.to);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return null;
+  return { from, to };
+}
+
+function fundingApplyLogicalRange(range) {
+  const valid = validFundingLogicalRange(range);
+  if (!valid) return false;
+  fundingChartSyncingRange = true;
+  try {
+    FUNDING_CHART_KINDS.forEach(kind => {
+      try { fundingCharts[kind]?.chart?.timeScale?.()?.setVisibleLogicalRange(valid); } catch {}
+    });
+  } finally {
+    setTimeout(() => { fundingChartSyncingRange = false; }, 0);
+  }
+  updateFundingStoredView(entry => { entry.logicalRange = valid; });
+  return true;
+}
+
+function validFundingPriceRange(range) {
+  const from = Number(range?.from);
+  const to = Number(range?.to);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return null;
+  return { from, to };
+}
+
+function fundingChartPriceRange(kind) {
+  const runtime = fundingCharts[kind];
+  const series = runtime?.series?.[0];
+  const container = runtime?.container || (kind === 'current'
+    ? document.getElementById('funding-current-chart')
+    : kind === 'real8h' ? document.getElementById('funding-real8h-chart')
+    : kind === 'realized' ? document.getElementById('funding-realized-chart')
+    : kind === 'realizedUsd' ? document.getElementById('funding-realized-usd-chart')
+    : document.getElementById('funding-interest-chart'));
+  if (!series || !container || typeof series.coordinateToPrice !== 'function') return null;
+  const pane = runtime?.chart?.paneSize?.();
+  const height = Math.max(pane?.height || container.clientHeight || 340, 1);
+  const top = Number(series.coordinateToPrice(0));
+  const bottom = Number(series.coordinateToPrice(height));
+  if (!Number.isFinite(top) || !Number.isFinite(bottom) || top === bottom) return null;
+  return validFundingPriceRange({ from: Math.min(top, bottom), to: Math.max(top, bottom) });
+}
+
+function fundingDataPriceRange(kind) {
+  const values = (fundingCharts[kind]?.series || [])
+    .flatMap(series => series?._fundingPoints || [])
+    .map(point => Number(point?.value))
+    .filter(Number.isFinite);
+  if (!values.length) return null;
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (min === max) {
+    const pad = Math.max(Math.abs(min) * 0.05, 1e-12);
+    min -= pad;
+    max += pad;
+  }
+  const span = max - min;
+  return validFundingPriceRange({ from: min - span * 0.08, to: max + span * 0.08 });
+}
+
+function fundingAutoscaleProvider(kind) {
+  return () => {
+    const range = savedFundingPriceScaleRange(kind);
+    if (!range) return null;
+    const span = range.to - range.from;
+    return { priceRange: {
+      minValue: range.from + span * FUNDING_PRICE_SCALE_MARGINS.bottom,
+      maxValue: range.to - span * FUNDING_PRICE_SCALE_MARGINS.top,
+    } };
+  };
+}
+
+function fundingChartVisibleRange(kind) {
+  try {
+    return fundingCharts[kind]?.chart?.timeScale?.()?.getVisibleRange?.();
+  } catch {
+    return null;
+  }
+}
+
+function persistFundingVisibleRange(range) {
+  const source = range || fundingChartVisibleRange('current') || fundingChartVisibleRange('real8h') || fundingChartVisibleRange('interest');
+  const valid = validFundingVisibleRange(source);
+  if (!valid) return;
+  updateFundingStoredView(entry => { entry.visibleRange = valid; });
+}
+
+function savedFundingVisibleRange() {
+  const entry = fundingStoredViewEntry();
+  return validFundingVisibleRange(entry?.visibleRange || entry);
+}
+
+function applyFundingVisibleRange(range) {
+  const valid = validFundingVisibleRange(range);
+  if (!valid) return false;
+  fundingChartSyncingRange = true;
+  try {
+    FUNDING_CHART_KINDS.forEach(kind => {
+      try { fundingCharts[kind]?.chart?.timeScale?.()?.setVisibleRange(valid); } catch {}
+    });
+  } finally {
+    setTimeout(() => { fundingChartSyncingRange = false; }, 0);
+  }
+  return true;
+}
+
+function fundingDefaultVisibleRange() {
+  const points = fundingTimeAnchorData.length ? fundingTimeAnchorData : (fundingCharts.current?.points || []);
+  if (points.length >= 2) {
+    const to = points[points.length - 1].time;
+    const fromByDays = to - fundingDays * 24 * 60 * 60;
+    return { from: Math.max(points[0].time, fromByDays), to };
+  }
+  const all = FUNDING_CHART_KINDS.flatMap(kind => fundingCharts[kind]?.points || []).sort((a, b) => a.time - b.time);
+  if (all.length >= 2) return { from: all[0].time, to: all[all.length - 1].time };
+  return null;
+}
+
+function applyUnifiedFundingTimeRange(forceDefault = false) {
+  const range = forceDefault ? fundingDefaultVisibleRange() : (savedFundingVisibleRange() || fundingChartVisibleRange('current') || fundingDefaultVisibleRange());
+  if (!applyFundingVisibleRange(range)) return false;
+  persistFundingVisibleRange(range);
+  return true;
+}
+
+function persistFundingPriceScaleRange(kind, range) {
+  const source = range || fundingChartPriceRange(kind);
+  const valid = validFundingPriceRange(source);
+  if (!valid) return false;
+  return updateFundingStoredView(entry => {
+    entry.priceRanges = { ...(entry.priceRanges || {}), [kind]: valid };
+  });
+}
+
+function applyFundingPriceScaleRange(kind, range) {
+  const valid = validFundingPriceRange(range);
+  if (!valid || !persistFundingPriceScaleRange(kind, valid)) return false;
+  try {
+    fundingCharts[kind]?.series?.forEach(series => {
+      if (series?._fundingPoints) series.setData(series._fundingPoints);
+    });
+  } catch {}
+  return true;
+}
+
+function clearFundingPriceScaleRange(kind) {
+  updateFundingStoredView(entry => {
+    entry.priceRanges = { ...(entry.priceRanges || {}) };
+    delete entry.priceRanges[kind];
+  });
+  try {
+    fundingCharts[kind]?.chart?.priceScale?.('right')?.applyOptions?.({ autoScale: true });
+    fundingCharts[kind]?.series?.forEach(series => {
+      if (series?._fundingPoints) series.setData(series._fundingPoints);
+    });
+  } catch {}
+}
+
+function savedFundingPriceScaleRange(kind) {
+  const entry = fundingStoredViewEntry();
+  return validFundingPriceRange(entry?.priceRanges?.[kind]);
+}
+
+function applyFundingPriceScaleRanges() {
+  let restored = false;
+  FUNDING_CHART_KINDS.forEach(kind => {
+    const range = savedFundingPriceScaleRange(kind);
+    if (!range) return;
+    try {
+      fundingCharts[kind]?.series?.forEach(series => {
+        if (series?._fundingPoints) series.setData(series._fundingPoints);
+      });
+      restored = true;
+    } catch {}
+  });
+  return restored;
+}
+
+function persistFundingChartState() {
+  persistFundingVisibleRange();
+  FUNDING_CHART_KINDS.forEach(kind => {
+    if (savedFundingPriceScaleRange(kind)) persistFundingPriceScaleRange(kind);
+  });
+}
+
+function bybitMerge(minuteRows, settledRows) {
+  const settled = fundingRowsFrom({ rows: settledRows }).map(r => ({ time: fundingTimeValue(r), value: percentValue(r, 'interest_8h') })).filter(p => Number.isFinite(p.time) && Number.isFinite(p.value)).sort((a, b) => a.time - b.time);
+  const rows = fundingRowsFrom({ rows: minuteRows }).slice().sort((a, b) => fundingTimeValue(a) - fundingTimeValue(b));
+  let i = 0, last = null;
+  return rows.map(r => {
+    const t = fundingTimeValue(r);
+    while (i < settled.length && settled[i].time <= t) { last = settled[i]; i++; }
+    return { t: r.observedMinuteUtc || r.tsUtc || r.time, current_funding: percentValue(r, 'current_funding'), interest_8h: last ? last.value : null };
+  });
+}
+
+function coincallInterestRow(row) {
+  const rawRate = row && (row.fundRate ?? row.fund_rate);
+  const rate = Number(rawRate);
+  const t = fundingTimeValue({ time: row && (row.recordTimeUtc ?? row.record_time_utc ?? row.ctime) });
+  if (!Number.isFinite(t) || !Number.isFinite(rate)) return null;
+  return { t: row.recordTimeUtc || row.record_time_utc || row.ctime, current_funding: null, interest_8h: rate * 100 };
+}
+
+function coincallReal8hRow(row) {
+  const rawRate = row && (row.fundRate ?? row.fund_rate);
+  const rate = Number(rawRate);
+  const t = fundingTimeValue({ time: row && (row.recordTimeUtc ?? row.record_time_utc ?? row.ctime) });
+  if (!Number.isFinite(t) || !Number.isFinite(rate)) return null;
+  return { t: row.recordTimeUtc || row.record_time_utc || row.ctime, current_funding: null, real_8h_funding: rate * 100, interest_8h: null };
+}
+
+function coincallCurrentFundingValue(row) {
+  const raw = row && (row.currentFunding ?? row.fundRate ?? row.fundingRate);
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.abs(n) <= 1 ? n * 100 : n;
+}
+
+function okxPercentValue(row, key) {
+  const raw = row && (key === 'current_funding'
+    ? (row.currentFunding ?? row.fundingRate ?? row.fundRate ?? row.current_funding)
+    : (row.interest8h ?? row.interestRate ?? row.interest_rate ?? row.interest_8h));
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.abs(n) <= 1 ? n * 100 : n;
+}
+
+function okxFundingComparisonRow(row) {
+  const t = fundingTimeValue(row);
+  if (!Number.isFinite(t)) return null;
+  return {
+    t: row.snapshotMinuteUtc || row.snapshot_minute_utc || row.minuteUtc || row.minute_utc || row.tsUtc || row.time,
+    current_funding: okxPercentValue(row, 'current_funding'),
+    interest_8h: okxPercentValue(row, 'interest_8h'),
+  };
+}
+
+function binanceFundingHistoryRow(row) {
+  const rawTime = row && (row.fundingTime ?? row.funding_time ?? row.time);
+  const t = Number(rawTime);
+  const rate = Number(row && (row.fundingRate ?? row.funding_rate ?? row.interest_8h));
+  if (!Number.isFinite(t) || !Number.isFinite(rate)) return null;
+  return {
+    t: t > 100000000000 ? Math.floor(t / 1000) : t,
+    current_funding: null,
+    interest_8h: Math.abs(rate) <= 1 ? rate * 100 : rate,
+  };
+}
+
+function binanceFundingMinuteRow(row) {
+  const t = fundingTimeValue(row);
+  if (!Number.isFinite(t)) return null;
+  const rawCurrent = row && (row.currentFunding ?? row.fundingRate ?? row.fundRate);
+  const rawInterest = row && (row.interest8h ?? row.interestRate ?? row.interest_8h);
+  const current = Number(rawCurrent);
+  const interest = Number(rawInterest);
+  return {
+    t: row.snapshotMinuteUtc || row.snapshot_minute_utc || row.minuteUtc || row.observedMinuteUtc || row.ctime || row.time,
+    current_funding: Number.isFinite(current) ? (Math.abs(current) <= 1 ? current * 100 : current) : null,
+    interest_8h: Number.isFinite(interest) ? (Math.abs(interest) <= 1 ? interest * 100 : interest) : null,
+  };
+}
+
+function binanceBtcusdtPerpPricePoint(row) {
+  const t = fundingTimeValue(row);
+  const value = Number(row && (row.markPrice ?? row.mark_price ?? row.indexPrice ?? row.index_price));
+  if (!Number.isFinite(t) || !Number.isFinite(value)) return null;
+  return { time: t, value };
+}
+
+function fundingBtcusdtPerpSeries(rows) {
+  const cutoff = Date.now() - fundingDays * 24 * 60 * 60 * 1000;
+  return fundingRowsFrom({ rows })
+    .map(binanceBtcusdtPerpPricePoint)
+    .filter(p => p && Number.isFinite(p.time) && Number.isFinite(p.value) && p.time * 1000 >= cutoff)
+    .sort((a, b) => a.time - b.time)
+    .filter((p, i, a) => i === 0 || p.time !== a[i - 1].time);
+}
+
+function deribitPositionRowsFrom(data) {
+  const rows = fundingRowsFrom(data);
+  if (rows.length) return rows;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
+function deribitPositionField(row, keys) {
+  for (const key of keys) {
+    const direct = row && row[key];
+    if (direct !== undefined && direct !== null && direct !== '') return direct;
+    const nested = row?.raw && row.raw[key];
+    if (nested !== undefined && nested !== null && nested !== '') return nested;
+  }
+  return null;
+}
+
+function deribitNormalizedRealizedFundingRows(asset, rows) {
+  const instrument = String(asset || 'BTC').toUpperCase() + '-PERPETUAL';
+  return deribitPositionRowsFrom(rows).flatMap(row => {
+    const symbol = String(deribitPositionField(row, ['symbol', 'instrument', 'instrument_name', 'displayName']) || '').toUpperCase();
+    if (symbol && symbol !== instrument) return [];
+    const funding = Number(deribitPositionField(row, ['realized_funding', 'realizedFunding']));
+    const sizeCurrency = Math.abs(Number(deribitPositionField(row, ['sizeCurrency', 'size_currency', 'amount', 'qty', 'position'])));
+    const sizeUsd = Math.abs(Number(deribitPositionField(row, ['size', 'positionUsd', 'position_usd'])));
+    const normalizedByBase = Number(deribitPositionField(row, ['normalized_by_base_position_size', 'normalizedByBasePositionSize', 'normalized_by_eth_position_size', 'normalizedByEthPositionSize']));
+    const normalizedToUsd = Number(deribitPositionField(row, ['normalized_to_1_usd_position_size', 'normalizedTo1UsdPositionSize']));
+    const t = fundingTimeValue({ t: deribitPositionField(row, ['updateTime', 'last_update_timestamp', 'ts', 'time']) || Math.floor(Date.now() / 1000) });
+    const byBase = Number.isFinite(normalizedByBase) ? normalizedByBase : (Number.isFinite(funding) && Number.isFinite(sizeCurrency) && sizeCurrency > 0 ? (funding / sizeCurrency) * 100 : NaN);
+    const toUsd = Number.isFinite(normalizedToUsd) ? normalizedToUsd : (Number.isFinite(funding) && Number.isFinite(sizeUsd) && sizeUsd > 0 ? funding / sizeUsd : NaN);
+    if (!Number.isFinite(t) || !Number.isFinite(byBase)) return [];
+    const point = {
+      t,
+      normalized_realized_funding: byBase * 1000,
+      normalized_by_base_position_size: byBase,
+      normalized_by_eth_position_size: byBase,
+      normalized_to_1_usd_position_size: Number.isFinite(toUsd) ? toUsd * 1000000000 : null,
+      raw_normalized_to_1_usd_position_size: Number.isFinite(toUsd) ? toUsd : null,
+      realized_funding: funding,
+      position_size: sizeCurrency,
+      position_usd_size: Number.isFinite(sizeUsd) ? sizeUsd : null,
+    };
+    return [{ ...point, t: t - 1 }, point];
+  });
+}
+
+function fundingWalkObjects(value, out = []) {
+  if (!value || typeof value !== 'object') return out;
+  if (Array.isArray(value)) {
+    value.forEach(item => fundingWalkObjects(item, out));
+    return out;
+  }
+  out.push(value);
+  Object.keys(value).forEach(key => fundingWalkObjects(value[key], out));
+  return out;
+}
+
+function fundingDeribitPositionRowFromMessage(msg) {
+  const asset = fundingAsset;
+  const instrument = String(asset || 'BTC').toUpperCase() + '-PERPETUAL';
+  const objects = fundingWalkObjects(msg);
+  for (const obj of objects) {
+    const symbol = String(deribitPositionField(obj, ['instrument_name', 'instrument', 'symbol', 'displayName']) || '').toUpperCase();
+    if (symbol !== instrument) continue;
+    const funding = Number(deribitPositionField(obj, ['realized_funding', 'realizedFunding']));
+    const sizeCurrency = Math.abs(Number(deribitPositionField(obj, ['sizeCurrency', 'size_currency', 'amount', 'qty', 'position'])));
+    const sizeUsd = Math.abs(Number(deribitPositionField(obj, ['size', 'positionUsd', 'position_usd'])));
+    const normalizedByBase = Number(deribitPositionField(obj, ['normalized_by_base_position_size', 'normalizedByBasePositionSize', 'normalized_by_eth_position_size', 'normalizedByEthPositionSize']));
+    const normalizedToUsd = Number(deribitPositionField(obj, ['normalized_to_1_usd_position_size', 'normalizedTo1UsdPositionSize']));
+    const byBase = Number.isFinite(normalizedByBase) ? normalizedByBase : (Number.isFinite(funding) && Number.isFinite(sizeCurrency) && sizeCurrency > 0 ? (funding / sizeCurrency) * 100 : NaN);
+    const toUsd = Number.isFinite(normalizedToUsd) ? normalizedToUsd : (Number.isFinite(funding) && Number.isFinite(sizeUsd) && sizeUsd > 0 ? funding / sizeUsd : NaN);
+    if (!Number.isFinite(byBase)) continue;
+    const t = fundingTimeValue({ t: deribitPositionField(obj, ['last_update_timestamp', 'updateTime', 'ts', 'time']) || Math.floor(Date.now() / 1000) });
+    if (!Number.isFinite(t)) continue;
+    return {
+      t,
+      normalized_realized_funding: byBase * 1000,
+      normalized_by_base_position_size: byBase,
+      normalized_by_eth_position_size: byBase,
+      normalized_to_1_usd_position_size: Number.isFinite(toUsd) ? toUsd * 1000000000 : null,
+      raw_normalized_to_1_usd_position_size: Number.isFinite(toUsd) ? toUsd : null,
+      realized_funding: funding,
+      position_size: Number.isFinite(sizeCurrency) ? sizeCurrency : null,
+      position_usd_size: Number.isFinite(sizeUsd) ? sizeUsd : null,
+    };
+  }
+  return null;
+}
+
+function fundingApplyDeribitPositionMessage(msg) {
+  const row = fundingDeribitPositionRowFromMessage(msg);
+  if (!row) return;
+  const current = fundingRowsByExchangeCache || {};
+  const rows = current.Deribit || [];
+  fundingRowsByExchangeCache = mergeFundingRowsByExchange(current, { Deribit: rows.concat({ ...row, t: row.t - 1 }, row) });
+  renderFundingComparisonCharts(fundingRowsByExchangeCache, true);
+}
+
+function ensureFundingDeribitPositionStream() {
+  if (!window.EventSource || !fundingTabActive() || !fundingEnabledExchangeNames().includes('Deribit')) return;
+  const token = authToken();
+  if (!token) return;
+  const qs = new URLSearchParams({ access_token: token });
+  const url = '/api/admin/deribit/futures/order-events/stream?' + qs.toString();
+  if (fundingDeribitPositionStream && fundingDeribitPositionStreamUrl === url && fundingDeribitPositionStream.readyState !== EventSource.CLOSED) return;
+  try { fundingDeribitPositionStream?.close?.(); } catch {}
+  clearTimeout(fundingDeribitPositionStreamRetry);
+  const es = new EventSource(url);
+  fundingDeribitPositionStream = es;
+  fundingDeribitPositionStreamUrl = url;
+  const handle = event => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch { return; }
+    fundingApplyDeribitPositionMessage(msg);
+  };
+  ['change', 'portfolio', 'message'].forEach(name => es.addEventListener(name, handle));
+  es.onerror = () => {
+    try { es.close(); } catch {}
+    if (fundingDeribitPositionStream === es) fundingDeribitPositionStream = null;
+    clearTimeout(fundingDeribitPositionStreamRetry);
+    fundingDeribitPositionStreamRetry = setTimeout(ensureFundingDeribitPositionStream, 3000);
+  };
+}
+
+function krakenReal8hFundingRows(rows) {
+  return (Array.isArray(rows) ? rows : []).map(row => {
+    const t = fundingTimeValue(row);
+    const dt = Number.isFinite(t) ? new Date(t * 1000) : null;
+    const is8hBoundary = dt && dt.getUTCMinutes() === 0 && dt.getUTCSeconds() === 0 && dt.getUTCHours() % 8 === 0;
+    return {
+      ...row,
+      real_8h_funding: is8hBoundary ? row.current_funding : null,
+    };
+  });
+}
+
+function binanceFundingLimitForDays(days) {
+  return String(Math.min(1000, Math.max(16, Math.ceil(Number(days) || 1) * 3 + 8)));
+}
+
+async function loadFundingComparisonRows(options = {}) {
+  const incremental = !!options.incremental;
+  const asset = fundingAsset;
+  const deribitUrl = MD_API + '/funding/chart?asset=' + encodeURIComponent(asset) + '&days=' + encodeURIComponent(fundingDays);
+  const bybitSym = asset + 'USDT';
+  const coincallSym = asset + 'USD';
+  const okxInst = asset + '-USDT-SWAP';
+  const binanceSym = asset + 'USDT';
+  const mexcSym = asset + '_USDT';
+  const gateSym = asset + '_USDT';
+  const bitgetSym = asset + 'USDT';
+  const kucoinSym = asset === 'BTC' ? 'XBTUSDTM' : asset + 'USDTM';
+  const coinbaseSym = asset + '-PERP';
+  const hyperliquidSym = asset;
+  const krakenSym = asset === 'BTC' ? 'PF_XBTUSD' : 'PF_ETHUSD';
+  const deribitPositionFundingSym = asset + '-PERPETUAL';
+  const minuteLimit = String(incremental ? 10 : fundingMinuteLimitForDays(fundingDays));
+  const enabled = new Set(fundingEnabledExchangeNames());
+  const enabledFetch = (name, request) => enabled.has(name) ? request() : Promise.resolve({ rows: [] });
+  const safe = p => p.catch(() => ({ rows: [] }));
+  const binanceFundingMinuteRequest = () => safe(fetchJson('/api/admin/binance/futures/funding/minute?' + new URLSearchParams({ symbol: binanceSym, limit: minuteLimit }).toString(), true));
+  const [deribit, deribitPosition, bybitMinute, bybitHistory, coincallMinute, coincallHistory, okxMinute, binanceMinute, binanceFunding, mexcMinute, gateMinute, bitgetMinute, kucoinMinute, coinbaseMinute, hyperliquidMinute, krakenMinute] = await Promise.all([
+    enabledFetch('Deribit', () => incremental ? Promise.resolve({ rows: [] }) : fetchJson(deribitUrl)),
+    enabledFetch('Deribit', () => safe(fetchJson('/api/admin/deribit/futures/position-funding?' + new URLSearchParams({ symbol: deribitPositionFundingSym, limit: minuteLimit }).toString(), true))),
+    enabledFetch('Bybit', () => safe(fetchJson('/api/admin/bybit/futures/funding/minute?' + new URLSearchParams({ symbol: bybitSym, limit: minuteLimit }).toString(), true))),
+    Promise.resolve({ rows: [] }),
+    enabledFetch('CoinCall', () => safe(fetchJson('/api/admin/coincall/futures/funding/minute?' + new URLSearchParams({ symbol: coincallSym, limit: minuteLimit }).toString(), true))),
+    Promise.resolve({ rows: [] }),
+    enabledFetch('OKX', () => safe(fetchJson('/api/admin/okx/futures/funding/minute?' + new URLSearchParams({ instId: okxInst, limit: minuteLimit }).toString(), true))),
+    (enabled.has('Binance') || fundingShowBtcusdtPerp) ? binanceFundingMinuteRequest() : Promise.resolve({ rows: [] }),
+    Promise.resolve({ rows: [] }),
+    enabledFetch('MEXC', () => safe(fetchJson('/api/admin/mexc/futures/funding/minute?' + new URLSearchParams({ symbol: mexcSym, limit: minuteLimit }).toString()))),
+    enabledFetch('Gate', () => safe(fetchJson('/api/admin/gate/futures/funding/minute?' + new URLSearchParams({ symbol: gateSym, limit: minuteLimit }).toString()))),
+    enabledFetch('Bitget', () => safe(fetchJson('/api/admin/bitget/futures/funding/minute?' + new URLSearchParams({ symbol: bitgetSym, limit: minuteLimit }).toString()))),
+    enabledFetch('KuCoin', () => safe(fetchJson('/api/admin/kucoin/futures/funding/minute?' + new URLSearchParams({ symbol: kucoinSym, limit: minuteLimit }).toString()))),
+    enabledFetch('Coinbase', () => safe(fetchJson('/api/admin/coinbase/futures/funding/minute?' + new URLSearchParams({ symbol: coinbaseSym, limit: minuteLimit }).toString()))),
+    enabledFetch('Hyperliquid', () => safe(fetchJson('/api/admin/hyperliquid/futures/funding/minute?' + new URLSearchParams({ symbol: hyperliquidSym, limit: minuteLimit }).toString()))),
+    enabledFetch('Kraken', () => safe(fetchJson('/api/admin/kraken/futures/funding/minute?' + new URLSearchParams({ symbol: krakenSym, limit: minuteLimit }).toString()))),
+  ]);
+  fundingBtcusdtPerpRowsCache = fundingShowBtcusdtPerp ? fundingRowsFrom(binanceMinute) : [];
+  return {
+    Deribit: fundingRowsFrom(deribit).map(r => ({
+      ...r,
+      real_8h_funding: r.current_funding,
+    })).concat(deribitNormalizedRealizedFundingRows(asset, deribitPosition)),
+    Bybit: bybitMerge(fundingRowsFrom(bybitMinute), fundingRowsFrom(bybitHistory)),
+    CoinCall: fundingRowsFrom(coincallMinute).map(r => {
+      const current = coincallCurrentFundingValue(r);
+      return { t: r.observedMinuteUtc || r.minuteUtc || r.ctime, current_funding: current, real_8h_funding: current, interest_8h: null };
+    }),
+    OKX: fundingRowsFrom(okxMinute).map(okxFundingComparisonRow).filter(Boolean),
+    Binance: enabled.has('Binance') ? fundingRowsFrom(binanceMinute).map(binanceFundingMinuteRow).filter(Boolean) : [],
+    MEXC: fundingRowsFrom(mexcMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    Gate: fundingRowsFrom(gateMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    Bitget: fundingRowsFrom(bitgetMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    KuCoin: fundingRowsFrom(kucoinMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    Coinbase: fundingRowsFrom(coinbaseMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    Hyperliquid: fundingRowsFrom(hyperliquidMinute).map(binanceFundingMinuteRow).filter(Boolean),
+    Kraken: krakenReal8hFundingRows(fundingRowsFrom(krakenMinute).map(binanceFundingMinuteRow).filter(Boolean)),
+
+  };
+}
+
+function fundingRowsMerge(existingRows, incomingRows) {
+  const merged = new Map();
+  const put = row => {
+    const t = fundingTimeValue(row);
+    if (!Number.isFinite(t)) return;
+    const key = String(t);
+    const prev = merged.get(key);
+    if (!prev) {
+      merged.set(key, row);
+      return;
+    }
+    const next = { ...prev, ...row };
+    const prevReal = Number(prev.real_8h_funding);
+    const rowReal = Number(row.real_8h_funding);
+    if (Number.isFinite(prevReal) && Math.abs(prevReal) > 1e-12 && (!Number.isFinite(rowReal) || Math.abs(rowReal) <= 1e-12)) {
+      next.real_8h_funding = prev.real_8h_funding;
+    }
+    merged.set(key, next);
+  };
+  (Array.isArray(existingRows) ? existingRows : []).forEach(put);
+  (Array.isArray(incomingRows) ? incomingRows : []).forEach(put);
+  const cutoff = Math.floor(Date.now() / 1000) - fundingDays * 24 * 60 * 60 - 3600;
+  return Array.from(merged.values())
+    .filter(row => {
+      const t = fundingTimeValue(row);
+      return Number.isFinite(t) && t >= cutoff;
+    })
+    .sort((a, b) => fundingTimeValue(a) - fundingTimeValue(b));
+}
+
+function mergeFundingRowsByExchange(existing, incoming) {
+  const result = { ...(existing || {}) };
+  Object.keys(incoming || {}).forEach(name => {
+    result[name] = fundingRowsMerge(result[name] || [], incoming[name] || []);
+  });
+  return result;
+}
+
+async function loadFundingChart(persistBefore = true, updateExistingCharts = false) {
+  const current = document.getElementById('funding-current-chart');
+  const real8h = document.getElementById('funding-real8h-chart');
+  const realized = document.getElementById('funding-realized-chart');
+  const realizedUsd = document.getElementById('funding-realized-usd-chart');
+  const interest = document.getElementById('funding-interest-chart');
+  if (persistBefore) persistFundingChartState();
+  const canUpdateExisting = updateExistingCharts && fundingCharts.current?.chart && fundingCharts.real8h?.chart && fundingCharts.realized?.chart && fundingCharts.realizedUsd?.chart && fundingCharts.interest?.chart;
+  if (!canUpdateExisting) {
+    [current, real8h, realized, realizedUsd, interest].forEach(container => { if (container) container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:340px"><span class="spinner"></span></div>'; });
+    document.getElementById('funding-meta').textContent = 'Loading…';
+  }
+  try {
+    const incomingRowsByExchange = await loadFundingComparisonRows({ incremental: canUpdateExisting && !!fundingRowsByExchangeCache });
+    const rowsByExchange = canUpdateExisting && fundingRowsByExchangeCache
+      ? mergeFundingRowsByExchange(fundingRowsByExchangeCache, incomingRowsByExchange)
+      : incomingRowsByExchange;
+    fundingRowsByExchangeCache = rowsByExchange;
+    const counts = FUNDING_EXCHANGES.map(ex => {
+      const rows = rowsByExchange[ex.name] || [];
+      return ex.name + ' current ' + fundingSeries(rows, 'current_funding').length + ', real8h ' + fundingSeries(rows, 'real_8h_funding').length + ', realized ' + fundingSeries(rows, 'normalized_realized_funding').length + ', realizedUsd ' + fundingSeries(rows, 'normalized_to_1_usd_position_size').length + ', interest ' + fundingSeries(rows, 'interest_8h').length;
+    });
+    document.getElementById('funding-meta').textContent = '';
+    renderFundingComparisonCharts(rowsByExchange, canUpdateExisting);
+  } catch(e) {
+    if (!canUpdateExisting) [current, real8h, realized, realizedUsd, interest].forEach(container => { if (container) container.innerHTML = '<div class="no-data">Failed: ' + e.message + '</div>'; });
+    document.getElementById('funding-meta').textContent = 'Funding comparison failed: ' + e.message;
+  } finally {
+    ensureFundingDeribitPositionStream();
+    scheduleFundingAutoRefresh();
+  }
+}
+
+function clearFundingCharts() {
+  if (fundingResizeObserver) { fundingResizeObserver.disconnect(); fundingResizeObserver = null; }
+  Object.keys(fundingCharts).forEach(key => {
+    if (fundingCharts[key]?.chart) { fundingCharts[key].chart.remove(); fundingCharts[key] = null; }
+  });
+}
+
+function fundingChartOptions(container) {
+  return {
+    layout: { background: { color: '#0b1220' }, textColor: '#94a3b8' },
+    grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#334155', scaleMargins: FUNDING_PRICE_SCALE_MARGINS },
+    timeScale: {
+      borderColor: '#334155',
+      timeVisible: true,
+      secondsVisible: false,
+      minBarSpacing: SPREAD_TIME_MIN_BAR_SPACING,
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      rightBarStaysOnScroll: false,
+    },
+    handleScroll: { pressedMouseMove: false, horzTouchDrag: false, vertTouchDrag: false, mouseWheel: false },
+    handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: { time: false, price: true } },
+    width: container.clientWidth,
+    height: 340,
+    localization: { priceFormatter: p => p.toFixed(6) + '%' },
+  };
+}
+
+function fundingSeriesDefs(rowsByExchange, key) {
+  return fundingEnabledExchanges().map(ex => {
+    const rows = rowsByExchange[ex.name] || [];
+    const points = fundingSeries(rows, key);
+    return { ...ex, points, accrualPoints: fundingAccrualPoints(rows, key, ex.name, points) };
+  });
+}
+
+function fundingChartCanUpdate(kind, seriesDefs) {
+  const runtime = fundingCharts[kind];
+  const active = seriesDefs.filter(s => s.points.length);
+  if (!runtime?.chart || !runtime?.seriesByExchange || !active.length) return false;
+  const nextNames = active.map(s => s.name).sort().join('|');
+  const existingNames = Object.keys(runtime.seriesByExchange).sort().join('|');
+  return nextNames === existingNames;
+}
+
+function fundingApplySeriesPoints(series, nextPoints) {
+  const prev = series?._fundingPoints || [];
+  if (!series) return;
+  if (!prev.length || !nextPoints.length) {
+    series._fundingPoints = nextPoints;
+    series.setData(nextPoints);
+    return;
+  }
+  const prevLast = prev[prev.length - 1];
+  const nextLast = nextPoints[nextPoints.length - 1];
+  if (prev.length === nextPoints.length && prevLast?.time === nextLast?.time && prevLast?.value === nextLast?.value) {
+    series._fundingPoints = nextPoints;
+    return;
+  }
+  const appendOnly = nextPoints.length >= prev.length && nextPoints[prev.length - 1]?.time === prevLast?.time;
+  if (appendOnly && typeof series.update === 'function') {
+    for (let i = prev.length; i < nextPoints.length; i++) series.update(nextPoints[i]);
+    series._fundingPoints = nextPoints;
+    return;
+  }
+  const prevIndex = new Map(prev.map((p, i) => [p.time, { point: p, index: i }]));
+  const changedExisting = nextPoints.some((p, i) => {
+    const old = prevIndex.get(p.time);
+    return old && old.index < prev.length - 1 && old.point.value !== p.value;
+  });
+  if (!changedExisting && nextPoints.length >= prev.length && typeof series.update === 'function') {
+    nextPoints.filter(p => !prevIndex.has(p.time) || prevIndex.get(p.time).point.value !== p.value).forEach(p => series.update(p));
+    series._fundingPoints = nextPoints;
+    return;
+  }
+  series._fundingPoints = nextPoints;
+  series.setData(nextPoints);
+}
+
+function fundingZeroLineData(points) {
+  const byTime = new Map();
+  (Array.isArray(points) ? points : []).forEach(p => {
+    if (p && Number.isFinite(p.time)) byTime.set(p.time, { time: p.time, value: 0 });
+  });
+  return Array.from(byTime.values()).sort((a, b) => a.time - b.time);
+}
+
+function updateFundingChartOne(kind, seriesDefs) {
+  const runtime = fundingCharts[kind];
+  if (!runtime?.seriesByExchange) return false;
+  const active = seriesDefs.filter(s => s.points.length);
+  runtime.points = active.flatMap(s => s.points).sort((a, b) => a.time - b.time);
+  fundingApplySeriesPoints(runtime.anchorSeries, fundingTimeAnchorData);
+  fundingApplySeriesPoints(runtime.zeroSeries, fundingZeroLineData(runtime.points));
+  active.forEach(s => {
+    const series = runtime.seriesByExchange[s.name];
+    if (!series) return;
+    fundingApplySeriesPoints(series, s.points);
+    series.applyOptions?.({ lineVisible: fundingShowCurves });
+    const markerSeries = runtime.markerSeriesByExchange?.[s.name];
+    if (markerSeries) {
+      fundingApplySeriesPoints(markerSeries, s.accrualPoints || []);
+      markerSeries.applyOptions?.({ pointMarkersVisible: fundingShowPoints });
+    }
+  });
+  return true;
+}
+
+function fundingCrosshairPrice(target, time) {
+  const series = target?.series?.[0];
+  if (!series) return null;
+  const points = target.points || [];
+  const exact = points.find(p => p.time === time) || points.reduce((best, p) => {
+    if (!Number.isFinite(p.time) || !Number.isFinite(p.value)) return best;
+    if (!best || Math.abs(p.time - time) < Math.abs(best.time - time)) return p;
+    return best;
+  }, null);
+  return exact ? { series, price: exact.value } : null;
+}
+
+function syncFundingCrosshair(sourceKind, param) {
+  if (fundingChartSyncingCrosshair) return;
+  fundingChartSyncingCrosshair = true;
+  try {
+    if (!param?.time || !param?.point || param.point.x < 0 || param.point.y < 0) {
+      FUNDING_CHART_KINDS.filter(kind => kind !== sourceKind).forEach(kind => {
+        try { fundingCharts[kind]?.chart?.clearCrosshairPosition?.(); } catch {}
+      });
+      return;
+    }
+    FUNDING_CHART_KINDS.filter(kind => kind !== sourceKind).forEach(kind => {
+      const target = fundingCharts[kind];
+      if (!target?.chart) return;
+      const price = fundingCrosshairPrice(target, param.time);
+      if (price && typeof target.chart.setCrosshairPosition === 'function') {
+        target.chart.setCrosshairPosition(price.price, param.time, price.series);
+      }
+    });
+  } finally {
+    setTimeout(() => { fundingChartSyncingCrosshair = false; }, 0);
+  }
+}
+
+function fundingApplyPanRange(range) {
+  const next = validFundingVisibleRange(range);
+  if (!next) return false;
+  applyFundingVisibleRange(next);
+  persistFundingVisibleRange(next);
+  return true;
+}
+
+function fundingApplyWheelZoom(sourceItem, event) {
+  if (!sourceItem?.chart || !sourceItem.container) return;
+  const logical = validFundingLogicalRange(sourceItem.chart.timeScale().getVisibleLogicalRange?.());
+  if (!logical) return;
+  const rect = sourceItem.container.getBoundingClientRect();
+  const width = Math.max(rect.width || sourceItem.container.clientWidth || 1, 1);
+  const x = Math.max(0, Math.min(event.clientX - rect.left, width));
+  const ratio = x / width;
+  const span = logical.to - logical.from;
+  const anchor = logical.from + span * ratio;
+  const factor = Math.exp(Math.max(-600, Math.min(600, event.deltaY)) * 0.0015);
+  const minSpan = 2;
+  let from = anchor - (anchor - logical.from) * factor;
+  let to = anchor + (logical.to - anchor) * factor;
+  if (to - from < minSpan) {
+    const half = minSpan / 2;
+    from = anchor - half;
+    to = anchor + half;
+  }
+  const next = validFundingLogicalRange({ from, to });
+  if (!next) return;
+  event.preventDefault();
+  event.stopPropagation();
+  fundingApplyLogicalRange(next);
+}
+
+function installFundingDragPan(item) {
+  const container = item?.container;
+  const chart = item?.chart;
+  const kind = item?.kind;
+  if (!container || !chart || !kind || container._fundingDragPanInstalled) return;
+  container._fundingDragPanInstalled = true;
+  let drag = null;
+  container.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || isFundingPriceAxisEvent(container, event)) return;
+    const logical = validFundingLogicalRange(chart.timeScale().getVisibleLogicalRange?.());
+    const startPriceRange = savedFundingPriceScaleRange(kind) || fundingChartPriceRange(kind) || fundingDataPriceRange(kind);
+    if (!logical && !startPriceRange) return;
+    drag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRange: logical,
+      startPriceRange,
+      width: Math.max(container.clientWidth || container.getBoundingClientRect().width || 1, 1),
+      height: Math.max(container.clientHeight || container.getBoundingClientRect().height || 1, 1),
+    };
+    try { container.setPointerCapture?.(event.pointerId); } catch {}
+    event.preventDefault();
+    event.stopPropagation();
+  }, { capture: true });
+  container.addEventListener('pointermove', event => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.startRange) {
+      const span = drag.startRange.to - drag.startRange.from;
+      const logicalPerPx = span / drag.width;
+      const shift = (event.clientX - drag.startX) * logicalPerPx;
+      fundingApplyLogicalRange({ from: drag.startRange.from - shift, to: drag.startRange.to - shift });
+    }
+    if (drag.startPriceRange) {
+      const priceSpan = drag.startPriceRange.to - drag.startPriceRange.from;
+      const priceShift = (event.clientY - drag.startY) * (priceSpan / drag.height);
+      applyFundingPriceScaleRange(kind, {
+        from: drag.startPriceRange.from + priceShift,
+        to: drag.startPriceRange.to + priceShift,
+      });
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }, { capture: true });
+  const end = event => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    persistFundingPriceScaleRange(kind);
+    persistFundingVisibleRange();
+    drag = null;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  container.addEventListener('pointerup', end, { capture: true });
+  container.addEventListener('pointercancel', end, { capture: true });
+}
+
+function installFundingChartSync() {
+  const charts = FUNDING_CHART_KINDS.map(kind => ({ kind, chart: fundingCharts[kind]?.chart, container: fundingCharts[kind]?.container })).filter(item => item.chart);
+  if (charts.length < 2) return;
+  const syncRange = (sourceKind, source, retry = true) => {
+    if (fundingChartSyncingRange) return;
+    const logical = validFundingLogicalRange(source.timeScale().getVisibleLogicalRange?.());
+    if (logical) {
+      fundingApplyLogicalRange(logical);
+      return;
+    }
+    const range = validFundingVisibleRange(source.timeScale().getVisibleRange?.());
+    if (!range) {
+      if (retry) setTimeout(() => syncRange(sourceKind, source, false), 0);
+      return;
+    }
+    applyFundingVisibleRange(range);
+    persistFundingVisibleRange(range);
+  };
+  charts.forEach(item => {
+    item.chart.timeScale().subscribeVisibleLogicalRangeChange?.(() => syncRange(item.kind, item.chart));
+    item.chart.timeScale().subscribeVisibleTimeRangeChange?.(() => syncRange(item.kind, item.chart));
+    item.container?.addEventListener?.('wheel', event => fundingApplyWheelZoom(item, event), { passive: false, capture: true });
+    installFundingDragPan(item);
+    item.chart.subscribeCrosshairMove(param => syncFundingCrosshair(item.kind, param));
+  });
+}
+
+function isFundingPriceAxisEvent(container, event) {
+  const rect = container?.getBoundingClientRect?.();
+  if (!rect) return false;
+  return event.clientX >= rect.right - FUNDING_PRICE_AXIS_WIDTH && event.clientX <= rect.right + 8;
+}
+
+function installFundingPriceScaleMemory(kind, container) {
+  const runtime = fundingCharts[kind];
+  if (!runtime?.chart || !container || container._fundingPriceScaleMemoryInstalled) return;
+  container._fundingPriceScaleMemoryInstalled = true;
+  let axisDrag = false;
+  let saveTimer = null;
+  const saveSoon = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => persistFundingPriceScaleRange(kind), 80);
+  };
+  container.addEventListener('pointerdown', event => {
+    axisDrag = isFundingPriceAxisEvent(container, event);
+    if (axisDrag) {
+      try { container.setPointerCapture?.(event.pointerId); } catch {}
+    }
+  });
+  const finishDrag = () => {
+    if (!axisDrag) return;
+    axisDrag = false;
+    saveSoon();
+  };
+  container.addEventListener('pointerup', finishDrag);
+  container.addEventListener('pointercancel', finishDrag);
+  container.addEventListener('pointerleave', finishDrag);
+  container.addEventListener('wheel', event => {
+    if (isFundingPriceAxisEvent(container, event)) saveSoon();
+  }, { passive: true });
+  container.addEventListener('dblclick', event => {
+    if (!isFundingPriceAxisEvent(container, event)) return;
+    clearFundingPriceScaleRange(kind);
+  });
+}
+
+function renderFundingChartOne(kind, containerId, seriesDefs, emptyText) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const active = seriesDefs.filter(s => s.points.length);
+  if (!active.length) { container.innerHTML = '<div class="no-data">' + emptyText + '</div>'; return; }
+  container.innerHTML = '';
+  const chart = LightweightCharts.createChart(container, fundingChartOptions(container));
+  const runtime = { chart, container, series: [], seriesByExchange: {}, markerSeriesByExchange: {}, points: active.flatMap(s => s.points).sort((a, b) => a.time - b.time), anchorSeries: null, zeroSeries: null, btcusdtPerpSeries: null };
+  fundingCharts[kind] = runtime;
+  if (fundingTimeAnchorData.length) {
+    runtime.anchorSeries = chart.addLineSeries({ color: 'rgba(0,0,0,0)', lineWidth: 1, lineVisible: false, pointMarkersVisible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    runtime.anchorSeries.setData(fundingTimeAnchorData);
+  }
+  runtime.zeroSeries = chart.addLineSeries({ color: '#64748b', lineWidth: 1, lineVisible: true, pointMarkersVisible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  runtime.zeroSeries.setData(fundingZeroLineData(runtime.points));
+  active.forEach(s => {
+    const series = chart.addLineSeries({ color: s.color, lineWidth: 1, lineVisible: fundingShowCurves, title: s.name, priceLineVisible: false, lastValueVisible: true, autoscaleInfoProvider: fundingAutoscaleProvider(kind) });
+    series._fundingPoints = s.points;
+    series.setData(s.points);
+    const markerSeries = chart.addLineSeries({ color: s.color, lineWidth: 1, lineVisible: false, pointMarkersVisible: fundingShowPoints, pointMarkersRadius: 2, priceLineVisible: false, lastValueVisible: false, autoscaleInfoProvider: fundingAutoscaleProvider(kind) });
+    markerSeries.setData(s.accrualPoints || []);
+    runtime.series.push(series);
+    runtime.seriesByExchange[s.name] = series;
+    runtime.markerSeriesByExchange[s.name] = markerSeries;
+  });
+  if (kind === 'real8h' && fundingShowBtcusdtPerp) {
+    const perpPoints = fundingBtcusdtPerpSeries(fundingBtcusdtPerpRowsCache);
+    if (perpPoints.length) {
+      const perpSeries = chart.addLineSeries({
+        color: '#94a3b8',
+        lineWidth: 1,
+        title: 'BTCUSDT-Perp',
+        priceScaleId: 'btcusdt-perp',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      chart.priceScale('btcusdt-perp').applyOptions({ visible: false, scaleMargins: { top: 0.08, bottom: 0.08 } });
+      perpSeries.setData(perpPoints);
+      runtime.btcusdtPerpSeries = perpSeries;
+    }
+  }
+  chart.timeScale().fitContent();
+}
+
+function fundingBuildTimeAnchorData(seriesDefGroups) {
+  const byTime = new Map();
+  const add = p => {
+    if (p && Number.isFinite(p.time)) byTime.set(p.time, { time: p.time });
+  };
+  (seriesDefGroups[0] || []).forEach(def => (def.points || []).forEach(add));
+  if (!byTime.size) seriesDefGroups.flat().forEach(def => (def.points || []).forEach(add));
+  return Array.from(byTime.values()).sort((a, b) => a.time - b.time);
+}
+
+function renderFundingComparisonCharts(rowsByExchange, updateExistingCharts = false) {
+  const currentDefs = fundingSeriesDefs(rowsByExchange, 'current_funding');
+  const real8hDefs = fundingSeriesDefs(rowsByExchange, 'real_8h_funding');
+  const realizedDefs = fundingSeriesDefs(rowsByExchange, 'normalized_realized_funding');
+  const realizedUsdDefs = fundingSeriesDefs(rowsByExchange, 'normalized_to_1_usd_position_size');
+  const interestDefs = fundingSeriesDefs(rowsByExchange, 'interest_8h');
+  fundingTimeAnchorData = fundingBuildTimeAnchorData([currentDefs, real8hDefs, realizedDefs, realizedUsdDefs, interestDefs]);
+  if (updateExistingCharts && fundingChartCanUpdate('current', currentDefs) && fundingChartCanUpdate('real8h', real8hDefs) && fundingChartCanUpdate('realized', realizedDefs) && fundingChartCanUpdate('realizedUsd', realizedUsdDefs) && fundingChartCanUpdate('interest', interestDefs)) {
+    updateFundingChartOne('current', currentDefs);
+    updateFundingChartOne('real8h', real8hDefs);
+    updateFundingChartOne('realized', realizedDefs);
+    updateFundingChartOne('realizedUsd', realizedUsdDefs);
+    updateFundingChartOne('interest', interestDefs);
+    applyUnifiedFundingTimeRange(fundingForceDefaultRange);
+    fundingForceDefaultRange = false;
+    applyFundingPriceScaleRanges();
+    return;
+  }
+  clearFundingCharts();
+  renderFundingChartOne('current', 'funding-current-chart', currentDefs, 'No Current Funding rows for this range.');
+  renderFundingChartOne('real8h', 'funding-real8h-chart', real8hDefs, 'No Real 8h Funding rows for this range.');
+  renderFundingChartOne('realized', 'funding-realized-chart', realizedDefs, 'No normalized position-size rows for this range.');
+  renderFundingChartOne('realizedUsd', 'funding-realized-usd-chart', realizedUsdDefs, 'No Normalized_to_1_USD_Position_Size x 1000000000 rows for this range.');
+  renderFundingChartOne('interest', 'funding-interest-chart', interestDefs, 'No Interest 8h rows for this range.');
+  installFundingChartSync();
+  if (!applyUnifiedFundingTimeRange(fundingForceDefaultRange)) {
+    FUNDING_CHART_KINDS.forEach(kind => fundingCharts[kind]?.chart?.timeScale?.()?.fitContent?.());
+    applyUnifiedFundingTimeRange(true);
+  }
+  fundingForceDefaultRange = false;
+  applyFundingPriceScaleRanges();
+  installFundingPriceScaleMemory('current', document.getElementById('funding-current-chart'));
+  installFundingPriceScaleMemory('real8h', document.getElementById('funding-real8h-chart'));
+  installFundingPriceScaleMemory('realized', document.getElementById('funding-realized-chart'));
+  installFundingPriceScaleMemory('realizedUsd', document.getElementById('funding-realized-usd-chart'));
+  installFundingPriceScaleMemory('interest', document.getElementById('funding-interest-chart'));
+  fundingResizeObserver = new ResizeObserver(() => {
+    const cur = document.getElementById('funding-current-chart');
+    const real = document.getElementById('funding-real8h-chart');
+    const realized = document.getElementById('funding-realized-chart');
+    const realizedUsd = document.getElementById('funding-realized-usd-chart');
+    const intr = document.getElementById('funding-interest-chart');
+    if (fundingCharts.current?.chart && cur) fundingCharts.current.chart.applyOptions({ width: cur.clientWidth });
+    if (fundingCharts.real8h?.chart && real) fundingCharts.real8h.chart.applyOptions({ width: real.clientWidth });
+    if (fundingCharts.realized?.chart && realized) fundingCharts.realized.chart.applyOptions({ width: realized.clientWidth });
+    if (fundingCharts.realizedUsd?.chart && realizedUsd) fundingCharts.realizedUsd.chart.applyOptions({ width: realizedUsd.clientWidth });
+    if (fundingCharts.interest?.chart && intr) fundingCharts.interest.chart.applyOptions({ width: intr.clientWidth });
+  });
+  ['funding-current-chart', 'funding-real8h-chart', 'funding-realized-chart', 'funding-realized-usd-chart', 'funding-interest-chart'].forEach(id => { const el = document.getElementById(id); if (el) fundingResizeObserver.observe(el); });
+}
+
+function fundingTabActive() {
+  return !document.hidden && document.getElementById('tab-funding')?.classList.contains('active');
+}
+
+function fundingNextUtcMinutePlus2Delay(now = Date.now()) {
+  let next = Math.floor(now / 60000) * 60000 + 2000;
+  if (next <= now) next += 60000;
+  return next - now;
+}
+
+function clearFundingAutoRefresh() {
+  if (fundingRefreshTimer) { clearTimeout(fundingRefreshTimer); fundingRefreshTimer = null; }
+}
+
+function scheduleFundingAutoRefresh() {
+  clearFundingAutoRefresh();
+}
+
+function updateFundingAutoRefresh() {
+  if (fundingTabActive()) scheduleFundingAutoRefresh(); else clearFundingAutoRefresh();
+}
+
+document.addEventListener('visibilitychange', updateFundingAutoRefresh);
+window.addEventListener('focus', () => {});
+
+async function refreshOpenSpreadChart() {
+  const rt = spreadChartRuntime;
+  if (!currentInstrument || !rt || !rt.chart || !rt.lastTime) {
+    if (currentInstrument) await loadChart(currentInstrument, currentDays);
+    return;
+  }
+  const key = currentInstrument + ':' + (currentHours ? 'h' + currentHours : 'd' + currentDays);
+  if (rt.key !== key) {
+    await loadChart(currentInstrument, currentDays);
+    return;
+  }
+  try {
+    const points = await loadSpreadChartPoints(currentInstrument, currentDays, rt.lastTime);
+    const rows = spreadRowsFromPoints(points).filter(row => row.t > rt.lastTime);
+    if (!rows.length) return;
+
+    rows.forEach(row => {
+      rt.rowByTime.set(row.t, row);
+      spreadUpdateSeries(rt.markSeries, row.t, row.mark);
+      spreadUpdateSeries(rt.bidSeries, row.t, row.bid);
+      spreadUpdateSeries(rt.askSeries, row.t, row.ask);
+      rt.lastRow = row;
+      rt.lastTime = row.t;
+    });
+    rt.renderTopRow(rt.lastRow);
+
+    const allowedTimes = new Set(rows.map(row => row.t));
+    await Promise.all(Object.keys(SPREAD_OVERLAYS).filter(k => spreadOverlayState[k] && rt.overlaySeries[k]).map(async key => {
+      const pts = (await loadSpreadOverlayPoints(key, currentDays, { since: rows[0].t - 60 }))
+        .filter(p => allowedTimes.has(p.time));
+      if (!pts.length) return;
+      pts.forEach(p => rt.overlaySeries[key].update(p));
+      if (key === 'funding') {
+        const series = rt.overlaySeries[key];
+        series._lastFundingValue = pts[pts.length - 1]?.value;
+        series._fundingAxisData = spreadOverlayDedup([...(series._fundingAxisData || []), ...pts]);
+        renderFundingAxis(rt.container, series, series._fundingAxisData);
+      }
+    }));
+    if (spreadOverlayState.perp && rt.perpSeries) {
+      const pts = (await loadSpreadOverlayPoints('perp', currentDays, { since: rows[0].t - 60 }))
+        .filter(p => allowedTimes.has(p.time));
+      pts.forEach(p => rt.perpSeries.update(p));
+    }
+  } catch (e) {
+    console.warn('Incremental spread chart refresh failed:', e);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function initSpreadsTab() {
+  if (spreadTabStarted) return;
+  spreadTabStarted = true;
+  initSpreadOverlayControls();
+  loadMatrix();
+  loadBybitMatrix(true);
+  spreadRefreshTimer = setInterval(() => {
+    if (!document.getElementById('tab-spreads')?.classList.contains('active')) return;
+    loadMatrix();
+    if (currentInstrument) refreshOpenSpreadChart();
+    loadBybitMatrix(!showBybit);
+  }, 60_000);
+}
+
+function initializeActiveMarketDataTab(id = activeMarketDataTabFromPath()) {
+  setActiveMarketDataTab(id);
+  if (id === 'spreads') initSpreadsTab();
+  if (id === 'funding') loadFundingChart(false);
+  updateFundingAutoRefresh();
+  if (id === 'options') initOptionsTab();
+}
+
+// ═══════════════════════════════════════════════════════════
+// OPTIONS TAB
+// ═══════════════════════════════════════════════════════════
+var optAsset       = 'BTC';
+var optExpiry      = null;
+var optInstrument  = null;
+var optDays        = 3;
+var optPriceChart  = null;
+var optIvChart     = null;
+var optChainLoaded = false;
+
+function setOptAsset(asset, btn) {
+  optAsset  = asset;
+  optExpiry = null;
+  document.querySelectorAll('#opt-asset-tabs .asset-tab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  loadOptExpirations();
+}
+
+function setOptDays(days, btn) {
+  optDays = days;
+  document.querySelectorAll('#opt-chart-section .day-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  if (optInstrument) loadOptChart(optInstrument);
+}
+
+function initOptionsTab() {
+  if (optChainLoaded) return;
+  optChainLoaded = true;
+  loadOptExpirations();
+}
+
+async function loadOptExpirations() {
+  var bar = document.getElementById('opt-expiry-bar');
+  bar.innerHTML = '<span class="spinner"></span>';
+  try {
+    var r = await fetch(MD_API + '/options/expirations?asset=' + optAsset);
+    if (!r.ok) throw new Error('API ' + r.status);
+    var data = await r.json();
+    var exps = data.expirations || [];
+    if (!optExpiry && exps.length > 0) optExpiry = exps[0];
+    bar.innerHTML = exps.map(function(exp) {
+      return '<button class="expiry-btn' + (exp === optExpiry ? ' active' : '') +
+             '" onclick="selectOptExpiry(\'' + exp + '\', this)">' + exp + '</button>';
+    }).join('');
+    if (optExpiry) loadOptChain();
+  } catch(e) {
+    bar.innerHTML = '<span style="color:#f87171;font-size:12px">Ошибка: ' + e.message + '</span>';
+  }
+}
+
+async function selectOptExpiry(expiry, btn) {
+  optExpiry = expiry;
+  document.querySelectorAll('.expiry-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  loadOptChain();
+}
+
+async function loadOptChain() {
+  var wrap = document.getElementById('opt-chain-wrap');
+  wrap.innerHTML = '<div class="no-data"><span class="spinner"></span> Загрузка цепочки&#8230;</div>';
+  document.getElementById('opt-meta').textContent = 'Загрузка&#8230;';
+  try {
+    var r = await fetch(MD_API + '/options/chain?asset=' + optAsset + '&expiry=' + optExpiry);
+    if (!r.ok) throw new Error('API ' + r.status);
+    var data = await r.json();
+    var und = data.underlying ? '$' + Math.round(data.underlying).toLocaleString() : '—';
+    document.getElementById('opt-meta').textContent =
+      optAsset + ' · ' + optExpiry + ' · Underlying: ' + und +
+      ' · ' + data.count + ' страйков · ' + fmtUtcTime(data.updated);
+    renderOptChain(data);
+  } catch(e) {
+    wrap.innerHTML = '<div class="no-data">Ошибка: ' + e.message + '</div>';
+  }
+}
+
+function _fmt(v, dec) {
+  if (v == null) return '<span class="val-dim">—</span>';
+  return (+v).toFixed(dec != null ? dec : 4);
+}
+function _fmtIV(v) {
+  if (v == null || v <= 0) return '<span class="val-dim">—</span>';
+  return (+v).toFixed(1) + '%';
+}
+function _fmtDelta(v) {
+  if (v == null) return '<span class="val-dim">—</span>';
+  var cls = v > 0 ? 'val-pos' : v < 0 ? 'val-neg' : '';
+  return '<span class="' + cls + '">' + (+v).toFixed(3) + '</span>';
+}
+function _fmtOI(v) {
+  if (v == null) return '<span class="val-dim">—</span>';
+  return v >= 1000 ? (v/1000).toFixed(1) + 'K' : (+v).toFixed(1);
+}
+
+function renderOptChain(data) {
+  var chain = data.chain;
+  var underlying = data.underlying;
+  var atmStrike = null;
+  if (underlying) {
+    var best = Infinity;
+    chain.forEach(function(row) {
+      var d = Math.abs(row.strike - underlying);
+      if (d < best) { best = d; atmStrike = row.strike; }
+    });
+  }
+
+  var html = '<table class="opt-chain">'
+    + '<thead><tr>'
+    + '<th class="call-hdr" colspan="6">CALLS</th>'
+    + '<th class="strike-hdr">STRIKE</th>'
+    + '<th class="put-hdr" colspan="6">PUTS</th>'
+    + '</tr><tr>'
+    + '<th class="call-hdr">OI</th>'
+    + '<th class="call-hdr">Bid IV</th>'
+    + '<th class="call-hdr">Mark IV</th>'
+    + '<th class="call-hdr">Bid</th>'
+    + '<th class="call-hdr">Ask</th>'
+    + '<th class="call-hdr">Delta</th>'
+    + '<th class="strike-hdr">—</th>'
+    + '<th class="put-hdr">Delta</th>'
+    + '<th class="put-hdr">Bid</th>'
+    + '<th class="put-hdr">Ask</th>'
+    + '<th class="put-hdr">Mark IV</th>'
+    + '<th class="put-hdr">Bid IV</th>'
+    + '<th class="put-hdr">OI</th>'
+    + '</tr></thead><tbody>';
+
+  chain.forEach(function(row) {
+    var c = row.call, p = row.put;
+    var isATM = row.strike === atmStrike;
+    var isSel = (c && c.instrument === optInstrument) || (p && p.instrument === optInstrument);
+    var trCls = 'clickable' + (isATM ? ' atm' : '') + (isSel ? ' selected' : '');
+    html += '<tr class="' + trCls + '" onclick="selectOptStrike(' + row.strike + ', this)">'
+      + '<td class="call-side">' + (c ? _fmtOI(c.oi)      : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="call-side">' + (c ? _fmtIV(c.bid_iv)  : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="call-side">' + (c ? _fmtIV(c.mark_iv) : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="call-side">' + (c ? _fmt(c.bid)        : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="call-side">' + (c ? _fmt(c.ask)        : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="call-side">' + (c ? _fmtDelta(c.delta) : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="strike-cell">' + row.strike.toLocaleString() + '</td>'
+      + '<td class="put-side">'  + (p ? _fmtDelta(p.delta) : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="put-side">'  + (p ? _fmt(p.bid)         : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="put-side">'  + (p ? _fmt(p.ask)         : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="put-side">'  + (p ? _fmtIV(p.mark_iv)  : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="put-side">'  + (p ? _fmtIV(p.bid_iv)   : '<span class="val-dim">—</span>') + '</td>'
+      + '<td class="put-side">'  + (p ? _fmtOI(p.oi)        : '<span class="val-dim">—</span>') + '</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('opt-chain-wrap').innerHTML = html;
+
+  if (underlying) {
+    var atmRow = document.querySelector('#opt-chain-wrap tr.atm');
+    if (atmRow) atmRow.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+function selectOptStrike(strike, tr) {
+  document.querySelectorAll('#opt-chain-wrap tr.selected').forEach(function(r){ r.classList.remove('selected'); });
+  tr.classList.add('selected');
+  optInstrument = optAsset + '-' + optExpiry + '-' + strike + '-C';
+  document.getElementById('opt-selected-label').textContent = optInstrument;
+  document.getElementById('opt-selected-meta').textContent = 'Call · Mark · Bid · Ask · IV (поминутно)';
+  document.getElementById('opt-chart-section').style.display = '';
+  loadOptChart(optInstrument);
+}
+
+async function loadOptChart(instrument) {
+  var priceEl = document.getElementById('opt-price-chart');
+  var ivEl    = document.getElementById('opt-iv-chart');
+  var spin = '<div style="display:flex;align-items:center;justify-content:center;height:240px"><span class="spinner"></span></div>';
+  priceEl.innerHTML = spin;
+  ivEl.innerHTML    = spin;
+  try {
+    var r = await fetch(MD_API + '/options/chart/' + encodeURIComponent(instrument) + '?days=' + optDays);
+    if (!r.ok) throw new Error('API ' + r.status);
+    var data = await r.json();
+    _renderOptPriceChart(priceEl, data.points);
+    _renderOptIVChart(ivEl, data.points);
+  } catch(e) {
+    priceEl.innerHTML = '<div class="no-data">Ошибка: ' + e.message + '</div>';
+    ivEl.innerHTML    = priceEl.innerHTML;
+  }
+}
+
+var _toTime = function(t) { return Math.floor(new Date(t).getTime() / 1000); };
+var _dedupe = function(arr) { return arr.filter(function(v, i, a) { return i === 0 || v.time !== a[i-1].time; }); };
+
+function _makeOptChart(container, height) {
+  container.innerHTML = '';
+  var chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#0b1220' }, textColor: '#94a3b8' },
+    grid:   { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#334155' },
+    timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
+    width: container.clientWidth, height: height || 240,
+  });
+  new ResizeObserver(function(){ chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+  return chart;
+}
+
+function _renderOptPriceChart(container, points) {
+  if (!points || !points.length) { container.innerHTML = '<div class="no-data">Нет данных</div>'; return; }
+  if (optPriceChart) { try { optPriceChart.remove(); } catch(e){} optPriceChart = null; }
+  var chart = _makeOptChart(container);
+  optPriceChart = chart;
+  var mk = function(key) {
+    return _dedupe(points.filter(function(p){ return p[key] != null; }).map(function(p){ return { time: _toTime(p.t), value: p[key] }; }));
+  };
+  chart.addLineSeries({ color: '#3b82f6', lineWidth: 1, priceLineVisible: false, lastValueVisible: true }).setData(mk('mark'));
+  chart.addLineSeries({ color: '#10b981', lineWidth: 1, priceLineVisible: false, lastValueVisible: true }).setData(mk('bid'));
+  chart.addLineSeries({ color: '#f87171', lineWidth: 1, priceLineVisible: false, lastValueVisible: true }).setData(mk('ask'));
+  chart.timeScale().fitContent();
+}
+
+function _renderOptIVChart(container, points) {
+  if (!points || !points.length) { container.innerHTML = '<div class="no-data">Нет данных</div>'; return; }
+  if (optIvChart) { try { optIvChart.remove(); } catch(e){} optIvChart = null; }
+  var chart = _makeOptChart(container);
+  optIvChart = chart;
+  var mk = function(key) {
+    return _dedupe(points.filter(function(p){ return p[key] != null && p[key] > 0 && p[key] < 800; }).map(function(p){ return { time: _toTime(p.t), value: p[key] }; }));
+  };
+  chart.addLineSeries({ color: '#a78bfa', lineWidth: 2, priceLineVisible: false, lastValueVisible: true }).setData(mk('mark_iv'));
+  chart.addLineSeries({ color: '#10b981', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true }).setData(mk('bid_iv'));
+  chart.addLineSeries({ color: '#f87171', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, priceLineVisible: false, lastValueVisible: true }).setData(mk('ask_iv'));
+  chart.timeScale().fitContent();
+}
+
+setInterval(function() {
+  var tab = document.getElementById('tab-options');
+  if (tab && tab.classList.contains('active') && optExpiry) loadOptChain();
+}, 60000);
+
+initializeActiveMarketDataTab();
+
+</script>
+<script src="/visitor-tracker.js"></script>
+</body>
+</html>

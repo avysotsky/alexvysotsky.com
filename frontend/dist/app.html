@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VAN Admin</title>
+    <script>window.__VAN_BASE_URL__ = window.location.origin;</script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/van-logo.png"/>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #020617; color: #f1f5f9; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+      a { color: inherit; text-decoration: none; }
+
+      header { border-bottom: 1px solid #1e293b; padding: 6px 24px; }
+      .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand-logo { height: 48px; filter: invert(1) brightness(1.15); opacity: .96; }
+      .brand-title { font-size: 15px; font-weight: 600; }
+      .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+      .header-right { display: flex; align-items: center; gap: 12px; }
+      .header-pill { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 13px; }
+
+      nav { border-bottom: 1px solid #1e293b; background: #0b1220; }
+      .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; gap: 0; padding: 0 24px; }
+      .nav-item { padding: 8px 10px; font-size: 13px; color: #94a3b8; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; transition: color .15s, background-color .15s; white-space: nowrap; }
+      .nav-item:hover { color: #f1f5f9; background: #111827; }
+      .nav-item.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+      .main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 40px; }
+      .login-layout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(360px, 420px); gap: 24px; align-items: stretch; }
+      .hero-card, .login-card { background: #0b1220; border: 1px solid #1e293b; border-radius: 14px; }
+      .hero-card { padding: 28px; display: flex; flex-direction: column; justify-content: center; min-height: 420px; }
+      .hero-eyebrow { display: inline-block; background: #1e293b; border-radius: 6px; padding: 2px 8px; font-size: 11px; color: #94a3b8; margin-bottom: 16px; width: fit-content; }
+      .hero-title { font-size: 30px; line-height: 1.15; font-weight: 700; color: #f8fafc; margin-bottom: 12px; }
+      .hero-sub { font-size: 14px; color: #94a3b8; line-height: 1.6; max-width: 720px; }
+      .hero-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+      .hero-metric { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; }
+      .hero-metric-label { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+      .hero-metric-value { font-size: 16px; color: #f1f5f9; font-weight: 600; }
+
+      .login-card { padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+      .login-card h1 { margin: 0 0 8px; font-size: 22px; color: #f8fafc; }
+      .login-card p { margin: 0 0 18px; color: #94a3b8; font-size: 13px; }
+      .login-card label { display:block; margin:12px 0 6px; font-size:12px; color:#cbd5e1; }
+      .login-card input { width:100%; box-sizing:border-box; padding:11px 12px; border-radius:10px; border:1px solid #334155; background:#020617; color:#e2e8f0; }
+      .login-card input:focus { outline:none; border-color:#3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+      .login-card button { width:100%; margin-top:16px; padding:11px 12px; border:0; border-radius:10px; background:#1e3a5f; color:#60a5fa; font-weight:700; cursor:pointer; border:1px solid #3b82f6; }
+      .login-card button:hover { background:#24466f; }
+      .login-card button:disabled { opacity:.6; cursor:wait; }
+      .msg { margin-top:12px; font-size:12px; color:#fca5a5; min-height:18px; }
+      .loading { min-height:100vh; display:flex; align-items:center; justify-content:center; color:#94a3b8; }
+
+      footer { text-align: center; padding: 10px 28px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; }
+
+      #visitorsFab { position: fixed; right: 18px; bottom: 18px; z-index: 9998; background:#7c3aed; color:white; border:0; border-radius:999px; padding:12px 16px; font-weight:700; cursor:pointer; box-shadow:0 12px 30px rgba(0,0,0,.35); }
+      #visitorsOverlay { position: fixed; inset: 0; background: rgba(2,6,23,.72); z-index: 9999; display:none; }
+      #visitorsPanel { position:absolute; inset: 18px; background:#020617; border:1px solid #334155; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
+      #visitorsBar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; background:#0f172a; border-bottom:1px solid #1e293b; }
+      #visitorsBarTitle { font-weight:700; color:#e2e8f0; }
+      #visitorsFrame { width:100%; height:100%; border:0; background:#0b1220; }
+      #visitorsClose { background:#ef4444; color:#fff; border:0; border-radius:10px; padding:8px 12px; cursor:pointer; }
+
+      @media(max-width: 900px) {
+        .main { padding: 20px 12px 32px; }
+        .header-inner { padding: 0 6px; }
+        .nav-inner { padding: 0 8px; overflow-x: auto; }
+        .login-layout { grid-template-columns: 1fr; }
+        .hero-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot" class="loading">Loading…</div>
+
+    <script>
+      const TOKEN_KEY = 'van_token';
+      const SESSION_KEY = 'van_session';
+
+      function installLogoutReloadHook() {
+        if (window.__vanLogoutReloadHookInstalled) return;
+        window.__vanLogoutReloadHookInstalled = true;
+        const origRemoveItem = localStorage.removeItem.bind(localStorage);
+        const origClear = localStorage.clear.bind(localStorage);
+
+        function hardRedirectToWrapper() {
+          try { document.body.style.opacity = '0'; } catch (e) {}
+          setTimeout(() => { location.replace('/app?logout=1'); }, 0);
+        }
+
+        localStorage.removeItem = function (key) {
+          const res = origRemoveItem(key);
+          if (key === TOKEN_KEY || key === SESSION_KEY) hardRedirectToWrapper();
+          return res;
+        };
+
+        localStorage.clear = function () {
+          const res = origClear();
+          hardRedirectToWrapper();
+          return res;
+        };
+      }
+
+      function getStoredToken() {
+        const direct = localStorage.getItem(TOKEN_KEY);
+        if (direct) return direct;
+        try {
+          const raw = localStorage.getItem(SESSION_KEY);
+          if (!raw) return '';
+          const sess = JSON.parse(raw);
+          return (sess && (sess.token || sess.Token)) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function clearSession() {
+        try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+        try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+      }
+
+      function renderLogin(message = '') {
+        document.body.innerHTML = `
+          <header>
+            <div class="header-inner">
+              <div class="brand">
+                <img class="brand-logo" src="/van-logo.png" alt="VAN"/>
+                <div>
+                  <div class="brand-title">VAN Portal</div>
+                  <div class="brand-sub">Admin</div>
+                </div>
+              </div>
+              <div class="header-right">
+                <span class="header-pill">Secure Area</span>
+              </div>
+            </div>
+          </header>
+
+          <nav>
+            <div class="nav-inner">
+              <div class="nav-item">Overview</div>
+              <div class="nav-item">Trading</div>
+              <div class="nav-item">Deribit</div>
+              <div class="nav-item">OKX</div>
+              <div class="nav-item">Bybit</div>
+              <div class="nav-item">CoinCall</div>
+              <div class="nav-item">MEXC</div>
+              <div class="nav-item">Binance</div>
+              <div class="nav-item">Hyperliquid</div>
+              <div class="nav-item">Bitget</div>
+              <div class="nav-item">Kraken</div>
+              <div class="nav-item">KuCoin</div>
+              <div class="nav-item">Gate</div>
+              <div class="nav-item">Coinbase</div>
+              <div class="nav-item">Arbitrage</div>
+              <div class="nav-item">Market Data</div>
+              <div class="nav-item">Position Builder</div>
+              <div class="nav-item">Backtester</div>
+              <div class="nav-item active">Admin</div>
+            </div>
+          </nav>
+
+          <main class="main">
+            <div class="login-layout">
+              <section class="hero-card">
+                <div class="hero-eyebrow">VAN Portal</div>
+                <h2 class="hero-title">Admin access for portfolio operations and system management</h2>
+                <div class="hero-sub">Use your administrator credentials to continue to the internal dashboard. This screen now follows the same visual language as <span style="color:#60a5fa">/market-data</span> so the admin area looks native to the rest of the portal.</div>
+                <div class="hero-grid">
+                  <div class="hero-metric"><div class="hero-metric-label">Theme</div><div class="hero-metric-value">Portal Dark</div></div>
+                  <div class="hero-metric"><div class="hero-metric-label">Access</div><div class="hero-metric-value">Admin only</div></div>
+                  <div class="hero-metric"><div class="hero-metric-label">Host</div><div class="hero-metric-value">alexvysotsky.com</div></div>
+                </div>
+              </section>
+
+              <form class="login-card" id="loginForm">
+                <h1>Admin login</h1>
+                <p>Enter your administrator credentials.</p>
+                <label for="login">Login</label>
+                <input id="login" name="login" autocomplete="username" value="admin" />
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" />
+                <button id="submitBtn" type="submit">Sign in</button>
+                <div class="msg" id="msg">${message || ''}</div>
+              </form>
+            </div>
+          </main>
+
+          <footer>© 2026 alexvysotsky.com</footer>`;
+
+        const form = document.getElementById('loginForm');
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('msg');
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          msg.textContent = '';
+          btn.disabled = true;
+          const login = document.getElementById('login').value.trim();
+          const password = document.getElementById('password').value;
+          try {
+            const r = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ Login: login, Password: password })
+            });
+            if (!r.ok) {
+              msg.textContent = r.status === 401 ? 'Invalid credentials' : ('Login failed (' + r.status + ')');
+              return;
+            }
+            const data = await r.json();
+            const token = data.token || data.Token || '';
+            localStorage.setItem(TOKEN_KEY, token);
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify({ token, user: data.user || data.User || { role: 'Admin', login } })); } catch (e) {}
+            location.replace('/app');
+          } catch (err) {
+            msg.textContent = err?.message || 'Login failed';
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      }
+
+      function installVisitorsOverlay() {
+        if (document.getElementById('visitorsFab')) return;
+        const fab = document.createElement('button');
+        fab.id = 'visitorsFab';
+        fab.textContent = 'Visitors';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'visitorsOverlay';
+        overlay.innerHTML = `
+          <div id="visitorsPanel">
+            <div id="visitorsBar">
+              <div id="visitorsBarTitle">Visitors Audit</div>
+              <button id="visitorsClose" type="button">Close</button>
+            </div>
+            <iframe id="visitorsFrame" src="/visitors"></iframe>
+          </div>`;
+
+        document.body.appendChild(fab);
+        document.body.appendChild(overlay);
+        fab.addEventListener('click', () => { overlay.style.display = 'block'; });
+        overlay.querySelector('#visitorsClose').addEventListener('click', () => { overlay.style.display = 'none'; });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+      }
+
+      async function renderAdmin(token) {
+        installLogoutReloadHook();
+        document.body.innerHTML = '<div id="root"><div class="loading">Loading admin panel…</div></div>';
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.src = '/assets/index-adminfix-20260327.js?v=20260411-admin-daily-dd-fix';
+        s.onload = () => setTimeout(installVisitorsOverlay, 500);
+        document.head.appendChild(s);
+      }
+
+      (async () => {
+        const qs = new URLSearchParams(location.search);
+        if (qs.get('logout') === '1') { clearSession(); history.replaceState({}, '', '/app'); renderLogin(); return; }
+        const token = getStoredToken();
+        if (!token) {
+          renderLogin();
+          return;
+        }
+        try {
+          const r = await fetch('/api/admin/dashboard', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!r.ok) {
+            clearSession();
+            renderLogin();
+            return;
+          }
+          await renderAdmin(token);
+        } catch (e) {
+          clearSession();
+          renderLogin('Failed to reach admin API');
+        }
+      })();
+    </script>
+    <script src="/visitor-tracker.js"></script>
+  </body>
+</html>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VAN Landing Layout Options</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#020617;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.4}
+    .page{max-width:1280px;margin:0 auto;padding:28px 20px 60px}
+    h1{font-size:28px;margin-bottom:8px}
+    .sub{color:#94a3b8;margin-bottom:24px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .option{background:#0f172a;border:1px solid #1e293b;border-radius:22px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .option-head{padding:18px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .option-head h2{font-size:18px}
+    .option-head .meta{font-size:12px;color:#94a3b8;margin-top:4px}
+    .badge{font-size:11px;padding:6px 10px;border-radius:999px;background:#111827;color:#cbd5e1;border:1px solid #334155;white-space:nowrap}
+    .mock{padding:18px;background:#020617}
+    .frame{border:1px solid #1e293b;border-radius:18px;overflow:hidden;background:#020617}
+    .hdr{padding:14px 18px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#f8fafc,#94a3b8)}
+    .brand-title{font-size:14px;font-weight:700}
+    .brand-sub{font-size:11px;color:#64748b}
+    .signin{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .inp{width:92px;height:32px;border-radius:9px;background:#0f172a;border:1px solid #334155}
+    .btn{height:32px;padding:0 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#e5e7eb;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+    .btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+    .content{padding:18px}
+    .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+    .stat{height:54px;border-radius:12px;background:#0f172a;border:1px solid #1e293b}
+    .cta-row{margin-bottom:14px;padding:14px 16px;border:1px solid #1e293b;border-radius:16px;background:#0b1220;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .cta-text{font-size:13px;color:#cbd5e1}
+    .chart{height:126px;border-radius:16px;border:1px solid #1e293b;background:linear-gradient(180deg,#0f172a,#09101d);margin-bottom:12px;position:relative;overflow:hidden}
+    .chart:before{content:'';position:absolute;left:18px;right:18px;top:22px;height:2px;background:linear-gradient(90deg,transparent,#34d399,transparent);opacity:.35}
+    .chart:after{content:'';position:absolute;left:16px;right:16px;bottom:18px;height:42px;background:repeating-linear-gradient(90deg,rgba(148,163,184,.4) 0 4px,transparent 4px 8px);opacity:.25}
+    .chart-head{position:absolute;left:14px;right:14px;top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8}
+    .chart-btn{position:absolute;right:14px;top:10px}
+    .footer-cta{display:flex;justify-content:center;padding:8px 0 2px}
+    .hero{padding:16px;border:1px solid #1e293b;border-radius:16px;background:#0b1220;margin-bottom:14px}
+    .hero h3{font-size:18px;margin-bottom:6px}
+    .hero p{font-size:13px;color:#94a3b8;margin-bottom:12px}
+    .floating{position:absolute;right:14px;bottom:14px}
+    .mini-note{padding:14px 18px;border-top:1px solid #1e293b;color:#94a3b8;font-size:13px}
+    .modal-ghost{position:absolute;inset:18px;background:rgba(2,6,23,.55);border:1px dashed rgba(148,163,184,.35);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:13px}
+    .stack{display:flex;gap:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>VAN landing — варианты компоновки Contact</h1>
+    <div class="sub">Ниже 6 визуальных mockup-вариантов. Это preview для выбора направления, не финальная пиксельная реализация.</div>
+    <div class="grid">
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 1 — Contact в header</h2><div class="meta">Быстро, естественно, всегда на первом экране</div></div>
+          <div class="badge">Header CTA</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div><div class="btn">Contact</div></div>
+            </div>
+            <div class="content">
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span>2025-11 → now</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Контакт — вторичный action рядом с Sign in. Строго, но на mobile header станет плотнее.</div>
+      </section>
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 2 — CTA под stats</h2><div class="meta">После метрик, до графиков</div></div>
+          <div class="badge">Recommended</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div></div>
+            </div>
+            <div class="content">
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="cta-row"><div class="cta-text">Interested in VAN strategy performance? Get in touch for details.</div><div class="btn">Contacts</div></div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span>2025-11 → now</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Лучший баланс между landing и dashboard. CTA не мешает header и не болтается внизу.</div>
+      </section>
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 3 — Contact в header карточки графика</h2><div class="meta">Аккуратный dashboard-style</div></div>
+          <div class="badge">Minimal</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div></div>
+            </div>
+            <div class="content">
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span class="chart-btn btn">Contact</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Самый строгий вариант. Контакт встроен в интерфейс и не выглядит отдельным инородным блоком.</div>
+      </section>
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 4 — Нижний CTA-блок</h2><div class="meta">Завершение страницы отдельной секцией</div></div>
+          <div class="badge">Classic landing</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div></div>
+            </div>
+            <div class="content">
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span>2025-11 → now</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div></div>
+              <div class="cta-row"><div class="cta-text">Looking for allocation details, access terms or onboarding info?</div><div class="stack"><div class="btn">Contacts</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Работает только если CTA-блок выглядит как полноценная секция, а не одинокая кнопка.</div>
+      </section>
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 5 — Floating button</h2><div class="meta">Кнопка всегда под рукой</div></div>
+          <div class="badge">Utility</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div></div>
+            </div>
+            <div class="content" style="position:relative">
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span>2025-11 → now</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div><div class="floating btn">Contact</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Функционально удобно, но для премиального лэндинга может выглядеть дёшево.</div>
+      </section>
+
+      <section class="option">
+        <div class="option-head">
+          <div><h2>Вариант 6 — Hero + CTA</h2><div class="meta">Самый landing-oriented сценарий</div></div>
+          <div class="badge">Most expressive</div>
+        </div>
+        <div class="mock">
+          <div class="frame">
+            <div class="hdr">
+              <div class="brand"><div class="logo"></div><div><div class="brand-title">VAN Portal</div><div class="brand-sub">Real-time · Updated every minute</div></div></div>
+              <div class="signin"><div class="inp"></div><div class="inp"></div><div class="btn primary">Sign in</div></div>
+            </div>
+            <div class="content">
+              <div class="hero"><h3>Systematic crypto strategy</h3><p>Transparent performance metrics, drawdown control and investor access in one portal.</p><div class="stack"><div class="btn">Contacts</div><div class="btn primary">Sign in</div></div></div>
+              <div class="stats"> <div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div><div class="stat"></div> </div>
+              <div class="chart"><div class="chart-head"><span>Daily Equity</span><span>2025-11 → now</span></div></div>
+              <div class="chart"><div class="chart-head"><span>1-min Equity</span><span>last 24h</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="mini-note">Лучший UX для публичной landing-page, но это уже заметное изменение характера страницы.</div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
