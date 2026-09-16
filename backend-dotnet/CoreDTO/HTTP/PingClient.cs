@@ -45,7 +45,7 @@ namespace CoreDTO.HTTP
             }
             catch (Exception ex)
             { 
-                logAction($"[GetRequest][{LogHashTags.externalServiceError}] error to {client.BaseAddress}{url} {ex}", LogLevel.llExceptions);
+                logAction($"[GetRequest][#external_service_error] error to {client.BaseAddress}{url} {ex}", LogLevel.llExceptions);
                 return new byte[0];
             }
         }

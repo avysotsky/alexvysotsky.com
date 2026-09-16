@@ -1,6 +1,5 @@
 ﻿using static CoreDTO.Logger.Enums;
 using CoreDTO;
-using CoreDTO.TextConst;
 using CoreDTO.Configs;
 using System;
 using System.Collections.Generic;
@@ -43,7 +42,7 @@ namespace SipCoreDTO.HTTP
             }
             catch (Exception ex)
             {
-                logAction($"[GetRequest][{LogHashTags.externalServiceError}] error to {client.BaseAddress}{url}; {ex}", LogLevel.llExceptions);
+                logAction($"[GetRequest][#external_service_error] error to {client.BaseAddress}{url}; {ex}", LogLevel.llExceptions);
                 return new byte[0];
             }
         }
@@ -71,7 +70,7 @@ namespace SipCoreDTO.HTTP
             }
             catch (Exception ex)
             {
-                logAction($"[PostRequest][{LogHashTags.externalServiceError}] error to {client.BaseAddress}{url}; {ex}", LogLevel.llExceptions);
+                logAction($"[PostRequest][#external_service_error] error to {client.BaseAddress}{url}; {ex}", LogLevel.llExceptions);
                 return new byte[0];
             }
         }
@@ -87,7 +86,7 @@ namespace SipCoreDTO.HTTP
                 return new T()
                 {
                     status = false,
-                    message = $"[{LogHashTags.externalServiceError}] {client.BaseAddress}{url} Method [Get] - null deserialized"
+                    message = $"[#external_service_error] {client.BaseAddress}{url} Method [Get] - null deserialized"
                 };
             }
 
@@ -118,7 +117,7 @@ namespace SipCoreDTO.HTTP
                 return new T()
                 {
                     status = false,
-                    message = $"[{LogHashTags.externalServiceError}] {client.BaseAddress}{url} Method [Delete] - null deserialized"
+                    message = $"[#external_service_error] {client.BaseAddress}{url} Method [Delete] - null deserialized"
                 };
             }
 
@@ -136,7 +135,7 @@ namespace SipCoreDTO.HTTP
                 return new T()
                 {
                     status = false,
-                    message = $"[{LogHashTags.externalServiceError}] {client.BaseAddress}{url} Method [Put] - null deserialized"
+                    message = $"[#external_service_error] {client.BaseAddress}{url} Method [Put] - null deserialized"
                 };
             }
 
@@ -154,7 +153,7 @@ namespace SipCoreDTO.HTTP
                 return new T()
                 {
                     status = false,
-                    message = $"[{LogHashTags.externalServiceError}] {client.BaseAddress}{url} Method [Post] - null deserialized"
+                    message = $"[#external_service_error] {client.BaseAddress}{url} Method [Post] - null deserialized"
                 };
             }
 

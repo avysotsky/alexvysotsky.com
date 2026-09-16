@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoreDTO.Configs;
 using CoreDTO.Logger;
-using CoreDTO.ServiceDTO;
 using CoreDTO.VANDTO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +27,7 @@ public static class CoreEndpoints
 		app.MapGet("ping", (Func<HttpContext, CoreDTO.Logger.Enums.LogAction, Task>)async delegate(HttpContext context, CoreDTO.Logger.Enums.LogAction logAction)
 		{
 			logAction("[GET] /ping", CoreDTO.Logger.Enums.LogLevel.llBaselogic);
-			PingResponseDTO value = new PingResponseDTO
+			var value = new
 			{
 				version = Assembly.GetExecutingAssembly().GetName().Version.ToString()
 			};

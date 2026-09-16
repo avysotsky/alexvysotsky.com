@@ -1,5 +1,4 @@
 ﻿using static CoreDTO.Logger.Enums;
-using CoreDTO.TextConst;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -17,7 +16,7 @@ namespace CoreDTO.Configs
             }
             catch (Exception ex)
             {
-                logAction?.Invoke($"[{LogHashTags.externalServiceError}] {ut8jsonString} deserialization errror - {ex}", LogLevel.llExceptions);
+                logAction?.Invoke($"[#external_service_error] {ut8jsonString} deserialization errror - {ex}", LogLevel.llExceptions);
                 return null;
             }
         }
@@ -31,7 +30,7 @@ namespace CoreDTO.Configs
             }
             catch (Exception ex)
             {
-                logAction?.Invoke($"[{LogHashTags.externalServiceError}] {ut8jsonString} deserialization errror - {ex}", LogLevel.llExceptions);
+                logAction?.Invoke($"[#external_service_error] {ut8jsonString} deserialization errror - {ex}", LogLevel.llExceptions);
                 return null;
             }
         }
@@ -44,7 +43,7 @@ namespace CoreDTO.Configs
             }
             catch (Exception ex)
             {
-                logAction?.Invoke($"[{LogHashTags.configurationErrror}] {fileName} deserialization errror - {ex}", LogLevel.llExceptions);
+                logAction?.Invoke($"[#config_error] {fileName} deserialization errror - {ex}", LogLevel.llExceptions);
                 return null;
             }
         }
@@ -58,7 +57,7 @@ namespace CoreDTO.Configs
             }
             catch (Exception ex)
             {
-                logAction?.Invoke($"[{LogHashTags.configurationErrror}] {ex}", LogLevel.llExceptions);
+                logAction?.Invoke($"[#config_error] {ex}", LogLevel.llExceptions);
             }
         }
     }
