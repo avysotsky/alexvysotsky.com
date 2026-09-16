@@ -23,6 +23,12 @@ outside Git and through the deployment environment.
 
 ## Development
 
+Open the Visual Studio solution:
+
+```text
+alexvysotsky.com.sln
+```
+
 The .NET service entry project is:
 
 ```text
